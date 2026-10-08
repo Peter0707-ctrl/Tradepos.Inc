@@ -1,0 +1,62 @@
+{
+  "name": "TradePOS — Modern Retail & POS OS",
+  "short_name": "TradePOS",
+  "description": "Enterprise Point of Sale, stock management, deliveries and automated profit & loss tracking.",
+  "start_url": "/",
+  "id": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#F4F7EE",
+  "theme_color": "#E1FFAC",
+  "categories": ["business", "finance", "shopping", "productivity"],
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Quick POS Cash Sale",
+      "short_name": "POS Sale",
+      "description": "Open Quick Cash Calculator POS",
+      "url": "/?module=pos",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Daily Sales & Register",
+      "short_name": "Hesabu ya Siku",
+      "description": "Daily Sales and Cash Drawer",
+      "url": "/?module=cash-register",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Wateja wa Delivery",
+      "short_name": "Deliveries",
+      "description": "Track Customer Deliveries",
+      "url": "/?module=deliveries",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
+    }
+  ]
+}

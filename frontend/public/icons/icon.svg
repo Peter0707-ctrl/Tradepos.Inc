@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#E1FFAC" />
+      <stop offset="100%" stop-color="#A8E852" />
+    </linearGradient>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="12" stdDeviation="16" flood-color="#152709" flood-opacity="0.25"/>
+    </filter>
+  </defs>
+
+  <!-- App Icon Background squircle -->
+  <rect width="512" height="512" rx="128" fill="url(#grad)" />
+  <rect x="16" y="16" width="480" height="480" rx="112" fill="none" stroke="#FFFFFF" stroke-width="8" stroke-opacity="0.5" />
+
+  <!-- Center Shopping Bag / Modern POS Emblem -->
+  <g filter="url(#shadow)" transform="translate(96, 96)">
+    <!-- Bag handles -->
+    <path d="M96 140 C96 60, 224 60, 224 140" fill="none" stroke="#142607" stroke-width="32" stroke-linecap="round" />
+    <!-- Bag body -->
+    <rect x="32" y="128" width="256" height="192" rx="36" fill="#142607" />
+    <!-- Subtle accent line -->
+    <path d="M80 180 L240 180" stroke="#E1FFAC" stroke-width="14" stroke-linecap="round" />
+    <circle cx="110" cy="240" r="16" fill="#E1FFAC" />
+    <circle cx="160" cy="240" r="16" fill="#E1FFAC" />
+    <circle cx="210" cy="240" r="16" fill="#E1FFAC" />
+  </g>
+</svg>

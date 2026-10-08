@@ -1,0 +1,59 @@
+version: '3.8'
+
+services:
+  frontend:
+    build:
+      context: ./frontend
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+    restart: always
+
+  backend:
+    build:
+      context: ./backend
+    ports:
+      - "4000:4000"
+    environment:
+      - PORT=4000
+      - DATABASE_URL=postgresql://tradepos_user:secure_pwd@postgres:5432/tradepos_db
+      - REDIS_URL=redis://redis:6379
+      - AI_SERVICE_URL=http://ai-service:8000
+    depends_on:
+      - postgres
+      - redis
+    restart: always
+
+  ai-service:
+    build:
+      context: ./ai-service
+    ports:
+      - "8000:8000"
+    environment:
+      - ENVIRONMENT=production
+    restart: always
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: tradepos_postgres
+    environment:
+      POSTGRES_DB: tradepos_db
+      POSTGRES_USER: tradepos_user
+      POSTGRES_PASSWORD: secure_pwd
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./database/schema.sql:/docker-entrypoint-initdb.d/init.sql
+    restart: always
+
+  redis:
+    image: redis:7-alpine
+    container_name: tradepos_redis
+    ports:
+      - "6379:6379"
+    restart: always
+
+volumes:
+  pgdata:
