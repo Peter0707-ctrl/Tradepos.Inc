@@ -44,7 +44,8 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate
     cashRegister,
     refundSale,
     stockMovements,
-    t
+    t,
+    language
   } = useApp();
 
   const [timeFilter, setTimeFilter] = useState<"Today" | "7 Days" | "30 Days">("Today");
@@ -92,10 +93,13 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-2 border-b border-[#D8E6CC]">
         <div>
           <h2 className="text-2xl font-black text-[#152508] tracking-tight">
-            Good morning, {user?.name ? user.name.split(" ")[0] : "Peter"}
+            {language === "sw" ? "Habari za Leo," : "Good morning,"} {user?.name ? user.name.split(" ")[0] : "Peter"}
           </h2>
           <p className="text-xs text-[#526848] font-semibold mt-0.5">
-            Here&apos;s what&apos;s happening with your business today at <strong className="text-[#192D0A]">{currentBranch?.name}</strong>.
+            {language === "sw"
+              ? "Huu hapa mwenendo wa biashara yako leo katika tawi la "
+              : "Here's what's happening with your business today at "}
+            <strong className="text-[#192D0A]">{currentBranch?.name}</strong>.
           </p>
         </div>
 
@@ -106,7 +110,7 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate
             className="px-3.5 py-2 rounded-xl bg-[#E1FFAC] border border-[#9EDE31] hover:bg-[#D5F98A] text-xs font-black text-[#172A08] shadow-xs flex items-center gap-1.5 transition"
           >
             <Plus className="w-4 h-4 text-[#20360A]" />
-            <span>New Sale</span>
+            <span>{language === "sw" ? "Mauzo Mapya" : "New Sale"}</span>
           </button>
 
           <button
@@ -114,7 +118,7 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate
             className="px-3 py-2 rounded-xl bg-white border border-[#D5E5C4] hover:bg-[#F2F7EB] text-xs font-bold text-[#2A3E1D] shadow-xs flex items-center gap-1.5 transition"
           >
             <Plus className="w-3.5 h-3.5 text-[#426117]" />
-            <span>Add Product</span>
+            <span>{language === "sw" ? "Ongeza Bidhaa" : "Add Product"}</span>
           </button>
 
           <button
@@ -122,7 +126,7 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate
             className="px-3 py-2 rounded-xl bg-white border border-[#D5E5C4] hover:bg-[#F2F7EB] text-xs font-bold text-[#2A3E1D] shadow-xs flex items-center gap-1.5 transition"
           >
             <Plus className="w-3.5 h-3.5 text-[#426117]" />
-            <span>Add Customer</span>
+            <span>{language === "sw" ? "Sajili Mteja" : "Add Customer"}</span>
           </button>
 
           <button
@@ -130,7 +134,7 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate
             className="px-3 py-2 rounded-xl bg-white border border-[#D5E5C4] hover:bg-[#F2F7EB] text-xs font-bold text-[#2A3E1D] shadow-xs flex items-center gap-1.5 transition"
           >
             <Plus className="w-3.5 h-3.5 text-[#426117]" />
-            <span>Record Expense</span>
+            <span>{language === "sw" ? "Weka Matumizi" : "Record Expense"}</span>
           </button>
 
           <button
@@ -138,7 +142,7 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate
             className="px-3 py-2 rounded-xl bg-white border border-[#D5E5C4] hover:bg-[#F2F7EB] text-xs font-bold text-[#2A3E1D] shadow-xs flex items-center gap-1.5 transition"
           >
             <Plus className="w-3.5 h-3.5 text-[#426117]" />
-            <span>Add Purchase</span>
+            <span>{language === "sw" ? "Weka Ununuzi" : "Add Purchase"}</span>
           </button>
         </div>
       </div>
@@ -147,93 +151,95 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3.5">
         {/* Today's Sales */}
         <div className="p-4 rounded-2xl bg-white border border-[#D8E6CC] shadow-xs">
-          <span className="text-xs font-bold text-[#5A704E] block">Today&apos;s Sales</span>
+          <span className="text-xs font-bold text-[#5A704E] block">{t.dashboard.todaysSales}</span>
           <p className="text-xl lg:text-2xl font-black text-[#162709] mt-1">
             TZS {todaysSales.toLocaleString()}
           </p>
           <div className="flex items-center gap-1 text-[11px] font-bold text-emerald-700 mt-1">
             <ArrowUpRight className="w-3.5 h-3.5" />
-            <span>+14.5% vs yesterday</span>
+            <span>{language === "sw" ? "+14.5% dhidi ya jana" : "+14.5% vs yesterday"}</span>
           </div>
         </div>
 
         {/* Today's Profit */}
         <div className="p-4 rounded-2xl bg-white border border-[#D8E6CC] shadow-xs">
-          <span className="text-xs font-bold text-[#5A704E] block">Today&apos;s Profit</span>
+          <span className="text-xs font-bold text-[#5A704E] block">{t.dashboard.todaysProfit}</span>
           <p className="text-xl lg:text-2xl font-black text-emerald-800 mt-1">
             TZS {grossProfit.toLocaleString()}
           </p>
           <div className="flex items-center gap-1 text-[11px] font-bold text-emerald-700 mt-1">
             <ArrowUpRight className="w-3.5 h-3.5" />
-            <span>38% gross margin</span>
+            <span>{language === "sw" ? "38% faida ghafi" : "38% gross margin"}</span>
           </div>
         </div>
 
         {/* Today's Orders */}
         <div className="p-4 rounded-2xl bg-white border border-[#D8E6CC] shadow-xs">
-          <span className="text-xs font-bold text-[#5A704E] block">Today&apos;s Orders</span>
+          <span className="text-xs font-bold text-[#5A704E] block">
+            {language === "sw" ? "Oda za Leo" : "Today's Orders"}
+          </span>
           <p className="text-xl lg:text-2xl font-black text-[#162709] mt-1">
-            {totalOrdersCount} Orders
+            {totalOrdersCount} {language === "sw" ? "Miamala" : "Orders"}
           </p>
           <div className="flex items-center gap-1 text-[11px] font-bold text-[#4B623F] mt-1">
-            <span>Avg ticket: TZS {avgOrderValue.toLocaleString()}</span>
+            <span>{language === "sw" ? "Wastani: TZS" : "Avg ticket: TZS"} {avgOrderValue.toLocaleString()}</span>
           </div>
         </div>
 
         {/* Today's Expenses */}
         <div className="p-4 rounded-2xl bg-white border border-[#D8E6CC] shadow-xs">
-          <span className="text-xs font-bold text-[#5A704E] block">Today&apos;s Expenses</span>
+          <span className="text-xs font-bold text-[#5A704E] block">{t.dashboard.totalExpenses}</span>
           <p className="text-xl lg:text-2xl font-black text-rose-700 mt-1">
             TZS {todaysExpenses.toLocaleString()}
           </p>
           <div className="flex items-center gap-1 text-[11px] font-semibold text-[#667D59] mt-1">
-            <span>Store lease & utility tokens</span>
+            <span>{language === "sw" ? "Pango & Umeme" : "Store lease & utility tokens"}</span>
           </div>
         </div>
 
         {/* Active Customers */}
         <div className="p-4 rounded-2xl bg-white border border-[#D8E6CC] shadow-xs">
-          <span className="text-xs font-bold text-[#5A704E] block">Active Customers</span>
+          <span className="text-xs font-bold text-[#5A704E] block">{t.dashboard.customersCount}</span>
           <p className="text-xl lg:text-2xl font-black text-[#162709] mt-1">
-            {customers.length} Accounts
+            {customers.length} {language === "sw" ? "Wateja" : "Accounts"}
           </p>
           <div className="flex items-center gap-1 text-[11px] font-bold text-emerald-700 mt-1">
             <ArrowUpRight className="w-3.5 h-3.5" />
-            <span>+2 registered today</span>
+            <span>{language === "sw" ? "+2 wapya leo" : "+2 registered today"}</span>
           </div>
         </div>
 
         {/* Low Stock Alerts */}
         <div className="p-4 rounded-2xl bg-white border border-[#D8E6CC] shadow-xs">
-          <span className="text-xs font-bold text-[#5A704E] block">Low Stock Alerts</span>
+          <span className="text-xs font-bold text-[#5A704E] block">{t.dashboard.lowStockItems}</span>
           <p className="text-xl lg:text-2xl font-black text-amber-700 mt-1">
-            {lowStockProducts.length} Items
+            {lowStockProducts.length} {language === "sw" ? "Bidhaa" : "Items"}
           </p>
           <div className="flex items-center gap-1 text-[11px] font-semibold text-amber-800 mt-1">
             <AlertTriangle className="w-3.5 h-3.5" />
-            <span>Below safety buffer</span>
+            <span>{language === "sw" ? "Chini ya kiwango salama" : "Below safety buffer"}</span>
           </div>
         </div>
 
         {/* Outstanding Debts */}
         <div className="p-4 rounded-2xl bg-white border border-[#D8E6CC] shadow-xs">
-          <span className="text-xs font-bold text-[#5A704E] block">Outstanding Debts</span>
+          <span className="text-xs font-bold text-[#5A704E] block">{t.dashboard.outstandingDebts}</span>
           <p className="text-xl lg:text-2xl font-black text-rose-700 mt-1">
             TZS {totalDebts.toLocaleString()}
           </p>
           <div className="flex items-center gap-1 text-[11px] font-bold text-[#637C55] mt-1">
-            <span>Receivables ledger</span>
+            <span>{language === "sw" ? "Daftari la madeni" : "Receivables ledger"}</span>
           </div>
         </div>
 
         {/* Cash Balance */}
         <div className="p-4 rounded-2xl bg-white border border-[#D8E6CC] shadow-xs">
-          <span className="text-xs font-bold text-[#5A704E] block">Cash Balance</span>
+          <span className="text-xs font-bold text-[#5A704E] block">{t.dashboard.cashBalance}</span>
           <p className="text-xl lg:text-2xl font-black text-[#152709] mt-1">
             TZS {cashRegister.actualCash.toLocaleString()}
           </p>
           <div className="flex items-center gap-1 text-[11px] font-bold text-emerald-700 mt-1">
-            <span>Drawer Open • Verified</span>
+            <span>{language === "sw" ? "Droo iko wazi • Imethibitishwa" : "Drawer Open • Verified"}</span>
           </div>
         </div>
       </div>

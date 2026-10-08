@@ -20,7 +20,8 @@ import {
   MessageCircle,
   Shield,
   FileCheck,
-  Headphones
+  Headphones,
+  Calculator
 } from "lucide-react";
 
 interface LandingPageProps {
@@ -46,19 +47,18 @@ const EN_PHRASES = [
 export const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onLoginClick, onDemoLogin }) => {
   const { t, language, setLanguage } = useApp();
 
-  const phrases = language === "sw" ? SW_PHRASES : EN_PHRASES;
+  const phrases = t.landing.phrases;
 
   const [phraseIndex, setPhraseIndex] = useState(0);
-  const [displayText, setDisplayText] = useState<string>(() => (language === "sw" ? SW_PHRASES[0] : EN_PHRASES[0]));
+  const [displayText, setDisplayText] = useState<string>(() => t.landing.phrases[0]);
   const [isDeleting, setIsDeleting] = useState(false);
 
   // Synchronize immediately if language changes
   useEffect(() => {
-    const list = language === "sw" ? SW_PHRASES : EN_PHRASES;
-    setDisplayText(list[0]);
+    setDisplayText(t.landing.phrases[0]);
     setPhraseIndex(0);
     setIsDeleting(false);
-  }, [language]);
+  }, [language, t]);
 
   // Robust typewriter timer loop
   useEffect(() => {
@@ -91,114 +91,18 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onLoginC
     return () => clearTimeout(timer);
   }, [displayText, isDeleting, phraseIndex, phrases]);
 
-  const features = [
-    {
-      title: "High-Speed POS & Sales",
-      desc: "Instant barcode scanner, fast cart, receipt printing, mobile money and cash payment processing.",
-      icon: ShoppingBag,
-    },
-    {
-      title: "Real-Time Stock & Inventory",
-      desc: "Low-stock notifications, batch and expiry tracking, minimum buffer controls, and supplier purchase integration.",
-      icon: Layers,
-    },
-    {
-      title: "Customer & Debt CRM",
-      desc: "Manage customer credit, record installment payments, debt reminders, loyalty rewards and total spending history.",
-      icon: Users,
-    },
-    {
-      title: "Expense & Accounting",
-      desc: "Track daily expenses, compute Gross Profit, COGS, Net Profit, cash flow, and generate automated P&L statements.",
-      icon: DollarSign,
-    },
-    {
-      title: "Multi-Branch Management",
-      desc: "Centrally monitor Kariakoo, Masaki, Mbezi or any branch. Transfer stock effortlessly with consolidated reports.",
-      icon: Store,
-    },
-    {
-      title: "Automated Financial Reports",
-      desc: "Daily sales summaries, margin tracking, profit breakdowns, expense audits and exportable PDF/Excel records.",
-      icon: FileText,
-    },
-    {
-      title: "Online Storefront",
-      desc: "Launch your own online shop directly synchronized with your physical POS stock counts.",
-      icon: Globe,
-    },
-    {
-      title: "Delivery Driver Dispatch",
-      desc: "Manage delivery fees, track order statuses from Packed to Delivered, and assign internal or third-party drivers.",
-      icon: Truck,
-    },
-  ];
+  const featureIcons = [ShoppingBag, Layers, Users, Calculator, Store, Truck, DollarSign, Sparkles];
+  const features = t.landing.features.map((item, idx) => ({
+    ...item,
+    icon: featureIcons[idx % featureIcons.length],
+  }));
 
-  const businessTypes = [
-    "Retail Shops",
-    "Supermarkets",
-    "Cosmetics & Beauty",
-    "Restaurants & Cafes",
-    "Hardware Stores",
-    "Electronics & Phones",
-    "Clothing Boutiques",
-    "Pharmacies",
-    "Wholesale Depots",
-    "Salons & Spas",
-    "Spare Parts Dealers",
-    "Food Businesses",
-  ];
+  const businessTypes = t.landing.businessTypes;
 
-  const pricingPlans = [
-    {
-      name: "PROFESSIONAL",
-      price: "TZS 150,000",
-      period: "/ month",
-      recommended: true,
-      desc: "The complete business operating system for thriving retail and commercial establishments.",
-      features: [
-        "Multiple Branches & Warehouses",
-        "Unlimited Staff with Granular Roles",
-        "Fast POS & Cash / Mobile Money",
-        "Real-Time Stock & Buffer Alerts",
-        "Full Accounting & P&L Statements",
-        "Customer CRM & Debt Tracking",
-        "Free Online Store & Delivery Tracking",
-        "Offline POS Resilient Caching",
-        "Priority VIP Support & Cloud Backups",
-      ],
-      isPopular: true,
-    },
-    {
-      name: "BUSINESS",
-      price: "TZS 300,000",
-      period: "/ month",
-      desc: "For multi-chain supermarkets, wholesale distributors, and multi-branch operations.",
-      features: [
-        "Up to 10 Branches & Warehouses",
-        "Comprehensive Inter-Branch Stock Transfers",
-        "Advanced Multi-Tier Wholesale Pricing",
-        "Automated WhatsApp Debt & Order Reminders",
-        "Dedicated Account Specialist",
-        "Custom ERP Integrations & API Access",
-      ],
-      isPopular: false,
-    },
-    {
-      name: "ENTERPRISE",
-      price: "Custom",
-      period: "",
-      desc: "Tailored private server setup with custom modules for large retail networks.",
-      features: [
-        "Unlimited Branches & Terminals",
-        "Dedicated Database Partition",
-        "Custom Financial Compliance & TRA EFD",
-        "SLA 99.99% Uptime Guarantee",
-        "On-Site Staff Training",
-      ],
-      isPopular: false,
-    },
-  ];
+  const pricingPlans = t.landing.pricingPlans.map((plan, idx) => ({
+    ...plan,
+    isPopular: idx === 0,
+  }));
 
   return (
     <div className="min-h-screen text-[#1E241E]">
@@ -354,10 +258,10 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onLoginC
         <div className="max-w-7xl mx-auto">
           <div className="text-center max-w-3xl mx-auto mb-16">
             <h2 className="text-3xl md:text-4xl font-extrabold text-[#17260a] tracking-tight mb-4">
-              Designed For High Reliability and Fast Business Execution
+              {t.landing.featuresHeading}
             </h2>
             <p className="text-[#3b4b34] text-base">
-              Every tool your shop, restaurant, pharmacy or supermarket requires to operate smoothly every day.
+              {t.landing.featuresSubheading}
             </p>
           </div>
 
@@ -385,10 +289,12 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onLoginC
       <section id="solutions" className="py-20 px-6 lg:px-12">
         <div className="max-w-7xl mx-auto text-center">
           <h2 className="text-3xl md:text-4xl font-extrabold text-[#17260a] tracking-tight mb-4">
-            Tailored For Every Commercial Sector
+            {t.landing.solutionsHeading}
           </h2>
           <p className="text-[#3b4b34] text-base max-w-2xl mx-auto mb-12">
-            Whether you run a fast-paced supermarket, cosmetics boutique, hardware shop or pharmacy, TradePOS adapts to your workflow.
+            {language === "sw"
+              ? "Iwe unamiliki supamaketi kubwa, duka la vipodozi, hardware au duka la dawa, TradePOS inakidhi mahitaji yako yote."
+              : "Whether you run a fast-paced supermarket, cosmetics boutique, hardware shop or pharmacy, TradePOS adapts to your workflow."}
           </p>
 
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
@@ -409,10 +315,10 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onLoginC
         <div className="max-w-7xl mx-auto">
           <div className="text-center max-w-3xl mx-auto mb-16">
             <h2 className="text-3xl md:text-4xl font-extrabold text-[#17260a] tracking-tight mb-4">
-              Simple, Transparent Pricing
+              {t.landing.pricingHeading}
             </h2>
             <p className="text-[#3b4b34] text-base mb-6">
-              Cancel anytime. No hidden setup fees.
+              {t.landing.pricingSubheading}
             </p>
           </div>
 
@@ -428,7 +334,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onLoginC
               >
                 {plan.isPopular && (
                   <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full bg-[#1b2f0a] text-[#E1FFAC] text-xs font-extrabold tracking-wider uppercase shadow-md">
-                    Recommended Plan
+                    {language === "sw" ? "Inayopendekezwa Zaidi" : "Recommended Plan"}
                   </div>
                 )}
 
@@ -459,7 +365,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onLoginC
                       : "bg-[#E1FFAC] text-[#1c2e0e] hover:bg-[#d6f798] border border-[#b2e858]"
                   }`}
                 >
-                  <span>Select {plan.name}</span>
+                  <span>{plan.btn || (language === "sw" ? `Chagua ${plan.name}` : `Select ${plan.name}`)}</span>
                 </button>
               </div>
             ))}

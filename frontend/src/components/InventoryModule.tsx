@@ -23,7 +23,7 @@ import {
 import { Product } from "@/types";
 
 export const InventoryModule: React.FC = () => {
-  const { products, addProduct, deleteProduct, stockMovements, recordStockMovement, t } = useApp();
+  const { products, addProduct, deleteProduct, stockMovements, recordStockMovement, t, language } = useApp();
   const [activeTab, setActiveTab] = useState<"catalog" | "movements">("catalog");
   const [search, setSearch] = useState("");
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -167,10 +167,12 @@ export const InventoryModule: React.FC = () => {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h2 className="text-xl font-black text-[#172709] tracking-tight flex items-center gap-2">
-            <span>Usimamizi wa Stoo & Mzunguko wa Bidhaa</span>
+            <span>{language === "sw" ? "Usimamizi wa Stoo & Mzunguko wa Bidhaa" : "Inventory & Stock Movements"}</span>
           </h2>
           <p className="text-xs text-[#52654c]">
-            Ripoti kamili ya Boss: Fuatilia bidhaa zilizopo, mzigo ulioingia (Stock IN) na uliotoka (Stock OUT).
+            {language === "sw"
+              ? "Ripoti kamili ya Boss: Fuatilia bidhaa zilizopo, mzigo ulioingia (Stock IN) na uliotoka (Stock OUT)."
+              : "Boss Summary: Track current products, received inventory (Stock IN) and dispatched stock (Stock OUT)."}
           </p>
         </div>
 
@@ -185,7 +187,7 @@ export const InventoryModule: React.FC = () => {
             }`}
           >
             <Boxes className="w-3.5 h-3.5" />
-            <span>1. Bidhaa Zilizopo ({products.length})</span>
+            <span>{language === "sw" ? `1. Bidhaa Zilizopo (${products.length})` : `1. In-Stock Items (${products.length})`}</span>
           </button>
 
           <button
@@ -197,26 +199,26 @@ export const InventoryModule: React.FC = () => {
             }`}
           >
             <History className="w-3.5 h-3.5" />
-            <span>2. Mzunguko wa Stoo (IN & OUT)</span>
+            <span>{language === "sw" ? "2. Mzunguko wa Stoo (IN & OUT)" : "2. Stock Movements (IN & OUT)"}</span>
             <span className="px-1.5 py-0.2 rounded-full bg-[#E1FFAC] text-[9px] font-bold text-[#1a2f0a]">
-              Ripoti ya Boss
+              {language === "sw" ? "Ripoti ya Boss" : "Owner's Audit"}
             </span>
           </button>
         </div>
       </div>
 
-      {/* BOSS SUMMARY CARDS (High Visibility Stock In / Stock Out Overview) */}
+      {/* BOSS SUMMARY CARDS (High Visibility Stock In / Stock OUT Overview) */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         <div className="p-3.5 rounded-2xl bg-white border border-[#d5e5c3] shadow-xs">
           <div className="flex items-center justify-between mb-1">
-            <span className="text-[10px] font-black text-[#63795b] uppercase">Stoo Iliyopo Sasa</span>
+            <span className="text-[10px] font-black text-[#63795b] uppercase">{language === "sw" ? "Stoo Iliyopo Sasa" : "Current Stock On Hand"}</span>
             <Boxes className="w-4 h-4 text-[#304d16]" />
           </div>
           <div className="text-lg font-black text-[#172b0a]">
-            {totalCurrentStockUnits.toLocaleString()} <span className="text-xs font-normal text-[#657a5d]">Units</span>
+            {totalCurrentStockUnits.toLocaleString()} <span className="text-xs font-normal text-[#657a5d]">{language === "sw" ? "Vipande" : "Units"}</span>
           </div>
           <div className="text-[10px] text-[#55694d] mt-0.5">
-            Thamani: TZS {totalCurrentStockValue.toLocaleString()}
+            {language === "sw" ? "Thamani: TZS " : "Value: TZS "}{totalCurrentStockValue.toLocaleString()}
           </div>
         </div>
 
@@ -224,15 +226,15 @@ export const InventoryModule: React.FC = () => {
           <div className="flex items-center justify-between mb-1">
             <span className="text-[10px] font-black text-emerald-800 uppercase flex items-center gap-1">
               <ArrowDownLeft className="w-3 h-3 text-emerald-700" />
-              Mzigo Ulioingia (Stock IN)
+              {language === "sw" ? "Mzigo Ulioingia (Stock IN)" : "Stock Received (IN)"}
             </span>
             <TrendingUp className="w-4 h-4 text-emerald-700" />
           </div>
           <div className="text-lg font-black text-emerald-950">
-            +{totalStockInQty.toLocaleString()} <span className="text-xs font-normal text-emerald-800">Units</span>
+            +{totalStockInQty.toLocaleString()} <span className="text-xs font-normal text-emerald-800">{language === "sw" ? "Vipande" : "Units"}</span>
           </div>
           <div className="text-[10px] text-emerald-800 font-semibold mt-0.5">
-            Thamani: TZS {totalStockInValue.toLocaleString()}
+            {language === "sw" ? "Thamani: TZS " : "Value: TZS "}{totalStockInValue.toLocaleString()}
           </div>
         </div>
 
@@ -240,21 +242,21 @@ export const InventoryModule: React.FC = () => {
           <div className="flex items-center justify-between mb-1">
             <span className="text-[10px] font-black text-rose-800 uppercase flex items-center gap-1">
               <ArrowUpRight className="w-3 h-3 text-rose-700" />
-              Mzigo Uliotoka (Stock OUT)
+              {language === "sw" ? "Mzigo Uliotoka (Stock OUT)" : "Stock Out / Dispatched"}
             </span>
             <TrendingDown className="w-4 h-4 text-rose-700" />
           </div>
           <div className="text-lg font-black text-rose-950">
-            -{totalStockOutQty.toLocaleString()} <span className="text-xs font-normal text-rose-800">Units</span>
+            -{totalStockOutQty.toLocaleString()} <span className="text-xs font-normal text-rose-800">{language === "sw" ? "Vipande" : "Units"}</span>
           </div>
           <div className="text-[10px] text-rose-800 font-semibold mt-0.5">
-            Thamani: TZS {totalStockOutValue.toLocaleString()} (Mauzo & Uharibifu)
+            {language === "sw" ? "Thamani: TZS " : "Value: TZS "}{totalStockOutValue.toLocaleString()} {language === "sw" ? "(Mauzo & Uharibifu)" : "(Sales & Spoilage)"}
           </div>
         </div>
 
         <div className="p-3.5 rounded-2xl bg-white border border-[#d5e5c3] shadow-xs flex flex-col justify-between">
           <div className="flex items-center justify-between">
-            <span className="text-[10px] font-black text-[#63795b] uppercase">Rekodi Haraka</span>
+            <span className="text-[10px] font-black text-[#63795b] uppercase">{language === "sw" ? "Rekodi Haraka" : "Quick Action"}</span>
             <Package className="w-4 h-4 text-[#304d16]" />
           </div>
           <div className="flex gap-1.5 mt-2">

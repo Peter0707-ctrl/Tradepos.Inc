@@ -55,7 +55,7 @@ import {
 } from "lucide-react";
 
 function MainApp() {
-  const { user, loginUser, logoutUser, isAiModalOpen, setIsAiModalOpen } = useApp();
+  const { user, loginUser, logoutUser, isAiModalOpen, setIsAiModalOpen, t, language } = useApp();
 
   const [showSplash, setShowSplash] = useState(false);
   const [view, setView] = useState<"landing" | "app">("landing");
@@ -95,31 +95,31 @@ function MainApp() {
   // Human readable title lookup
   const getModuleTitle = (mod: string) => {
     switch (mod) {
-      case "dashboard": return "Business Dashboard Command Center";
-      case "pos": return "Point of Sale (POS) Checkout";
-      case "sales": return "Sales Invoices & Transactions";
-      case "products": return "Products & Inventory Directory";
-      case "inventory": return "Real-Time Stock & Buffer Levels";
-      case "purchases": return "Supplier Purchases & Inbound Orders";
-      case "suppliers": return "Supplier CRM & Accounts Payable";
-      case "customers": return "Customer CRM & Debt Ledger";
-      case "expenses": return "Operating Expenses & Cash Flow";
-      case "accounting": return "General Ledger & Accounting Statements";
-      case "cash-register": return "Hesabu ya Siku, Droo ya Pesa & Mauzo";
-      case "employees": return "Employee Accounts & Staff Permissions";
-      case "branches": return "Multi-Branch Outlets";
-      case "warehouses": return "Central Warehouses & Transit Depots";
-      case "online-store": return "Online Storefront Catalog";
-      case "orders": return "Customer Orders & Dispatch";
-      case "deliveries": return "Wateja wa Delivery & Ulinzi wa Mzigo";
-      case "reports": return "Commercial Reports & Compliance Statements";
-      case "notifications": return "Notification Center";
-      case "settings": return "Business Operating Settings";
-      case "help": return "Help Center & Support";
-      case "subscription": return "Subscription & Billing License";
-      case "profile": return "User Profile & Security";
-      case "super-admin": return "Super Admin Platform Governance";
-      default: return "Business Command Center";
+      case "dashboard": return t.titles.dashboard;
+      case "pos": return t.titles.pos;
+      case "sales": return t.titles.sales;
+      case "products": return t.titles.products;
+      case "inventory": return t.titles.inventory;
+      case "purchases": return t.titles.purchases;
+      case "suppliers": return t.titles.suppliers;
+      case "customers": return t.titles.customers;
+      case "expenses": return t.titles.expenses;
+      case "accounting": return t.titles.accounting;
+      case "cash-register": return t.titles.cashRegister;
+      case "employees": return t.titles.employees;
+      case "branches": return t.titles.branches;
+      case "warehouses": return t.titles.warehouses;
+      case "online-store": return t.titles.onlineStore;
+      case "orders": return t.titles.orders;
+      case "deliveries": return t.titles.deliveries;
+      case "reports": return t.titles.reports;
+      case "notifications": return t.titles.notifications;
+      case "settings": return t.titles.settings;
+      case "help": return t.titles.help;
+      case "subscription": return t.titles.subscription;
+      case "profile": return t.titles.profile;
+      case "super-admin": return t.titles.superAdmin;
+      default: return t.titles.dashboard;
     }
   };
 
@@ -227,7 +227,7 @@ function MainApp() {
                 }`}
               >
                 <Store className="w-4 h-4" />
-                <span>Dashboard</span>
+                <span>{t.nav.dashboard}</span>
               </button>
 
               <button
@@ -237,7 +237,7 @@ function MainApp() {
                 }`}
               >
                 <ShoppingBag className="w-4 h-4" />
-                <span>POS</span>
+                <span>{t.nav.pos}</span>
               </button>
 
               <button
@@ -247,7 +247,7 @@ function MainApp() {
                 }`}
               >
                 <Receipt className="w-4 h-4" />
-                <span>Sales</span>
+                <span>{t.nav.sales}</span>
               </button>
 
               <button
@@ -257,7 +257,7 @@ function MainApp() {
                 }`}
               >
                 <Layers className="w-4 h-4" />
-                <span>Stoo</span>
+                <span>{t.nav.inventory}</span>
               </button>
 
               <button
@@ -265,7 +265,7 @@ function MainApp() {
                 className="flex flex-col items-center text-[10px] font-bold text-[#627956]"
               >
                 <MoreHorizontal className="w-4 h-4" />
-                <span>Menu Zote</span>
+                <span>{t.nav.allMenu}</span>
               </button>
             </div>
           </div>
@@ -275,7 +275,7 @@ function MainApp() {
             <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 backdrop-blur-xs md:hidden">
               <div className="w-full bg-white rounded-t-3xl p-5 border-t-2 border-[#BFE973] shadow-2xl max-h-[75vh] overflow-y-auto animate-slide-up">
                 <div className="flex items-center justify-between pb-3 border-b border-[#EDF4E4] mb-3">
-                  <h3 className="font-black text-sm text-[#162709]">Menu Zote za Biashara</h3>
+                  <h3 className="font-black text-sm text-[#162709]">{language === "sw" ? "Menu Zote za Biashara" : "All Business Menus"}</h3>
                   <button
                     onClick={() => setIsMobileMoreOpen(false)}
                     className="p-1.5 rounded-full bg-[#EDF3E6] text-[#334A23]"
@@ -286,16 +286,16 @@ function MainApp() {
 
                 <div className="grid grid-cols-3 gap-2.5 text-center">
                   {[
-                    { id: "deliveries", label: "Wateja Delivery", icon: Truck },
-                    { id: "cash-register", label: "Hesabu ya Siku", icon: Calculator },
-                    { id: "customers", label: "Wateja & Madeni", icon: Users },
-                    { id: "expenses", label: "Matumizi", icon: DollarSign },
-                    { id: "accounting", label: "Hesabu & Faida", icon: Receipt },
-                    { id: "employees", label: "Wafanyakazi", icon: UserCheck },
-                    { id: "reports", label: "Ripoti", icon: BarChart3 },
-                    { id: "settings", label: "Mipangilio", icon: Settings },
-                    { id: "subscription", label: "Kifurushi", icon: CreditCard },
-                    { id: "help", label: "Msaada", icon: HelpCircle },
+                    { id: "deliveries", label: t.nav.deliveries, icon: Truck },
+                    { id: "cash-register", label: t.nav.cashRegister, icon: Calculator },
+                    { id: "customers", label: t.nav.customers, icon: Users },
+                    { id: "expenses", label: t.nav.expenses, icon: DollarSign },
+                    { id: "accounting", label: t.nav.accounting, icon: Receipt },
+                    { id: "employees", label: t.nav.employees, icon: UserCheck },
+                    { id: "reports", label: t.nav.reports, icon: BarChart3 },
+                    { id: "settings", label: t.nav.settings, icon: Settings },
+                    { id: "subscription", label: t.nav.subscription, icon: CreditCard },
+                    { id: "help", label: t.nav.help, icon: HelpCircle },
                   ].map((it) => {
                     const Icon = it.icon;
                     return (

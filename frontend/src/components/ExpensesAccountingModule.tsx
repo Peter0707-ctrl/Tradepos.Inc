@@ -15,7 +15,7 @@ import {
 import { Expense } from "@/types";
 
 export const ExpensesAccountingModule: React.FC = () => {
-  const { expenses, addExpense, sales } = useApp();
+  const { expenses, addExpense, sales, language, t } = useApp();
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   const [title, setTitle] = useState("");
@@ -57,10 +57,12 @@ export const ExpensesAccountingModule: React.FC = () => {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-5">
         <div>
           <h2 className="text-xl font-black text-[#172709] tracking-tight">
-            Financial Ledger & Operating Expenses
+            {language === "sw" ? "Daftari la Fedha & Matumizi ya Biashara" : "Financial Ledger & Operating Expenses"}
           </h2>
           <p className="text-xs text-[#52654c]">
-            Track daily operating costs, calculate Gross Profit, COGS and automated Net Profit.
+            {language === "sw"
+              ? "Fuatilia gharama za uendeshaji, hesabu Faida Ghafi (Gross Profit), COGS na Faida Halisi (Net Profit)."
+              : "Track daily operating costs, calculate Gross Profit, COGS and automated Net Profit."}
           </p>
         </div>
 
@@ -69,7 +71,7 @@ export const ExpensesAccountingModule: React.FC = () => {
           className="px-4 py-2.5 rounded-xl neu-btn text-xs font-bold flex items-center gap-2 shadow-neu-flat"
         >
           <Plus className="w-4 h-4" />
-          <span>Record Expense</span>
+          <span>{language === "sw" ? "+ Rekodi Matumizi" : "+ Record Expense"}</span>
         </button>
       </div>
 
@@ -100,22 +102,31 @@ export const ExpensesAccountingModule: React.FC = () => {
                     : "bg-rose-200 text-rose-950"
                 }`}
               >
-                {netProfit >= 0 ? "BIASHARA INATENGENEZA FAIDA (PROFIT)" : "TAHADHARI: BIASHARA INAPATA HASARA (LOSS)"}
+                {netProfit >= 0
+                  ? (language === "sw" ? "BIASHARA INATENGENEZA FAIDA (PROFIT)" : "BUSINESS IS PROFITABLE (NET PROFIT)")
+                  : (language === "sw" ? "TAHADHARI: BIASHARA INAPATA HASARA (LOSS)" : "WARNING: OPERATING AT A LOSS")}
               </span>
               <span className="text-xs font-bold text-[#445b37]">
-                Net Margin: {totalRevenue > 0 ? Math.round((netProfit / totalRevenue) * 100) : 0}%
+                {language === "sw" ? "Uwiano wa Faida: " : "Net Margin: "}
+                {totalRevenue > 0 ? Math.round((netProfit / totalRevenue) * 100) : 0}%
               </span>
             </div>
             <p className="text-xs text-[#425838] mt-0.5">
               {netProfit >= 0
-                ? `Baada ya kutoa gharama za ununuzi wa bidhaa (COGS) na matumizi yote ya uendeshaji, biashara imebakiwa na ziada ya TZS ${netProfit.toLocaleString()}.`
-                : `Matumizi na gharama za ununuzi zimezidi mapato ya mauzo kwa TZS ${Math.abs(netProfit).toLocaleString()}. Inahitaji kupunguza matumizi au kuongeza mauzo.`}
+                ? (language === "sw"
+                    ? `Baada ya kutoa gharama za ununuzi wa bidhaa (COGS) na matumizi yote ya uendeshaji, biashara imebakiwa na ziada ya TZS ${netProfit.toLocaleString()}.`
+                    : `After deducting cost of goods sold (COGS) and all operational expenses, business retains a net surplus of TZS ${netProfit.toLocaleString()}.`)
+                : (language === "sw"
+                    ? `Matumizi na gharama za ununuzi zimezidi mapato ya mauzo kwa TZS ${Math.abs(netProfit).toLocaleString()}. Inahitaji kupunguza matumizi au kuongeza mauzo.`
+                    : `Operating expenses and COGS exceed sales revenue by TZS ${Math.abs(netProfit).toLocaleString()}. Requires cutting overhead or boosting sales.`)}
             </p>
           </div>
         </div>
 
         <div className="text-right shrink-0">
-          <span className="text-[11px] font-bold text-[#556b49] block">Salio Halisi la Faida/Hasara:</span>
+          <span className="text-[11px] font-bold text-[#556b49] block">
+            {language === "sw" ? "Salio Halisi la Faida/Hasara:" : "Net Profit / Loss Balance:"}
+          </span>
           <span
             className={`text-2xl font-black font-mono ${
               netProfit >= 0 ? "text-emerald-800" : "text-rose-700"
@@ -129,31 +140,45 @@ export const ExpensesAccountingModule: React.FC = () => {
       {/* Accounting Statement Overview */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-5">
         <div className="p-4 rounded-2xl bg-white border border-[#d6e5c5] shadow-neu-card">
-          <span className="text-xs font-bold text-[#5c7054]">Total Revenue (Mauzo)</span>
+          <span className="text-xs font-bold text-[#5c7054]">
+            {language === "sw" ? "Jumla ya Mapato (Revenue)" : "Total Revenue (Sales)"}
+          </span>
           <p className="text-xl font-black text-[#17280a] mt-1">
             TZS {totalRevenue.toLocaleString()}
           </p>
-          <span className="text-[11px] text-emerald-700 font-bold">Jumla ya Mauzo Yote</span>
+          <span className="text-[11px] text-emerald-700 font-bold">
+            {language === "sw" ? "Jumla ya Mauzo Yote" : "Total Gross Sales"}
+          </span>
         </div>
 
         <div className="p-4 rounded-2xl bg-white border border-[#d6e5c5] shadow-neu-card">
-          <span className="text-xs font-bold text-[#5c7054]">Gharama za Bidhaa (COGS)</span>
+          <span className="text-xs font-bold text-[#5c7054]">
+            {language === "sw" ? "Gharama za Bidhaa (COGS)" : "Cost of Goods (COGS)"}
+          </span>
           <p className="text-xl font-black text-[#17280a] mt-1">
             TZS {cogs.toLocaleString()}
           </p>
-          <span className="text-[11px] text-[#6d8065]">Thamani ya mzigo uliouzwa</span>
+          <span className="text-[11px] text-[#6d8065]">
+            {language === "sw" ? "Thamani ya mzigo uliouzwa" : "Inventory cost of sold goods"}
+          </span>
         </div>
 
         <div className="p-4 rounded-2xl bg-white border border-[#d6e5c5] shadow-neu-card">
-          <span className="text-xs font-bold text-[#5c7054]">Matumizi ya Uendeshaji (Expenses)</span>
+          <span className="text-xs font-bold text-[#5c7054]">
+            {language === "sw" ? "Matumizi ya Uendeshaji (Expenses)" : "Operating Overhead (Expenses)"}
+          </span>
           <p className="text-xl font-black text-rose-700 mt-1">
             TZS {totalExpenses.toLocaleString()}
           </p>
-          <span className="text-[11px] text-[#6d8065]">Kodi, umeme, mishahara n.k.</span>
+          <span className="text-[11px] text-[#6d8065]">
+            {language === "sw" ? "Kodi, umeme, mishahara n.k." : "Rent, power, wages etc."}
+          </span>
         </div>
 
         <div className="p-4 rounded-2xl bg-white border border-[#d6e5c5] shadow-neu-card">
-          <span className="text-xs font-bold text-[#5c7054]">Faida / Hasara Halisi</span>
+          <span className="text-xs font-bold text-[#5c7054]">
+            {language === "sw" ? "Faida / Hasara Halisi" : "Net Profit / Loss"}
+          </span>
           <p
             className={`text-xl font-black mt-1 ${
               netProfit >= 0 ? "text-emerald-700" : "text-rose-700"
@@ -162,7 +187,9 @@ export const ExpensesAccountingModule: React.FC = () => {
             TZS {netProfit.toLocaleString()}
           </p>
           <span className="text-[11px] font-bold text-[#556b49]">
-            {netProfit >= 0 ? "Biashara Ina Faida" : "Biashara Ina Hasara"}
+            {netProfit >= 0
+              ? (language === "sw" ? "Biashara Ina Faida" : "Net Operating Surplus")
+              : (language === "sw" ? "Biashara Ina Hasara" : "Operating Net Loss")}
           </span>
         </div>
       </div>
@@ -172,12 +199,12 @@ export const ExpensesAccountingModule: React.FC = () => {
         <table className="w-full text-left text-xs divide-y divide-[#e8f0df]">
           <thead className="bg-[#F8FAF4] font-bold text-[#44573d] sticky top-0 z-10">
             <tr>
-              <th className="py-3 px-4">Title / Purpose</th>
-              <th className="py-3 px-4">Category</th>
-              <th className="py-3 px-4">Amount</th>
-              <th className="py-3 px-4">Date</th>
-              <th className="py-3 px-4">Recorded By</th>
-              <th className="py-3 px-4">Notes</th>
+              <th className="py-3 px-4">{language === "sw" ? "Maelezo / Kusudi" : "Title / Purpose"}</th>
+              <th className="py-3 px-4">{language === "sw" ? "Aina" : "Category"}</th>
+              <th className="py-3 px-4">{language === "sw" ? "Kiasi" : "Amount"}</th>
+              <th className="py-3 px-4">{language === "sw" ? "Tarehe" : "Date"}</th>
+              <th className="py-3 px-4">{language === "sw" ? "Iliyoandikwa Na" : "Recorded By"}</th>
+              <th className="py-3 px-4">{language === "sw" ? "Maelezo ya Ziada" : "Notes"}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-[#eff5e9] text-[#1c2c0e]">

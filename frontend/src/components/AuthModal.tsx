@@ -11,7 +11,7 @@ interface AuthModalProps {
 }
 
 export const AuthModal: React.FC<AuthModalProps> = ({ initialMode, onClose, onSuccess }) => {
-  const { loginUser, registerBusiness, t } = useApp();
+  const { loginUser, registerBusiness, t, language } = useApp();
   const [mode, setMode] = useState<"login" | "register">(initialMode);
   const [step, setStep] = useState<number>(1);
   
@@ -86,12 +86,14 @@ export const AuthModal: React.FC<AuthModalProps> = ({ initialMode, onClose, onSu
             <ShoppingBag className="w-8 h-8 text-[#172709]" />
           </div>
           <h2 className="text-2xl font-black text-[#152408]">
-            {mode === "login" ? "Karibu Tena" : "Fungua Akaunti ya Biashara"}
+            {mode === "login"
+              ? (language === "sw" ? "Karibu Tena" : "Sign In to TradePOS")
+              : (language === "sw" ? "Fungua Akaunti ya Biashara" : "Register Your Business")}
           </h2>
           <p className="text-xs text-[#4e6047] mt-1 font-semibold">
             {mode === "login"
-              ? "Ingia kwenye mfumo kusimamia mauzo na hesabu za biashara yako."
-              : `Hatua ya ${step} ya 4`}
+              ? (language === "sw" ? "Ingia kwenye mfumo kusimamia mauzo na hesabu za biashara yako." : "Enter your credentials to access your store dashboard.")
+              : (language === "sw" ? `Hatua ya ${step} ya 4` : `Step ${step} of 4`)}
           </p>
         </div>
 
@@ -99,15 +101,19 @@ export const AuthModal: React.FC<AuthModalProps> = ({ initialMode, onClose, onSu
         {mode === "login" && (
           <div className="mb-5 p-4 rounded-2xl auth-neu-well flex items-center justify-between">
             <div>
-              <h4 className="font-extrabold text-xs text-[#162709]">Akaunti ya Majaribio (Demo)</h4>
-              <p className="text-[11px] text-[#4d6144]">Bonyeza hapa kuingia moja kwa moja bila kujisajili</p>
+              <h4 className="font-extrabold text-xs text-[#162709]">
+                {language === "sw" ? "Akaunti ya Majaribio (Demo)" : "Try Demo Account"}
+              </h4>
+              <p className="text-[11px] text-[#4d6144]">
+                {language === "sw" ? "Bonyeza hapa kuingia moja kwa moja bila kujisajili" : "Instant access with preloaded sample store"}
+              </p>
             </div>
             <button
               type="button"
               onClick={handleDemoLogin}
               className="px-4 py-2 rounded-xl bg-[#1b2f0a] text-[#E1FFAC] text-xs font-black shadow-md hover:bg-[#122006] transition"
             >
-              Fungua Demo
+              {language === "sw" ? "Fungua Demo" : "Open Demo"}
             </button>
           </div>
         )}
@@ -117,26 +123,28 @@ export const AuthModal: React.FC<AuthModalProps> = ({ initialMode, onClose, onSu
           <form onSubmit={handleLogin} className="space-y-4">
             <div>
               <label className="block text-xs font-bold text-[#2d3f23] mb-1.5">
-                Barua Pepe au Namba ya Simu
+                {language === "sw" ? "Barua Pepe au Namba ya Simu" : "Email Address or Phone Number"}
               </label>
               <input
                 type="text"
                 required
                 value={loginIdentifier}
                 onChange={(e) => setLoginIdentifier(e.target.value)}
-                placeholder="owner@biashara.co.tz au +255 7..."
+                placeholder={language === "sw" ? "owner@biashara.co.tz au +255 7..." : "owner@store.com or +255 7..."}
                 className="w-full py-3.5 px-4 rounded-2xl auth-neu-input text-sm text-[#142308]"
               />
             </div>
 
             <div>
               <div className="flex items-center justify-between mb-1.5">
-                <label className="block text-xs font-bold text-[#2d3f23]">Nenosiri (Password)</label>
+                <label className="block text-xs font-bold text-[#2d3f23]">
+                  {language === "sw" ? "Nenosiri (Password)" : "Password"}
+                </label>
                 <button
                   type="button"
                   className="text-xs text-[#395e14] hover:underline font-bold"
                 >
-                  Umesahau Nenosiri?
+                  {language === "sw" ? "Umesahau Nenosiri?" : "Forgot Password?"}
                 </button>
               </div>
               <div className="relative">
@@ -162,11 +170,13 @@ export const AuthModal: React.FC<AuthModalProps> = ({ initialMode, onClose, onSu
               type="submit"
               className="w-full py-4 rounded-2xl auth-neu-btn text-sm font-black shadow-md mt-3"
             >
-              Ingia Kwenye Mfumo
+              {language === "sw" ? "Ingia Kwenye Mfumo" : "Sign In to TradePOS"}
             </button>
 
             <div className="text-center pt-3 border-t border-[#d5e2cb]">
-              <span className="text-xs text-[#52634d]">Huna akaunti ya biashara bado? </span>
+              <span className="text-xs text-[#52634d]">
+                {language === "sw" ? "Huna akaunti ya biashara bado? " : "Don't have an account yet? "}
+              </span>
               <button
                 type="button"
                 onClick={() => {
@@ -175,7 +185,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ initialMode, onClose, onSu
                 }}
                 className="text-xs font-bold text-[#1f3a07] hover:underline"
               >
-                Jisajili Hapa
+                {language === "sw" ? "Jisajili Hapa" : "Register Here"}
               </button>
             </div>
           </form>

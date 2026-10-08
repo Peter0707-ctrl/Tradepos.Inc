@@ -632,7 +632,7 @@ const initialStockMovements: StockMovement[] = [
 ];
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
-  const [language, setLanguage] = useState<"en" | "sw">("en");
+  const [language, setLanguage] = useState<"en" | "sw">("sw");
   const [user, setUser] = useState<User | null>(defaultUser);
   const [availableBusinesses, setAvailableBusinesses] = useState<Business[]>(businessProfiles);
   const [business, setBusiness] = useState<Business | null>(businessProfiles[0]);
@@ -641,6 +641,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   // Restore authenticated session from localStorage
   useEffect(() => {
     try {
+      const storedLang = localStorage.getItem("tradepos_lang") as "en" | "sw" | null;
+      if (storedLang === "en" || storedLang === "sw") {
+        setLanguage(storedLang);
+      }
       const storedUser = localStorage.getItem("tradepos_session_user");
       if (storedUser) {
         setUser(JSON.parse(storedUser));

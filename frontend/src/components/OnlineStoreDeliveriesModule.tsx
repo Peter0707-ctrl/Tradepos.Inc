@@ -28,7 +28,9 @@ export const OnlineStoreDeliveriesModule: React.FC = () => {
     createOnlineOrder,
     updateOrderStatus,
     updateDeliveryDetails,
-    user
+    user,
+    language,
+    t
   } = useApp();
 
   const [search, setSearch] = useState("");
@@ -136,14 +138,14 @@ export const OnlineStoreDeliveriesModule: React.FC = () => {
           <div className="flex items-center gap-2">
             <h2 className="text-xl font-black text-[#162709] tracking-tight flex items-center gap-2">
               <Truck className="w-5 h-5 text-[#243d12]" />
-              <span>Wateja wa Delivery & Ulinzi wa Mizigo</span>
+              <span>{t.deliveries.title}</span>
             </h2>
             <span className="text-xs px-2.5 py-0.5 rounded-full bg-[#E1FFAC] text-[#1b2d0b] font-bold border border-[#aae056]">
-              Usimamizi wa Madereva
+              {t.deliveries.badge}
             </span>
           </div>
           <p className="text-xs text-[#52654c] mt-0.5">
-            Mteja akitaka delivery mzigo wake unawekwa hapa ili kufuatilia bodaboda, kulinda biashara na kuzuia lawama kwa wafanyakazi.
+            {t.deliveries.subtitle}
           </p>
         </div>
 
@@ -153,7 +155,7 @@ export const OnlineStoreDeliveriesModule: React.FC = () => {
             className="px-4 py-2.5 rounded-xl neu-btn text-xs font-black flex items-center gap-1.5 shadow-neu-flat"
           >
             <Plus className="w-4 h-4 text-[#1a3109]" />
-            <span>+ Weka Mteja wa Delivery</span>
+            <span>+ {t.deliveries.newDeliveryBtn}</span>
           </button>
         </div>
       </div>
@@ -161,33 +163,33 @@ export const OnlineStoreDeliveriesModule: React.FC = () => {
       {/* KPI Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
         <div className="p-3.5 rounded-2xl bg-white border border-[#D8E6CC] shadow-xs">
-          <span className="text-[10px] font-bold text-[#5e7454] block uppercase">Jumla ya Mizigo</span>
-          <p className="text-xl font-black text-[#162709] mt-0.5">{totalCount} Oda</p>
-          <span className="text-[10px] text-[#55694c]">Mizigo yote ya delivery</span>
+          <span className="text-[10px] font-bold text-[#5e7454] block uppercase">{t.deliveries.totalOrders}</span>
+          <p className="text-xl font-black text-[#162709] mt-0.5">{totalCount} {language === "sw" ? "Oda" : "Orders"}</p>
+          <span className="text-[10px] text-[#55694c]">{language === "sw" ? "Mizigo yote ya delivery" : "All dispatch parcels"}</span>
         </div>
 
         <div className="p-3.5 rounded-2xl bg-amber-50/70 border border-amber-200 shadow-xs">
-          <span className="text-[10px] font-bold text-amber-800 block uppercase">Inayoandaliwa</span>
-          <p className="text-xl font-black text-amber-950 mt-0.5">{pendingCount} Oda</p>
-          <span className="text-[10px] text-amber-800">Dukani / Inafungwa</span>
+          <span className="text-[10px] font-bold text-amber-800 block uppercase">{t.deliveries.preparing}</span>
+          <p className="text-xl font-black text-amber-950 mt-0.5">{pendingCount} {language === "sw" ? "Oda" : "Orders"}</p>
+          <span className="text-[10px] text-amber-800">{language === "sw" ? "Dukani / Inafungwa" : "In Shop / Packing"}</span>
         </div>
 
         <div className="p-3.5 rounded-2xl bg-blue-50/70 border border-blue-200 shadow-xs">
-          <span className="text-[10px] font-bold text-blue-800 block uppercase">Njiani na Dereva</span>
-          <p className="text-xl font-black text-blue-950 mt-0.5">{onTheWayCount} Oda</p>
-          <span className="text-[10px] text-blue-700">Bodaboda anasafirisha</span>
+          <span className="text-[10px] font-bold text-blue-800 block uppercase">{t.deliveries.onTheWay}</span>
+          <p className="text-xl font-black text-blue-950 mt-0.5">{onTheWayCount} {language === "sw" ? "Oda" : "Orders"}</p>
+          <span className="text-[10px] text-blue-700">{language === "sw" ? "Bodaboda anasafirisha" : "Driver on the way"}</span>
         </div>
 
         <div className="p-3.5 rounded-2xl bg-emerald-50/70 border border-emerald-200 shadow-xs">
-          <span className="text-[10px] font-bold text-emerald-800 block uppercase">Imefika Salama</span>
-          <p className="text-xl font-black text-emerald-950 mt-0.5">{deliveredCount} Oda</p>
-          <span className="text-[10px] text-emerald-700">Imepokelewa na mteja</span>
+          <span className="text-[10px] font-bold text-emerald-800 block uppercase">{t.deliveries.delivered}</span>
+          <p className="text-xl font-black text-emerald-950 mt-0.5">{deliveredCount} {language === "sw" ? "Oda" : "Orders"}</p>
+          <span className="text-[10px] text-emerald-700">{language === "sw" ? "Imepokelewa na mteja" : "Received by customer"}</span>
         </div>
 
         <div className="p-3.5 rounded-2xl bg-rose-50/70 border border-rose-200 shadow-xs">
-          <span className="text-[10px] font-bold text-rose-800 block uppercase">Shida / Imerudi</span>
-          <p className="text-xl font-black text-rose-950 mt-0.5">{issueCount} Oda</p>
-          <span className="text-[10px] text-rose-700 font-bold">Imelindwa na rekodi</span>
+          <span className="text-[10px] font-bold text-rose-800 block uppercase">{t.deliveries.issues}</span>
+          <p className="text-xl font-black text-rose-950 mt-0.5">{issueCount} {language === "sw" ? "Oda" : "Orders"}</p>
+          <span className="text-[10px] text-rose-700 font-bold">{language === "sw" ? "Imelindwa na rekodi" : "Audit trail saved"}</span>
         </div>
       </div>
 
@@ -199,18 +201,18 @@ export const OnlineStoreDeliveriesModule: React.FC = () => {
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Tafuta jina la mteja, namba ya simu, eneo, au jina la dereva..."
+            placeholder={language === "sw" ? "Tafuta jina la mteja, namba ya simu, eneo, au jina la dereva..." : "Search customer name, phone, address, or driver..."}
             className="w-full py-2.5 pl-10 pr-4 rounded-xl neu-input text-xs font-medium text-[#18260d]"
           />
         </div>
 
         <div className="flex items-center gap-1.5 overflow-x-auto w-full sm:w-auto scrollbar-thin">
           {[
-            { id: "ALL", label: "Zote" },
-            { id: "PACKED", label: "Dukani" },
-            { id: "OUT_FOR_DELIVERY", label: "Njiani" },
-            { id: "DELIVERED", label: "Zilizoletwa" },
-            { id: "CANCELLED", label: "Shida / Zilizorudi" }
+            { id: "ALL", label: language === "sw" ? "Zote" : "All" },
+            { id: "PACKED", label: language === "sw" ? "Dukani" : "In Shop" },
+            { id: "OUT_FOR_DELIVERY", label: language === "sw" ? "Njiani" : "On the Way" },
+            { id: "DELIVERED", label: language === "sw" ? "Zilizoletwa" : "Delivered" },
+            { id: "CANCELLED", label: language === "sw" ? "Shida / Zilizorudi" : "Issues / Returned" }
           ].map((st) => (
             <button
               key={st.id}

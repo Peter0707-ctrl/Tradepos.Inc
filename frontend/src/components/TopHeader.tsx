@@ -90,9 +90,9 @@ export const TopHeader: React.FC<TopHeaderProps> = ({ pageTitle, onNavigate, onL
             <div className="absolute right-0 mt-2 w-72 rounded-2xl bg-white border-2 border-[#C2E880] shadow-xl p-2 z-50 animate-fade-in">
               <div className="px-3 py-2 border-b border-[#EDF4E4]">
                 <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#59724C] block">
-                  Switch Business Account
+                  {t.header.switchBusiness}
                 </span>
-                <p className="text-[11px] text-[#6E8262]">Data & branches are isolated strictly per business</p>
+                <p className="text-[11px] text-[#6E8262]">{t.header.isolatedData}</p>
               </div>
 
               <div className="space-y-1 py-1 max-h-60 overflow-y-auto">
@@ -113,7 +113,7 @@ export const TopHeader: React.FC<TopHeaderProps> = ({ pageTitle, onNavigate, onL
                     >
                       <div className="min-w-0 pr-2">
                         <span className="block truncate">{b.name}</span>
-                        <span className="block text-[10px] text-[#637956]">{b.businessType} • {b.branches.length} branches</span>
+                        <span className="block text-[10px] text-[#637956]">{b.businessType} • {b.branches.length} {language === "sw" ? "matawi" : "branches"}</span>
                       </div>
                       {isCurrent && <Check className="w-4 h-4 text-[#2E4F0A] shrink-0" />}
                     </button>
@@ -129,7 +129,7 @@ export const TopHeader: React.FC<TopHeaderProps> = ({ pageTitle, onNavigate, onL
                   }}
                   className="w-full text-center py-2 text-xs font-bold text-[#355B0F] hover:bg-[#F4F8EC] rounded-lg transition"
                 >
-                  + Add New Business Entity
+                  {language === "sw" ? "+ Sajili Biashara Nyingine" : "+ Add New Business Entity"}
                 </button>
               </div>
             </div>
@@ -153,37 +153,41 @@ export const TopHeader: React.FC<TopHeaderProps> = ({ pageTitle, onNavigate, onL
           {isNotifOpen && (
             <div className="absolute right-0 mt-2 w-80 sm:w-96 rounded-2xl bg-white border-2 border-[#C2E880] shadow-xl p-3 z-50 animate-fade-in">
               <div className="flex items-center justify-between pb-2 border-b border-[#EDF4E4] px-1">
-                <span className="text-xs font-black text-[#192A0B]">Notifications</span>
+                <span className="text-xs font-black text-[#192A0B]">{t.header.notifications}</span>
                 {unreadNotificationCount > 0 && (
                   <button
                     onClick={markAllNotificationsRead}
                     className="text-[11px] text-[#3D6612] font-bold hover:underline"
                   >
-                    Mark all read
+                    {t.header.markAllRead}
                   </button>
                 )}
               </div>
 
               <div className="divide-y divide-[#EDF4E4] max-h-72 overflow-y-auto my-1">
-                {notifications.map((n) => (
-                  <div
-                    key={n.id}
-                    onClick={() => {
-                      markNotificationRead(n.id);
-                      if (n.actionUrl) onNavigate(n.actionUrl);
-                      setIsNotifOpen(false);
-                    }}
-                    className={`p-2.5 rounded-xl cursor-pointer transition ${
-                      !n.read ? "bg-[#F7FCEE]" : "hover:bg-[#F9FBF6]"
-                    }`}
-                  >
-                    <div className="flex items-start justify-between gap-2">
-                      <h4 className="text-xs font-bold text-[#1B2D0C]">{n.title}</h4>
-                      <span className="text-[10px] text-[#718765] shrink-0">{n.timestamp}</span>
+                {notifications.length === 0 ? (
+                  <div className="p-4 text-center text-xs text-[#718765]">{t.header.noNotifications}</div>
+                ) : (
+                  notifications.map((n) => (
+                    <div
+                      key={n.id}
+                      onClick={() => {
+                        markNotificationRead(n.id);
+                        if (n.actionUrl) onNavigate(n.actionUrl);
+                        setIsNotifOpen(false);
+                      }}
+                      className={`p-2.5 rounded-xl cursor-pointer transition ${
+                        !n.read ? "bg-[#F7FCEE]" : "hover:bg-[#F9FBF6]"
+                      }`}
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <h4 className="text-xs font-bold text-[#1B2D0C]">{n.title}</h4>
+                        <span className="text-[10px] text-[#718765] shrink-0">{n.timestamp}</span>
+                      </div>
+                      <p className="text-xs text-[#4F6444] mt-0.5 leading-snug">{n.message}</p>
                     </div>
-                    <p className="text-xs text-[#4F6444] mt-0.5 leading-snug">{n.message}</p>
-                  </div>
-                ))}
+                  ))
+                )}
               </div>
 
               <div className="pt-2 border-t border-[#EDF4E4] text-center">
@@ -194,7 +198,7 @@ export const TopHeader: React.FC<TopHeaderProps> = ({ pageTitle, onNavigate, onL
                   }}
                   className="text-xs font-bold text-[#355B0F] hover:underline"
                 >
-                  View All Notifications
+                  {language === "sw" ? "Ona Taarifa Zote" : "View All Notifications"}
                 </button>
               </div>
             </div>
@@ -205,7 +209,7 @@ export const TopHeader: React.FC<TopHeaderProps> = ({ pageTitle, onNavigate, onL
         <button
           onClick={() => onNavigate("help")}
           className="w-9 h-9 rounded-xl bg-white border border-[#D5E5C4] hover:bg-[#F4F7EE] hidden sm:flex items-center justify-center text-[#2B3F1E] shadow-xs transition"
-          title="Help & Support"
+          title={t.header.helpCenter}
         >
           <HelpCircle className="w-4 h-4" />
         </button>
@@ -213,7 +217,8 @@ export const TopHeader: React.FC<TopHeaderProps> = ({ pageTitle, onNavigate, onL
         {/* 4. Language Selector */}
         <button
           onClick={() => setLanguage(language === "en" ? "sw" : "en")}
-          className="px-2.5 py-1.5 rounded-xl bg-white border border-[#D5E5C4] hover:bg-[#F4F7EE] text-xs font-bold text-[#2A3E1D] hidden md:flex items-center gap-1.5 shadow-xs transition"
+          className="px-2.5 py-1.5 rounded-xl bg-white border border-[#D5E5C4] hover:bg-[#F4F7EE] text-xs font-black text-[#2A3E1D] flex items-center gap-1.5 shadow-xs transition cursor-pointer"
+          title={language === "sw" ? "Badili kwenda Kiingereza (Switch to English)" : "Badili kwenda Kiswahili (Switch to Swahili)"}
         >
           <Globe className="w-3.5 h-3.5 text-[#406214]" />
           <span>{language === "en" ? "SW" : "EN"}</span>
@@ -230,7 +235,7 @@ export const TopHeader: React.FC<TopHeaderProps> = ({ pageTitle, onNavigate, onL
             </div>
             <div className="hidden lg:block text-left pr-1">
               <span className="block text-xs font-black text-[#172709] leading-tight">{user?.name || "Peter Joseph"}</span>
-              <span className="block text-[10px] font-bold text-[#5C724F]">{user?.role || "Owner"}</span>
+              <span className="block text-[10px] font-bold text-[#5C724F]">{user?.role || "Mwenye Duka"}</span>
             </div>
             <ChevronDown className="w-3.5 h-3.5 text-[#5B6F50]" />
           </button>
@@ -251,7 +256,7 @@ export const TopHeader: React.FC<TopHeaderProps> = ({ pageTitle, onNavigate, onL
                   className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-[#F2F7EB] transition text-left"
                 >
                   <User className="w-4 h-4 text-[#476517]" />
-                  <span>My Profile</span>
+                  <span>{language === "sw" ? "Wasifu Wangu" : "My Profile"}</span>
                 </button>
 
                 <button
@@ -262,7 +267,7 @@ export const TopHeader: React.FC<TopHeaderProps> = ({ pageTitle, onNavigate, onL
                   className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-[#F2F7EB] transition text-left"
                 >
                   <Settings className="w-4 h-4 text-[#476517]" />
-                  <span>Business Settings</span>
+                  <span>{language === "sw" ? "Mipangilio ya Biashara" : "Business Settings"}</span>
                 </button>
 
                 <button
@@ -273,7 +278,7 @@ export const TopHeader: React.FC<TopHeaderProps> = ({ pageTitle, onNavigate, onL
                   className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-[#F2F7EB] transition text-left"
                 >
                   <CreditCard className="w-4 h-4 text-[#476517]" />
-                  <span>Subscription & Billing</span>
+                  <span>{language === "sw" ? "Vifurushi & Malipo" : "Subscription & Billing"}</span>
                 </button>
 
                 <button
@@ -284,7 +289,7 @@ export const TopHeader: React.FC<TopHeaderProps> = ({ pageTitle, onNavigate, onL
                   className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-[#F2F7EB] transition text-left"
                 >
                   <Shield className="w-4 h-4 text-[#476517]" />
-                  <span>Security & Audits</span>
+                  <span>{language === "sw" ? "Usalama & Ukaguzi" : "Security & Audits"}</span>
                 </button>
               </div>
 
@@ -297,7 +302,7 @@ export const TopHeader: React.FC<TopHeaderProps> = ({ pageTitle, onNavigate, onL
                   className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-rose-700 hover:bg-rose-50 transition text-left"
                 >
                   <LogOut className="w-4 h-4" />
-                  <span>Logout</span>
+                  <span>{t.logout}</span>
                 </button>
               </div>
             </div>
@@ -311,7 +316,7 @@ export const TopHeader: React.FC<TopHeaderProps> = ({ pageTitle, onNavigate, onL
           title={language === "sw" ? "Toka Nje ya Mfumo" : "Sign out of TradePOS"}
         >
           <LogOut className="w-3.5 h-3.5 text-rose-600" />
-          <span className="hidden sm:inline">{language === "sw" ? "Toka Nje" : "Logout"}</span>
+          <span className="hidden sm:inline">{t.logout}</span>
         </button>
       </div>
     </header>

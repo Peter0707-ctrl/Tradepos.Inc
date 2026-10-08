@@ -19,7 +19,7 @@ import {
 import { Sale } from "@/types";
 
 export const SalesLedgerModule: React.FC = () => {
-  const { sales, refundSale, currentBranch } = useApp();
+  const { sales, refundSale, currentBranch, language, t } = useApp();
   const [search, setSearch] = useState("");
   const [paymentFilter, setPaymentFilter] = useState("ALL");
   const [selectedSale, setSelectedSale] = useState<Sale | null>(null);
@@ -40,14 +40,19 @@ export const SalesLedgerModule: React.FC = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-5">
         <div>
-          <h2 className="text-xl font-black text-[#162709] tracking-tight">Sales Ledger & Invoices</h2>
+          <h2 className="text-xl font-black text-[#162709] tracking-tight">
+            {language === "sw" ? "Leja ya Mauzo & Risiti" : "Sales Ledger & Invoices"}
+          </h2>
           <p className="text-xs text-[#526848]">
-            Complete transaction history for {currentBranch?.name}. Filter by payment methods, view breakdown or refund.
+            {language === "sw"
+              ? `Historia kamili ya miamala kwa ${currentBranch?.name}. Chuja kwa njia ya malipo au angalia uchanganuzi.`
+              : `Complete transaction history for ${currentBranch?.name}. Filter by payment methods, view breakdown or refund.`}
           </p>
         </div>
 
         <div className="px-3.5 py-1.5 rounded-xl bg-white border border-[#D5E5C4] text-xs font-bold text-[#2A3E1D] shadow-xs">
-          Total Invoiced: <strong className="text-emerald-800 font-black">TZS {totalInvoiced.toLocaleString()}</strong>
+          {language === "sw" ? "Jumla ya Mauzo: " : "Total Invoiced: "}
+          <strong className="text-emerald-800 font-black">TZS {totalInvoiced.toLocaleString()}</strong>
         </div>
       </div>
 
@@ -59,7 +64,11 @@ export const SalesLedgerModule: React.FC = () => {
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search invoice number, customer or cashier..."
+            placeholder={
+              language === "sw"
+                ? "Tafuta namba ya risiti, mteja au cashier..."
+                : "Search invoice number, customer or cashier..."
+            }
             className="w-full py-2.5 pl-10 pr-4 rounded-xl neu-input text-xs font-medium text-[#18260D]"
           />
         </div>
@@ -70,11 +79,11 @@ export const SalesLedgerModule: React.FC = () => {
             onChange={(e) => setPaymentFilter(e.target.value)}
             className="py-2.5 px-3 rounded-xl neu-input text-xs font-bold text-[#263C16]"
           >
-            <option value="ALL">All Payment Methods</option>
+            <option value="ALL">{language === "sw" ? "Njia Zote za Malipo" : "All Payment Methods"}</option>
             <option value="CASH">Cash</option>
             <option value="MPESA">M-Pesa</option>
             <option value="AIRTEL_MONEY">Airtel Money</option>
-            <option value="CREDIT">Credit</option>
+            <option value="CREDIT">{language === "sw" ? "Deni / Mkopo" : "Credit"}</option>
           </select>
 
           <button
@@ -92,21 +101,21 @@ export const SalesLedgerModule: React.FC = () => {
         <table className="w-full text-left text-xs divide-y divide-[#EBF2E2]">
           <thead className="bg-[#F8FAF4] font-bold text-[#4D6340] sticky top-0 z-10">
             <tr>
-              <th className="py-3 px-4">Invoice #</th>
-              <th className="py-3 px-4">Customer</th>
-              <th className="py-3 px-4">Cashier</th>
-              <th className="py-3 px-4">Items Breakdown</th>
-              <th className="py-3 px-4">Amount</th>
-              <th className="py-3 px-4">Payment</th>
-              <th className="py-3 px-4">Status</th>
-              <th className="py-3 px-4 text-right">Actions</th>
+              <th className="py-3 px-4">{language === "sw" ? "Risiti #" : "Invoice #"}</th>
+              <th className="py-3 px-4">{language === "sw" ? "Mteja" : "Customer"}</th>
+              <th className="py-3 px-4">{language === "sw" ? "Mhudumu" : "Cashier"}</th>
+              <th className="py-3 px-4">{language === "sw" ? "Bidhaa Zilizouzwa" : "Items Breakdown"}</th>
+              <th className="py-3 px-4">{language === "sw" ? "Kiasi" : "Amount"}</th>
+              <th className="py-3 px-4">{language === "sw" ? "Malipo" : "Payment"}</th>
+              <th className="py-3 px-4">{language === "sw" ? "Hali" : "Status"}</th>
+              <th className="py-3 px-4 text-right">{language === "sw" ? "Vitendo" : "Actions"}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-[#F1F6EB] text-[#1A2E0A]">
             {filteredSales.map((s) => (
               <tr key={s.id} className="hover:bg-[#F9FBF6] transition">
                 <td className="py-3 px-4 font-black">{s.saleNumber}</td>
-                <td className="py-3 px-4 font-medium">{s.customerName || "Walk-in Customer"}</td>
+                <td className="py-3 px-4 font-medium">{s.customerName || (language === "sw" ? "Mteja wa Kawaida" : "Walk-in Customer")}</td>
                 <td className="py-3 px-4 text-[#48603C]">{s.cashierName}</td>
                 <td className="py-3 px-4 text-[#536B47] max-w-[220px] truncate">
                   {s.items.map((i) => `${i.productName} (x${i.quantity})`).join(", ")}

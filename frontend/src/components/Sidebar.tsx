@@ -37,35 +37,35 @@ interface SidebarProps {
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({ activeModule, setActiveModule, onLogout }) => {
-  const { user } = useApp();
+  const { user, t, language } = useApp();
   const [collapsed, setCollapsed] = useState(false);
 
   const isSuperAdmin = user?.role === "SUPER_ADMIN";
 
   const primaryNav = [
-    { id: "dashboard", label: "Dashboard", icon: Store },
-    { id: "pos", label: "POS", icon: ShoppingBag, badge: "FAST" },
-    { id: "sales", label: "Sales (Mauzo)", icon: Receipt },
-    { id: "inventory", label: "Stoo & Bidhaa", icon: Layers },
-    { id: "deliveries", label: "Wateja wa Delivery", icon: Truck },
-    { id: "cash-register", label: "Hesabu ya Siku", icon: Calculator },
-    { id: "customers", label: "Wateja & Madeni", icon: Users },
-    { id: "expenses", label: "Matumizi (Expenses)", icon: DollarSign },
-    { id: "accounting", label: "Hesabu & Faida", icon: Receipt },
-    { id: "employees", label: "Wafanyakazi", icon: UserCheck },
-    { id: "reports", label: "Ripoti", icon: BarChart3 },
-    { id: "ai-assistant", label: "Copetra AI", icon: Sparkles, badge: "COPETRA" },
-    { id: "notifications", label: "Notifications", icon: Bell },
+    { id: "dashboard", label: t.nav.dashboard, icon: Store },
+    { id: "pos", label: t.nav.pos, icon: ShoppingBag, badge: "FAST" },
+    { id: "sales", label: t.nav.sales, icon: Receipt },
+    { id: "inventory", label: t.nav.inventory, icon: Layers },
+    { id: "deliveries", label: t.nav.deliveries, icon: Truck },
+    { id: "cash-register", label: t.nav.cashRegister, icon: Calculator },
+    { id: "customers", label: t.nav.customers, icon: Users },
+    { id: "expenses", label: t.nav.expenses, icon: DollarSign },
+    { id: "accounting", label: t.nav.accounting, icon: Receipt },
+    { id: "employees", label: t.nav.employees, icon: UserCheck },
+    { id: "reports", label: t.nav.reports, icon: BarChart3 },
+    { id: "ai-assistant", label: t.nav.aiAssistant, icon: Sparkles, badge: "COPETRA" },
+    { id: "notifications", label: t.nav.notifications, icon: Bell },
   ];
 
   const secondaryNav = [
-    { id: "settings", label: "Settings", icon: Settings },
-    { id: "help", label: "Help & Support", icon: HelpCircle },
-    { id: "subscription", label: "Subscription", icon: CreditCard },
+    { id: "settings", label: t.nav.settings, icon: Settings },
+    { id: "help", label: t.nav.help, icon: HelpCircle },
+    { id: "subscription", label: t.nav.subscription, icon: CreditCard },
   ];
 
   if (isSuperAdmin) {
-    primaryNav.unshift({ id: "super-admin", label: "Super Admin", icon: ShieldAlert, badge: "ROOT" });
+    primaryNav.unshift({ id: "super-admin", label: t.nav.superAdmin, icon: ShieldAlert, badge: "ROOT" });
   }
 
   return (
@@ -140,7 +140,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeModule, setActiveModule,
           })}
 
           <div className="pt-2 px-2 pb-1 text-[10px] font-extrabold text-[#6E8560] uppercase tracking-wider border-t border-[#DDE9D1] mt-2">
-            {!collapsed ? "Management" : "•"}
+            {!collapsed ? (language === "sw" ? "Usimamizi" : "Management") : "•"}
           </div>
 
           {secondaryNav.map((item) => {
@@ -176,10 +176,10 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeModule, setActiveModule,
           className={`w-full flex items-center ${
             collapsed ? "justify-center" : "justify-start gap-2.5"
           } px-3 py-2 rounded-xl text-xs font-bold text-rose-800 hover:bg-rose-50 border border-transparent hover:border-rose-200 transition`}
-          title="Sign Out"
+          title={t.logout}
         >
           <LogOut className="w-4 h-4" />
-          {!collapsed && <span>Logout</span>}
+          {!collapsed && <span>{t.logout}</span>}
         </button>
       </div>
     </aside>

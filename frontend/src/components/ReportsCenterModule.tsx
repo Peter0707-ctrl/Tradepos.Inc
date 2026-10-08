@@ -16,7 +16,7 @@ import {
 } from "lucide-react";
 
 export const ReportsCenterModule: React.FC = () => {
-  const { sales, expenses, products, customers, currentBranch } = useApp();
+  const { sales, expenses, products, customers, currentBranch, language, t } = useApp();
   const [reportType, setReportType] = useState<
     "SALES" | "PROFIT" | "INVENTORY" | "EXPENSES" | "DEBTS" | "BRANCH"
   >("SALES");
@@ -33,10 +33,12 @@ export const ReportsCenterModule: React.FC = () => {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-5">
         <div>
           <h2 className="text-xl font-black text-[#162709] tracking-tight">
-            Commercial Business Reports & Financial Statements
+            {language === "sw" ? "Ripoti za Biashara & Taarifa za Kifedha" : "Commercial Business Reports & Financial Statements"}
           </h2>
           <p className="text-xs text-[#526848]">
-            Audit-ready reporting with exportable PDF, Excel and printable statements for TRA compliance and stakeholder review.
+            {language === "sw"
+              ? "Ripoti rasmi zinazoweza kupakuliwa kama PDF, Excel au kuchapishwa kwa ukaguzi wa TRA na uongozi."
+              : "Audit-ready reporting with exportable PDF, Excel and printable statements for TRA compliance and stakeholder review."}
           </p>
         </div>
 
@@ -46,14 +48,14 @@ export const ReportsCenterModule: React.FC = () => {
             className="px-3.5 py-2 rounded-xl bg-white border border-[#D5E5C4] hover:bg-[#F2F7EB] text-xs font-bold text-[#2A3E1D] flex items-center gap-1.5 shadow-xs"
           >
             <Printer className="w-4 h-4 text-[#3C6415]" />
-            <span>Print Report</span>
+            <span>{language === "sw" ? "Chapisha Ripoti" : "Print Report"}</span>
           </button>
           <button
-            onClick={() => alert("Exporting formatted Excel spreadsheet...")}
+            onClick={() => alert(language === "sw" ? "Inapakua ripoti ya Excel/PDF..." : "Exporting formatted Excel spreadsheet...")}
             className="px-4 py-2 rounded-xl neu-btn text-xs font-bold flex items-center gap-1.5 shadow-xs"
           >
             <Download className="w-4 h-4" />
-            <span>Export Excel / PDF</span>
+            <span>{language === "sw" ? "Pakua Excel / PDF" : "Export Excel / PDF"}</span>
           </button>
         </div>
       </div>
@@ -61,12 +63,12 @@ export const ReportsCenterModule: React.FC = () => {
       {/* Report Categories Nav */}
       <div className="flex items-center gap-2 overflow-x-auto pb-2 mb-4">
         {[
-          { id: "SALES", label: "Sales & Turnover" },
-          { id: "PROFIT", label: "Profit & Loss (P&L)" },
-          { id: "INVENTORY", label: "Inventory Valuation" },
-          { id: "EXPENSES", label: "Expense Breakdown" },
-          { id: "DEBTS", label: "Accounts Receivable & Debts" },
-          { id: "BRANCH", label: "Branch Comparison" },
+          { id: "SALES", label: language === "sw" ? "Mauzo & Mzunguko" : "Sales & Turnover" },
+          { id: "PROFIT", label: language === "sw" ? "Faida & Hasara (P&L)" : "Profit & Loss (P&L)" },
+          { id: "INVENTORY", label: language === "sw" ? "Thamani ya Stoo" : "Inventory Valuation" },
+          { id: "EXPENSES", label: language === "sw" ? "Mchanganuo wa Matumizi" : "Expense Breakdown" },
+          { id: "DEBTS", label: language === "sw" ? "Madeni ya Wateja" : "Accounts Receivable & Debts" },
+          { id: "BRANCH", label: language === "sw" ? "Ulinganifu wa Matawi" : "Branch Comparison" },
         ].map((rep) => (
           <button
             key={rep.id}

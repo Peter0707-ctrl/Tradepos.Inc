@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 
 export const CustomersModule: React.FC = () => {
-  const { customers, addCustomer } = useApp();
+  const { customers, addCustomer, language, t } = useApp();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
@@ -45,10 +45,12 @@ export const CustomersModule: React.FC = () => {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-5">
         <div>
           <h2 className="text-xl font-black text-[#172709] tracking-tight">
-            Customer CRM & Credit Ledger
+            {language === "sw" ? "Wateja & Daftari la Madeni (Kikoba)" : "Customer CRM & Credit Ledger"}
           </h2>
           <p className="text-xs text-[#52654c]">
-            Track customer balances, credit purchases, installment settlements and loyalty rewards.
+            {language === "sw"
+              ? "Fuatilia salio la wateja, mauzo ya mikopo, ulipaji wa awamu na pointi za zawadi."
+              : "Track customer balances, credit purchases, installment settlements and loyalty rewards."}
           </p>
         </div>
 
@@ -57,32 +59,44 @@ export const CustomersModule: React.FC = () => {
           className="px-4 py-2.5 rounded-xl neu-btn text-xs font-bold flex items-center gap-2 shadow-neu-flat"
         >
           <Plus className="w-4 h-4" />
-          <span>Add New Customer</span>
+          <span>{language === "sw" ? "+ Ongeza Mteja Mpya" : "+ Add New Customer"}</span>
         </button>
       </div>
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-5">
         <div className="p-4 rounded-2xl bg-white border border-[#d6e5c5] shadow-neu-card">
-          <span className="text-xs font-bold text-[#5c7054]">Total Outstanding Credit / Debt</span>
+          <span className="text-xs font-bold text-[#5c7054]">
+            {language === "sw" ? "Jumla ya Madeni ya Wateja" : "Total Outstanding Credit / Debt"}
+          </span>
           <p className="text-2xl font-black text-amber-700 mt-1">
             TZS {totalOutstandingDebt.toLocaleString()}
           </p>
-          <span className="text-[11px] text-[#6d8065]">Receivable from credit sales</span>
+          <span className="text-[11px] text-[#6d8065]">
+            {language === "sw" ? "Inayodaiwa kutoka kwa mauzo ya mkopo" : "Receivable from credit sales"}
+          </span>
         </div>
 
         <div className="p-4 rounded-2xl bg-white border border-[#d6e5c5] shadow-neu-card">
-          <span className="text-xs font-bold text-[#5c7054]">Registered Customers</span>
+          <span className="text-xs font-bold text-[#5c7054]">
+            {language === "sw" ? "Wateja Waliosajiliwa" : "Registered Customers"}
+          </span>
           <p className="text-2xl font-black text-[#192b0c] mt-1">{customers.length}</p>
-          <span className="text-[11px] text-[#6d8065]">Active customer directory</span>
+          <span className="text-[11px] text-[#6d8065]">
+            {language === "sw" ? "Wateja wote hai" : "Active customer directory"}
+          </span>
         </div>
 
         <div className="p-4 rounded-2xl bg-white border border-[#d6e5c5] shadow-neu-card">
-          <span className="text-xs font-bold text-[#5c7054]">Total Customer Lifetime Value</span>
+          <span className="text-xs font-bold text-[#5c7054]">
+            {language === "sw" ? "Thamani Yote ya Mauzo ya Wateja" : "Total Customer Lifetime Value"}
+          </span>
           <p className="text-2xl font-black text-emerald-800 mt-1">
             TZS {customers.reduce((a, b) => a + b.totalSpent, 0).toLocaleString()}
           </p>
-          <span className="text-[11px] text-[#6d8065]">Cumulative purchases</span>
+          <span className="text-[11px] text-[#6d8065]">
+            {language === "sw" ? "Mauzo yote yaliyofanyika" : "Cumulative purchases"}
+          </span>
         </div>
       </div>
 
@@ -91,13 +105,13 @@ export const CustomersModule: React.FC = () => {
         <table className="w-full text-left text-xs divide-y divide-[#e8f0df]">
           <thead className="bg-[#F8FAF4] font-bold text-[#44573d] sticky top-0 z-10">
             <tr>
-              <th className="py-3 px-4">Customer</th>
-              <th className="py-3 px-4">Contact</th>
-              <th className="py-3 px-4">Address</th>
-              <th className="py-3 px-4">Total Spending</th>
-              <th className="py-3 px-4">Credit / Debt Balance</th>
-              <th className="py-3 px-4">Loyalty Points</th>
-              <th className="py-3 px-4 text-right">Status</th>
+              <th className="py-3 px-4">{language === "sw" ? "Mteja" : "Customer"}</th>
+              <th className="py-3 px-4">{language === "sw" ? "Mawasiliano" : "Contact"}</th>
+              <th className="py-3 px-4">{language === "sw" ? "Mahali" : "Address"}</th>
+              <th className="py-3 px-4">{language === "sw" ? "Jumla Aliyonunua" : "Total Spending"}</th>
+              <th className="py-3 px-4">{language === "sw" ? "Deni Analodaiwa" : "Credit / Debt Balance"}</th>
+              <th className="py-3 px-4">{language === "sw" ? "Pointi" : "Loyalty Points"}</th>
+              <th className="py-3 px-4 text-right">{language === "sw" ? "Hali" : "Status"}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-[#eff5e9] text-[#1c2c0e]">

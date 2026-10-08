@@ -22,7 +22,7 @@ import {
 } from "lucide-react";
 
 export const CashRegisterModule: React.FC = () => {
-  const { cashRegister, updateCashRegister, currentBranch, sales } = useApp();
+  const { cashRegister, updateCashRegister, currentBranch, sales, language, t } = useApp();
   const [activeTab, setActiveTab] = useState<"cash" | "sold_products">("cash");
   const [amountInput, setAmountInput] = useState("");
   const [modalMode, setModalMode] = useState<"DEPOSIT" | "WITHDRAW" | "COUNT" | null>(null);
@@ -95,10 +95,12 @@ export const CashRegisterModule: React.FC = () => {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h2 className="text-xl font-black text-[#162709] tracking-tight flex items-center gap-2">
-            <span>Hesabu ya Siku, Droo ya Pesa & Mauzo</span>
+            <span>{language === "sw" ? "Hesabu ya Siku, Droo ya Pesa & Mauzo" : "Daily Register, Cash Drawer & Reconciliation"}</span>
           </h2>
           <p className="text-xs text-[#526848]">
-            Kagua hesabu kamili ya mauzo ya siku, orodha ya bidhaa zilizouzwa, na linganisha pesa ya drooni na mfumo.
+            {language === "sw"
+              ? "Kagua hesabu kamili ya mauzo ya siku, orodha ya bidhaa zilizouzwa, na linganisha pesa ya drooni na mfumo."
+              : "Reconcile daily sales, review products sold, and balance cash drawer against recorded sales."}
           </p>
         </div>
 
@@ -114,7 +116,7 @@ export const CashRegisterModule: React.FC = () => {
               }`}
             >
               <Wallet className="w-3.5 h-3.5" />
-              <span>1. Hesabu ya Droo (Cash)</span>
+              <span>{language === "sw" ? "1. Hesabu ya Droo (Cash)" : "1. Cash Drawer"}</span>
             </button>
             <button
               onClick={() => setActiveTab("sold_products")}
@@ -125,7 +127,7 @@ export const CashRegisterModule: React.FC = () => {
               }`}
             >
               <Package className="w-3.5 h-3.5" />
-              <span>2. Bidhaa Zilizouzwa Leo ({soldProductsList.length})</span>
+              <span>{language === "sw" ? `2. Bidhaa Zilizouzwa Leo (${soldProductsList.length})` : `2. Products Sold Today (${soldProductsList.length})`}</span>
             </button>
           </div>
 
@@ -136,7 +138,7 @@ export const CashRegisterModule: React.FC = () => {
             className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-xs transition"
           >
             <MessageCircle className="w-4 h-4" />
-            <span>Tuma Ripoti WhatsApp</span>
+            <span>{language === "sw" ? "Tuma Ripoti WhatsApp" : "Send WhatsApp Report"}</span>
           </a>
         </div>
       </div>
@@ -144,31 +146,45 @@ export const CashRegisterModule: React.FC = () => {
       {/* Register Vital Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3.5">
         <div className="p-3.5 rounded-2xl bg-white border border-[#D8E6CC] shadow-xs">
-          <span className="text-xs font-bold text-[#566E49] block">Pesa ya Mwanzo (Float)</span>
+          <span className="text-xs font-bold text-[#566E49] block">
+            {language === "sw" ? "Pesa ya Mwanzo (Float)" : "Opening Morning Float"}
+          </span>
           <p className="text-xl font-black text-[#162709] mt-0.5">
             TZS {cashRegister.openingBalance.toLocaleString()}
           </p>
-          <span className="text-[10px] text-[#69825B]">Pesa iliyoanza asubuhi</span>
+          <span className="text-[10px] text-[#69825B]">
+            {language === "sw" ? "Pesa iliyoanza asubuhi" : "Morning opening balance"}
+          </span>
         </div>
 
         <div className="p-3.5 rounded-2xl bg-white border border-[#D8E6CC] shadow-xs">
-          <span className="text-xs font-bold text-[#566E49] block">Mauzo ya Cash Leo</span>
+          <span className="text-xs font-bold text-[#566E49] block">
+            {language === "sw" ? "Mauzo ya Cash Leo" : "Cash Sales Today"}
+          </span>
           <p className="text-xl font-black text-emerald-800 mt-0.5">
             +TZS {totalCashSales.toLocaleString()}
           </p>
-          <span className="text-[10px] text-emerald-700 font-semibold">Noti na sarafu za dukani</span>
+          <span className="text-[10px] text-emerald-700 font-semibold">
+            {language === "sw" ? "Noti na sarafu za dukani" : "Banknotes and coins collected"}
+          </span>
         </div>
 
         <div className="p-3.5 rounded-2xl bg-white border border-[#D8E6CC] shadow-xs">
-          <span className="text-xs font-bold text-[#566E49] block">Pesa ya Mfumo (Expected)</span>
+          <span className="text-xs font-bold text-[#566E49] block">
+            {language === "sw" ? "Pesa ya Mfumo (Expected)" : "Expected in Drawer"}
+          </span>
           <p className="text-xl font-black text-[#162709] mt-0.5">
             TZS {expectedCash.toLocaleString()}
           </p>
-          <span className="text-[10px] text-[#69825B]">Float + Mauzo - Matumizi</span>
+          <span className="text-[10px] text-[#69825B]">
+            {language === "sw" ? "Float + Mauzo - Matumizi" : "Float + Sales - Expenses"}
+          </span>
         </div>
 
         <div className="p-3.5 rounded-2xl bg-white border border-[#D8E6CC] shadow-xs">
-          <span className="text-xs font-bold text-[#566E49] block">Pesa Halisi ya Drooni</span>
+          <span className="text-xs font-bold text-[#566E49] block">
+            {language === "sw" ? "Pesa Halisi ya Drooni" : "Actual Cash Counted"}
+          </span>
           <p className="text-xl font-black text-[#162709] mt-0.5">
             TZS {cashRegister.actualCash.toLocaleString()}
           </p>
@@ -177,7 +193,9 @@ export const CashRegisterModule: React.FC = () => {
               variance === 0 ? "text-emerald-700" : variance > 0 ? "text-emerald-800" : "text-rose-700"
             }`}
           >
-            {variance === 0 ? "✓ Hesabu Imetimia Sawia" : `Tofauti: TZS ${variance.toLocaleString()}`}
+            {variance === 0
+              ? (language === "sw" ? "✓ Hesabu Imetimia Sawia" : "✓ 100% Balanced")
+              : `${language === "sw" ? "Tofauti: TZS " : "Variance: TZS "} ${variance.toLocaleString()}`}
           </span>
         </div>
       </div>
