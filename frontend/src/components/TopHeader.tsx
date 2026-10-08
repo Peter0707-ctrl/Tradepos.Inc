@@ -27,9 +27,6 @@ interface TopHeaderProps {
 export const TopHeader: React.FC<TopHeaderProps> = ({ pageTitle, onNavigate, onLogout }) => {
   const {
     user,
-    business,
-    availableBusinesses,
-    switchBusiness,
     language,
     setLanguage,
     notifications,
@@ -39,20 +36,15 @@ export const TopHeader: React.FC<TopHeaderProps> = ({ pageTitle, onNavigate, onL
     t
   } = useApp();
 
-  const [isBizDropdownOpen, setIsBizDropdownOpen] = useState(false);
   const [isNotifOpen, setIsNotifOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
 
-  const bizRef = useRef<HTMLDivElement>(null);
   const notifRef = useRef<HTMLDivElement>(null);
   const profileRef = useRef<HTMLDivElement>(null);
 
   // Close dropdowns on outside click
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
-      if (bizRef.current && !bizRef.current.contains(event.target as Node)) {
-        setIsBizDropdownOpen(false);
-      }
       if (notifRef.current && !notifRef.current.contains(event.target as Node)) {
         setIsNotifOpen(false);
       }
@@ -73,70 +65,9 @@ export const TopHeader: React.FC<TopHeaderProps> = ({ pageTitle, onNavigate, onL
         </h1>
       </div>
 
-      {/* Right Controls: Business Switcher, Notifications, Help, Language, Profile */}
+      {/* Right Controls: Notifications, Help, Language, Profile */}
       <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
-        {/* 1. Business Switcher */}
-        <div className="relative" ref={bizRef}>
-          <button
-            onClick={() => setIsBizDropdownOpen(!isBizDropdownOpen)}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-white border border-[#D5E5C4] hover:border-[#8ECE28] text-xs font-bold text-[#1D300C] shadow-xs transition"
-          >
-            <Building2 className="w-3.5 h-3.5 text-[#446614] shrink-0" />
-            <span className="max-w-[75px] sm:max-w-[140px] truncate">{business?.name || "Biashara"}</span>
-            <ChevronDown className="w-3 h-3 text-[#5B6F50] shrink-0" />
-          </button>
-
-          {isBizDropdownOpen && (
-            <div className="absolute right-0 mt-2 w-72 rounded-2xl bg-white border-2 border-[#C2E880] shadow-xl p-2 z-50 animate-fade-in">
-              <div className="px-3 py-2 border-b border-[#EDF4E4]">
-                <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#59724C] block">
-                  {t.header.switchBusiness}
-                </span>
-                <p className="text-[11px] text-[#6E8262]">{t.header.isolatedData}</p>
-              </div>
-
-              <div className="space-y-1 py-1 max-h-60 overflow-y-auto">
-                {availableBusinesses.map((b) => {
-                  const isCurrent = b.id === business?.id;
-                  return (
-                    <button
-                      key={b.id}
-                      onClick={() => {
-                        switchBusiness(b.id);
-                        setIsBizDropdownOpen(false);
-                      }}
-                      className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-left text-xs transition ${
-                        isCurrent
-                          ? "bg-[#E1FFAC] font-black text-[#152708] border border-[#A2DD4F]"
-                          : "hover:bg-[#F2F7EB] text-[#2F4420] font-semibold"
-                      }`}
-                    >
-                      <div className="min-w-0 pr-2">
-                        <span className="block truncate">{b.name}</span>
-                        <span className="block text-[10px] text-[#637956]">{b.businessType} • {b.branches.length} {language === "sw" ? "matawi" : "branches"}</span>
-                      </div>
-                      {isCurrent && <Check className="w-4 h-4 text-[#2E4F0A] shrink-0" />}
-                    </button>
-                  );
-                })}
-              </div>
-
-              <div className="pt-1.5 border-t border-[#EDF4E4]">
-                <button
-                  onClick={() => {
-                    setIsBizDropdownOpen(false);
-                    onNavigate("settings");
-                  }}
-                  className="w-full text-center py-2 text-xs font-bold text-[#355B0F] hover:bg-[#F4F8EC] rounded-lg transition"
-                >
-                  {language === "sw" ? "+ Sajili Biashara Nyingine" : "+ Add New Business Entity"}
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* 2. Notification Center */}
+        {/* 1. Notification Center */}
         <div className="relative" ref={notifRef}>
           <button
             onClick={() => setIsNotifOpen(!isNotifOpen)}
