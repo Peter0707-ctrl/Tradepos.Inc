@@ -95,24 +95,23 @@ function MainApp() {
   // Human readable title lookup
   const getModuleTitle = (mod: string) => {
     switch (mod) {
-      case "dashboard": return t.titles.dashboard;
-      case "pos": return t.titles.pos;
-      case "sales": return t.titles.sales;
-      case "products": return t.titles.products;
-      case "inventory": return t.titles.inventory;
+      case "dashboard": return language === "sw" ? "1. Dashibodi Kuu ya Biashara" : t.titles.dashboard;
+      case "sales": return language === "sw" ? "2. Mauzo ya Siku (Andika Mauzo & Hesabu Auto)" : "2. Daily Sales & Auto Calculation";
+      case "expenses":
+      case "accounting": return language === "sw" ? "3. Matumizi ya Siku Hiyo" : "3. Daily Shop Expenses";
+      case "products":
+      case "inventory": return language === "sw" ? "4. Stoo & Bidhaa (Bando za Stoo vs Mauzo)" : "4. Store Stock & Bundle Reconciliation";
+      case "deliveries":
+      case "orders":
+      case "online-store": return language === "sw" ? "5. Ufuatiliaji wa Delivery za Wateja" : "5. Customer Delivery Tracking";
+      case "customers": return language === "sw" ? "6. Wateja & Daftari la Madeni" : "6. Customers & Debt Ledger";
+      case "cash-register":
+      case "reports": return language === "sw" ? "7. Ripoti za Siku: Faida na Hasara ya Kila Siku" : "7. Daily Reports: Profit & Loss";
       case "purchases": return t.titles.purchases;
       case "suppliers": return t.titles.suppliers;
-      case "customers": return t.titles.customers;
-      case "expenses": return t.titles.expenses;
-      case "accounting": return t.titles.accounting;
-      case "cash-register": return t.titles.cashRegister;
       case "employees": return t.titles.employees;
       case "branches": return t.titles.branches;
       case "warehouses": return t.titles.warehouses;
-      case "online-store": return t.titles.onlineStore;
-      case "orders": return t.titles.orders;
-      case "deliveries": return t.titles.deliveries;
-      case "reports": return t.titles.reports;
       case "notifications": return t.titles.notifications;
       case "settings": return t.titles.settings;
       case "help": return t.titles.help;
@@ -147,7 +146,7 @@ function MainApp() {
         />
       )}
 
-      {/* AI FLOATING ASSISTANT MODAL (OPENED VIA ✨ ASK AI BUTTON) */}
+      {/* AI FLOATING ASSISTANT MODAL */}
       <AiAssistantModal />
 
       {/* VIEW CONDITIONAL: PUBLIC WEBSITE OR LOGGED-IN CUSTOMER ACCOUNT */}
@@ -189,19 +188,17 @@ function MainApp() {
               {(activeModule === "dashboard" || activeModule === "ai-assistant") && (
                 <DashboardOverview onNavigate={(m) => setActiveModule(m)} />
               )}
-              {(activeModule === "products" || activeModule === "inventory") && <InventoryModule />}
-              {(activeModule === "purchases" || activeModule === "suppliers") && <PurchasesSuppliersModule />}
-              {activeModule === "customers" && <CustomersModule />}
+              {(activeModule === "sales" || activeModule === "pos") && <SalesLedgerModule />}
               {(activeModule === "expenses" || activeModule === "accounting") && <ExpensesAccountingModule />}
-              {(activeModule === "cash-register" || activeModule === "pos" || activeModule === "sales") && (
-                <CashRegisterModule />
-              )}
-              {activeModule === "employees" && <EmployeesRolesModule onNavigate={(m) => setActiveModule(m)} />}
-              {(activeModule === "branches" || activeModule === "warehouses") && <MultiBranchWarehouseModule />}
+              {(activeModule === "products" || activeModule === "inventory") && <InventoryModule />}
               {(activeModule === "online-store" || activeModule === "orders" || activeModule === "deliveries") && (
                 <OnlineStoreDeliveriesModule />
               )}
-              {activeModule === "reports" && <ReportsCenterModule />}
+              {activeModule === "customers" && <CustomersModule />}
+              {(activeModule === "cash-register" || activeModule === "reports") && <CashRegisterModule />}
+              {(activeModule === "purchases" || activeModule === "suppliers") && <PurchasesSuppliersModule />}
+              {activeModule === "employees" && <EmployeesRolesModule onNavigate={(m) => setActiveModule(m)} />}
+              {(activeModule === "branches" || activeModule === "warehouses") && <MultiBranchWarehouseModule />}
               {activeModule === "notifications" && <NotificationCenterModule onNavigate={(m) => setActiveModule(m)} />}
               {activeModule === "settings" && <BusinessSettingsModule />}
               {activeModule === "help" && <HelpSupportModule />}

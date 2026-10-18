@@ -3,233 +3,471 @@
 import React, { useState } from "react";
 import { useApp } from "@/context/AppContext";
 import {
+  ShoppingBag,
+  PlusCircle,
   Search,
-  Filter,
-  Calendar,
-  Printer,
+  UserCheck,
   RotateCcw,
-  CheckCircle2,
-  FileSpreadsheet,
-  Building,
-  User,
-  CreditCard,
-  Eye,
-  X
+  Calculator
 } from "lucide-react";
-import { Sale } from "@/types";
 
 export const SalesLedgerModule: React.FC = () => {
-  const { sales, refundSale, currentBranch, language, t } = useApp();
+  const {
+    user,
+    employees,
+    switchEmployeeAccount,
+    sales,
+    processSale,
+    refundSale,
+    products,
+    addProduct,
+    currentBranch,
+    language,
+  } = useApp();
+
   const [search, setSearch] = useState("");
   const [paymentFilter, setPaymentFilter] = useState("ALL");
-  const [selectedSale, setSelectedSale] = useState<Sale | null>(null);
 
-  const filteredSales = sales.filter((s) => {
+  // Direct Sale Entry Form State (Employee or Owner types today's sale directly)
+  const [prodName, setProdName] = useState("");
+  const [qty, setQty] = useState("1");
+  const [unitPrice, setUnitPrice] = useState("");
+  const [paymentMethod, setPaymentMethod] = useState<"CASH" | "MPESA" | "CREDIT">("CASH");
+  const [customerName, setCustomerName] = useState("");
+
+  // Automatic calculation preview for current form input
+  const parsedQty = parseInt(qty) || 0;
+  const matchedProduct = products.find(
+    (p) => p.name.toLowerCase() === prodName.trim().toLowerCase()
+  );
+  const parsedUnitPrice =
+    parseFloat(unitPrice) || (matchedProduct ? matchedProduct.sellingPrice : 0);
+  const autoLineTotal = parsedQty * parsedUnitPrice;
+
+  // Automatic System Calculations across all valid sales
+  const validSales = sales.filter((s) => s.status !== "REFUNDED");
+  const totalSalesAmount = validSales.reduce((acc, s) => acc + s.total, 0);
+  const totalCashSales = validSales
+    .filter((s) => s.paymentMethod === "CASH")
+    .reduce((acc, s) => acc + s.total, 0);
+  const totalMobileSales = validSales
+    .filter((s) => ["MPESA", "AIRTEL_MONEY", "MIXX", "HALOPESA"].includes(s.paymentMethod))
+    .reduce((acc, s) => acc + s.total, 0);
+  const totalCreditSales = validSales
+    .filter((s) => s.paymentMethod === "CREDIT")
+    .reduce((acc, s) => acc + s.total, 0);
+
+  const totalUnitsSold = validSales.reduce(
+    (acc, s) => acc + s.items.reduce((sum, i) => sum + i.quantity, 0),
+    0
+  );
+
+  const filteredSales = validSales.filter((s) => {
+    const itemsText = s.items.map((i) => i.productName).join(" ").toLowerCase();
     const matchesSearch =
-      s.saleNumber.toLowerCase().includes(search.toLowerCase()) ||
+      itemsText.includes(search.toLowerCase()) ||
       (s.customerName && s.customerName.toLowerCase().includes(search.toLowerCase())) ||
       s.cashierName.toLowerCase().includes(search.toLowerCase());
     const matchesPayment = paymentFilter === "ALL" || s.paymentMethod === paymentFilter;
     return matchesSearch && matchesPayment;
   });
 
-  const totalInvoiced = filteredSales.reduce((acc, s) => acc + s.total, 0);
+  const handleRecordSale = (e: React.FormEvent) => {
+    e.preventDefault();
+    const cleanName = prodName.trim();
+    if (!cleanName || parsedQty <= 0 || parsedUnitPrice <= 0) return;
+
+    let targetProdId = matchedProduct?.id || `prod-auto-${Date.now()}`;
+    let targetProdName = matchedProduct?.name || cleanName;
+
+    if (!matchedProduct) {
+      const created = addProduct({
+        name: cleanName,
+        sku: `AUTO-${Date.now().toString().slice(-4)}`,
+        barcode: "",
+        category: "Bidhaa za Dukani",
+        brand: "General",
+        buyingPrice: Math.round(parsedUnitPrice * 0.7),
+        sellingPrice: parsedUnitPrice,
+        wholesalePrice: parsedUnitPrice,
+        stockQuantity: Math.max(20, parsedQty),
+        minStock: 5,
+        maxStock: 500,
+        unit: "Pcs",
+        branchId: currentBranch?.id || "br-01",
+      });
+      if (created) {
+        targetProdId = created.id;
+        targetProdName = created.name;
+      }
+    }
+
+    const total = parsedQty * parsedUnitPrice;
+    processSale({
+      branchId: currentBranch?.id || "br-01",
+      items: [
+        {
+          productId: targetProdId,
+          productName: targetProdName,
+          quantity: parsedQty,
+          price: parsedUnitPrice,
+          total,
+        },
+      ],
+      subtotal: total,
+      tax: 0,
+      discount: 0,
+      total,
+      paidAmount: paymentMethod === "CREDIT" ? 0 : total,
+      balance: paymentMethod === "CREDIT" ? total : 0,
+      paymentMethod,
+      customerName:
+        customerName.trim() ||
+        (paymentMethod === "CREDIT" ? "Mteja wa Mkopo" : "Mteja wa Dukani"),
+      cashierName: user?.name || "Baraka Mushi",
+      status: "COMPLETED",
+    });
+
+    setProdName("");
+    setQty("1");
+    setUnitPrice("");
+    setCustomerName("");
+  };
 
   return (
-    <div className="flex-1 flex flex-col h-full p-4 lg:p-6 overflow-hidden">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-5">
+    <div className="flex-1 flex flex-col h-full p-4 lg:p-6 overflow-y-auto gap-4">
+      {/* Datalist for optional autocomplete while typing product name */}
+      <datalist id="sales-products-datalist">
+        {products.map((p) => (
+          <option key={p.id} value={p.name}>
+            Bei: TZS {p.sellingPrice.toLocaleString()} | Stoo: {p.stockQuantity} {p.unit}
+          </option>
+        ))}
+      </datalist>
+
+      {/* Top Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h2 className="text-xl font-black text-[#162709] tracking-tight">
-            {language === "sw" ? "Leja ya Mauzo & Risiti" : "Sales Ledger & Invoices"}
-          </h2>
-          <p className="text-xs text-[#526848]">
+          <div className="flex flex-wrap items-center gap-2">
+            <h2 className="text-xl font-black text-[#162709] tracking-tight">
+              {language === "sw"
+                ? "2. Mauzo ya Siku (Mfanyakazi Anaandika & Owner Anaona Mauzo)"
+                : "2. Daily Sales (Staff Entry & Owner Live View)"}
+            </h2>
+            <span className="px-2.5 py-0.5 rounded-full text-[11px] font-black bg-[#E1FFAC] text-[#172B08] border border-[#9CE034]">
+              {user?.role === "OWNER"
+                ? "Mwonekano wa Mwenye Duka"
+                : `Mfanyakazi: ${user?.name}`}
+            </span>
+          </div>
+          <p className="text-xs text-[#526848] mt-0.5">
             {language === "sw"
-              ? `Historia kamili ya miamala kwa ${currentBranch?.name}. Chuja kwa njia ya malipo au angalia uchanganuzi.`
-              : `Complete transaction history for ${currentBranch?.name}. Filter by payment methods, view breakdown or refund.`}
+              ? "Andika bidhaa iliyouzwa na idadi yake; mfumo unapiga mahesabu ya jumla na kupunguza stoo automatically."
+              : "Type the product sold and quantity; the system calculates totals and deducts store stock automatically."}
           </p>
         </div>
 
-        <div className="px-3.5 py-1.5 rounded-xl bg-white border border-[#D5E5C4] text-xs font-bold text-[#2A3E1D] shadow-xs">
-          {language === "sw" ? "Jumla ya Mauzo: " : "Total Invoiced: "}
-          <strong className="text-emerald-800 font-black">TZS {totalInvoiced.toLocaleString()}</strong>
-        </div>
-      </div>
-
-      {/* Filter Controls */}
-      <div className="flex flex-wrap items-center gap-3 mb-4">
-        <div className="relative flex-1 min-w-[220px]">
-          <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-[#657C58]" />
-          <input
-            type="text"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder={
-              language === "sw"
-                ? "Tafuta namba ya risiti, mteja au cashier..."
-                : "Search invoice number, customer or cashier..."
-            }
-            className="w-full py-2.5 pl-10 pr-4 rounded-xl neu-input text-xs font-medium text-[#18260D]"
-          />
-        </div>
-
-        <div className="flex items-center gap-2">
+        {/* Account Switcher to test Owner vs Staff */}
+        <div className="flex items-center gap-1.5 bg-white px-3 py-1.5 rounded-xl border border-[#D4E4C3] shadow-xs text-xs self-start sm:self-auto">
+          <UserCheck className="w-3.5 h-3.5 text-[#3F6315]" />
+          <span className="font-bold text-[#4D6340]">Akaunti:</span>
           <select
-            value={paymentFilter}
-            onChange={(e) => setPaymentFilter(e.target.value)}
-            className="py-2.5 px-3 rounded-xl neu-input text-xs font-bold text-[#263C16]"
+            value={user?.id || "emp-01"}
+            onChange={(e) => switchEmployeeAccount(e.target.value)}
+            className="font-black text-[#162808] bg-transparent focus:outline-none cursor-pointer"
           >
-            <option value="ALL">{language === "sw" ? "Njia Zote za Malipo" : "All Payment Methods"}</option>
-            <option value="CASH">Cash</option>
-            <option value="MPESA">M-Pesa</option>
-            <option value="AIRTEL_MONEY">Airtel Money</option>
-            <option value="CREDIT">{language === "sw" ? "Deni / Mkopo" : "Credit"}</option>
+            {employees.map((emp) => (
+              <option key={emp.id} value={emp.id}>
+                {emp.name} ({emp.role === "OWNER" ? "Mwenye Duka" : emp.role})
+              </option>
+            ))}
           </select>
-
-          <button
-            onClick={() => window.print()}
-            className="px-3.5 py-2.5 rounded-xl bg-white border border-[#D5E5C4] hover:bg-[#F2F7EB] text-xs font-bold text-[#283D1B] flex items-center gap-1.5 shadow-xs"
-          >
-            <FileSpreadsheet className="w-4 h-4 text-[#446517]" />
-            <span>Export CSV</span>
-          </button>
         </div>
       </div>
 
-      {/* Sales Table */}
-      <div className="flex-1 overflow-y-auto bg-white rounded-2xl border border-[#D8E6CC] shadow-xs">
-        <table className="w-full text-left text-xs divide-y divide-[#EBF2E2]">
-          <thead className="bg-[#F8FAF4] font-bold text-[#4D6340] sticky top-0 z-10">
-            <tr>
-              <th className="py-3 px-4">{language === "sw" ? "Risiti #" : "Invoice #"}</th>
-              <th className="py-3 px-4">{language === "sw" ? "Mteja" : "Customer"}</th>
-              <th className="py-3 px-4">{language === "sw" ? "Mhudumu" : "Cashier"}</th>
-              <th className="py-3 px-4">{language === "sw" ? "Bidhaa Zilizouzwa" : "Items Breakdown"}</th>
-              <th className="py-3 px-4">{language === "sw" ? "Kiasi" : "Amount"}</th>
-              <th className="py-3 px-4">{language === "sw" ? "Malipo" : "Payment"}</th>
-              <th className="py-3 px-4">{language === "sw" ? "Hali" : "Status"}</th>
-              <th className="py-3 px-4 text-right">{language === "sw" ? "Vitendo" : "Actions"}</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-[#F1F6EB] text-[#1A2E0A]">
-            {filteredSales.map((s) => (
-              <tr key={s.id} className="hover:bg-[#F9FBF6] transition">
-                <td className="py-3 px-4 font-black">{s.saleNumber}</td>
-                <td className="py-3 px-4 font-medium">{s.customerName || (language === "sw" ? "Mteja wa Kawaida" : "Walk-in Customer")}</td>
-                <td className="py-3 px-4 text-[#48603C]">{s.cashierName}</td>
-                <td className="py-3 px-4 text-[#536B47] max-w-[220px] truncate">
-                  {s.items.map((i) => `${i.productName} (x${i.quantity})`).join(", ")}
-                </td>
-                <td className="py-3 px-4 font-black">TZS {s.total.toLocaleString()}</td>
-                <td className="py-3 px-4">
-                  <span className="px-2 py-0.5 rounded-md bg-[#EDF3E6] font-bold text-[#20360B]">
-                    {s.paymentMethod}
-                  </span>
-                </td>
-                <td className="py-3 px-4">
-                  <span
-                    className={`px-2 py-0.5 rounded-full text-[10px] font-black ${
-                      s.status === "COMPLETED"
-                        ? "bg-emerald-100 text-emerald-900 border border-emerald-300"
-                        : "bg-rose-100 text-rose-900 border border-rose-300"
-                    }`}
-                  >
-                    {s.status}
-                  </span>
-                </td>
-                <td className="py-3 px-4 text-right space-x-1.5">
-                  <button
-                    onClick={() => setSelectedSale(s)}
-                    className="p-1.5 rounded-lg text-[#263C16] hover:bg-[#EDF3E6] transition"
-                    title="View Breakdown"
-                  >
-                    <Eye className="w-4 h-4" />
-                  </button>
-                  <button
-                    onClick={() => window.print()}
-                    className="p-1.5 rounded-lg text-[#263C16] hover:bg-[#EDF3E6] transition"
-                    title="Print Receipt"
-                  >
-                    <Printer className="w-4 h-4" />
-                  </button>
-                  {s.status === "COMPLETED" && (
-                    <button
-                      onClick={() => refundSale(s.id)}
-                      className="p-1.5 rounded-lg text-rose-700 hover:bg-rose-50 transition"
-                      title="Issue Refund"
-                    >
-                      <RotateCcw className="w-4 h-4" />
-                    </button>
-                  )}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+      {/* 4 AUTOMATIC CALCULATION SUMMARY CARDS */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
+        <div className="p-3.5 rounded-2xl bg-white border-2 border-[#b2e269] shadow-xs">
+          <span className="text-xs font-bold text-[#566E49] block">
+            Jumla ya Mauzo ya Leo (Auto)
+          </span>
+          <p className="text-xl font-black text-emerald-800 mt-0.5">
+            TZS {totalSalesAmount.toLocaleString()}
+          </p>
+          <span className="text-[11px] text-emerald-700 font-bold">
+            Vipande {totalUnitsSold} vimeuzwa ({validSales.length} mauzo)
+          </span>
+        </div>
+
+        <div className="p-3.5 rounded-2xl bg-white border border-[#D8E6CC] shadow-xs">
+          <span className="text-xs font-bold text-[#566E49] block">
+            Mauzo ya Cash (Taslimu)
+          </span>
+          <p className="text-xl font-black text-[#162709] mt-0.5">
+            TZS {totalCashSales.toLocaleString()}
+          </p>
+          <span className="text-[11px] text-[#69825B] font-bold">
+            Pesa taslimu iliyoingia drooni
+          </span>
+        </div>
+
+        <div className="p-3.5 rounded-2xl bg-white border border-[#D8E6CC] shadow-xs">
+          <span className="text-xs font-bold text-[#566E49] block">
+            Mauzo ya Simu (M-Pesa / Airtel)
+          </span>
+          <p className="text-xl font-black text-[#162709] mt-0.5">
+            TZS {totalMobileSales.toLocaleString()}
+          </p>
+          <span className="text-[11px] text-[#69825B] font-bold">
+            Malipo ya Lipa Namba / Simu
+          </span>
+        </div>
+
+        <div className="p-3.5 rounded-2xl bg-white border border-[#D8E6CC] shadow-xs">
+          <span className="text-xs font-bold text-[#566E49] block">
+            Mauzo ya Mkopo (Madeni)
+          </span>
+          <p className="text-xl font-black text-amber-700 mt-0.5">
+            TZS {totalCreditSales.toLocaleString()}
+          </p>
+          <span className="text-[11px] text-amber-800 font-bold">
+            Inaingia kwenye Wateja & Madeni
+          </span>
+        </div>
       </div>
 
-      {/* Sale Details Modal */}
-      {selectedSale && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs p-4">
-          <div className="w-full max-w-md bg-white rounded-3xl p-6 shadow-2xl border-2 border-[#BFE973] animate-slide-up">
-            <div className="flex items-center justify-between pb-3 border-b border-[#EDF4E4]">
+      {/* MAIN WORKSPACE: LEFT = ENTER TODAY'S SALES | RIGHT = LIVE SALES TABLE FOR OWNER & STAFF */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 flex-1">
+        {/* Left: Enter Today's Sales Form */}
+        <div className="bg-white rounded-2xl border-2 border-[#BFE973] p-4 shadow-xs h-fit">
+          <h3 className="font-black text-sm text-[#162709] mb-1 flex items-center gap-1.5">
+            <PlusCircle className="w-4 h-4 text-[#3A6112]" />
+            <span>Andika Mauzo ya Leo</span>
+          </h3>
+          <p className="text-[11px] text-[#5B714F] mb-3">
+            Andika jina la bidhaa uliyouza na idadi yake. Mfumo utapiga jumla ya pesa na kupunguza stoo moja kwa moja.
+          </p>
+
+          <form onSubmit={handleRecordSale} className="space-y-3 text-xs">
+            <div>
+              <label className="block font-bold text-[#334A26] mb-1">
+                Andika Jina la Bidhaa Iliyouzwa:
+              </label>
+              <input
+                type="text"
+                list="sales-products-datalist"
+                required
+                value={prodName}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setProdName(val);
+                  const found = products.find(
+                    (p) => p.name.toLowerCase() === val.trim().toLowerCase()
+                  );
+                  if (found) {
+                    setUnitPrice(String(found.sellingPrice));
+                  }
+                }}
+                placeholder="Mfano: Nivea Body Milk au Viatu..."
+                className="w-full py-2.5 px-3 rounded-xl neu-input font-bold"
+              />
+              {matchedProduct && (
+                <span className="text-[10px] font-bold text-emerald-700 mt-1 block">
+                  ✓ Ipo stoo: {matchedProduct.stockQuantity} {matchedProduct.unit} | Bei: TZS{" "}
+                  {matchedProduct.sellingPrice.toLocaleString()}
+                </span>
+              )}
+            </div>
+
+            <div className="grid grid-cols-2 gap-2.5">
               <div>
-                <h3 className="font-black text-base text-[#162709]">Sale Invoice Details</h3>
-                <span className="text-xs text-[#5D7351] font-mono">{selectedSale.saleNumber}</span>
-              </div>
-              <button
-                onClick={() => setSelectedSale(null)}
-                className="w-7 h-7 rounded-full bg-[#EDF3E6] flex items-center justify-center text-xs font-bold text-[#354D26]"
-              >
-                ✕
-              </button>
-            </div>
-
-            <div className="py-4 space-y-2 text-xs">
-              <div className="flex justify-between text-[#4D6340]">
-                <span>Customer:</span>
-                <strong className="text-[#17290A]">{selectedSale.customerName || "Walk-in"}</strong>
-              </div>
-              <div className="flex justify-between text-[#4D6340]">
-                <span>Processed by:</span>
-                <strong className="text-[#17290A]">{selectedSale.cashierName}</strong>
-              </div>
-              <div className="flex justify-between text-[#4D6340]">
-                <span>Payment Method:</span>
-                <strong className="text-[#17290A]">{selectedSale.paymentMethod}</strong>
+                <label className="block font-bold text-[#334A26] mb-1">
+                  Idadi Iliyouzwa
+                </label>
+                <input
+                  type="number"
+                  min="1"
+                  required
+                  value={qty}
+                  onChange={(e) => setQty(e.target.value)}
+                  placeholder="1"
+                  className="w-full py-2 px-3 rounded-xl neu-input font-black text-sm"
+                />
               </div>
 
-              <div className="pt-2 border-t border-[#EDF4E4] font-bold text-[#162709] mb-1">Items:</div>
-              {selectedSale.items.map((it, idx) => (
-                <div key={idx} className="flex justify-between py-1 bg-[#F9FBF6] px-2 rounded-lg">
-                  <span>{it.productName} × {it.quantity}</span>
-                  <span className="font-black">TZS {it.total.toLocaleString()}</span>
-                </div>
-              ))}
-
-              <div className="pt-3 border-t border-[#EDF4E4] flex justify-between font-black text-sm text-[#152708]">
-                <span>Total Amount:</span>
-                <span>TZS {selectedSale.total.toLocaleString()}</span>
+              <div>
+                <label className="block font-bold text-[#334A26] mb-1">
+                  Bei ya Kila Moja (TZS)
+                </label>
+                <input
+                  type="number"
+                  min="1"
+                  required
+                  value={unitPrice}
+                  onChange={(e) => setUnitPrice(e.target.value)}
+                  placeholder="15000"
+                  className="w-full py-2 px-3 rounded-xl neu-input font-black text-sm"
+                />
               </div>
             </div>
 
-            <div className="flex gap-2 pt-2">
-              <button
-                onClick={() => window.print()}
-                className="flex-1 py-2.5 rounded-xl neu-btn-secondary text-xs font-bold"
+            {/* Automatic Calculation Box */}
+            <div className="p-3 rounded-xl bg-[#F4F8EC] border border-[#C6DDA8] flex items-center justify-between">
+              <div className="flex items-center gap-1.5 text-[#273E14] font-bold">
+                <Calculator className="w-4 h-4 text-[#3F6315]" />
+                <span>Jumla (Auto Hesabu):</span>
+              </div>
+              <span className="text-base font-black text-emerald-800">
+                TZS {autoLineTotal.toLocaleString()}
+              </span>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2.5">
+              <div>
+                <label className="block font-bold text-[#334A26] mb-1">Njia ya Malipo</label>
+                <select
+                  value={paymentMethod}
+                  onChange={(e) =>
+                    setPaymentMethod(e.target.value as "CASH" | "MPESA" | "CREDIT")
+                  }
+                  className="w-full py-2 px-3 rounded-xl neu-input font-bold"
+                >
+                  <option value="CASH">Cash (Taslimu)</option>
+                  <option value="MPESA">M-Pesa / Simu</option>
+                  <option value="CREDIT">Mkopo (Deni la Mteja)</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block font-bold text-[#334A26] mb-1">
+                  Jina la Mteja {paymentMethod === "CREDIT" ? "(Muhimu)" : "(Hiari)"}
+                </label>
+                <input
+                  type="text"
+                  required={paymentMethod === "CREDIT"}
+                  value={customerName}
+                  onChange={(e) => setCustomerName(e.target.value)}
+                  placeholder="Jina la mteja..."
+                  className="w-full py-2 px-3 rounded-xl neu-input font-semibold"
+                />
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              className="w-full py-3 rounded-xl neu-btn font-black text-xs uppercase tracking-wider cursor-pointer"
+            >
+              + Hifadhi Mauzo ya Sasa
+            </button>
+          </form>
+        </div>
+
+        {/* Right: Owner & Staff Live Sales Table */}
+        <div className="lg:col-span-2 bg-white rounded-2xl border border-[#D8E6CC] p-4 shadow-xs flex flex-col">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-[#EBF2E2]">
+            <div>
+              <h3 className="font-black text-sm text-[#162709] flex items-center gap-1.5">
+                <ShoppingBag className="w-4 h-4 text-[#233F0D]" />
+                <span>Orodha ya Mauzo ya Leo (Owner & Mfanyakazi)</span>
+              </h3>
+              <p className="text-[11px] text-[#546949]">
+                Kila bidhaa iliyouzwa, idadi, bei, aliyeuza na jumla iliyopigwa na mfumo.
+              </p>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <div className="relative">
+                <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-[#657C58]" />
+                <input
+                  type="text"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Tafuta bidhaa au mteja..."
+                  className="py-1.5 pl-8 pr-3 rounded-xl neu-input text-xs"
+                />
+              </div>
+              <select
+                value={paymentFilter}
+                onChange={(e) => setPaymentFilter(e.target.value)}
+                className="py-1.5 px-2.5 rounded-xl neu-input text-xs font-bold"
               >
-                Print Receipt
-              </button>
-              <button
-                onClick={() => setSelectedSale(null)}
-                className="flex-1 py-2.5 rounded-xl neu-btn text-xs font-bold"
-              >
-                Close
-              </button>
+                <option value="ALL">Malipo Yote</option>
+                <option value="CASH">Cash</option>
+                <option value="MPESA">M-Pesa</option>
+                <option value="CREDIT">Mkopo</option>
+              </select>
             </div>
           </div>
+
+          <div className="overflow-x-auto mt-3 flex-1">
+            <table className="w-full text-left text-xs divide-y divide-[#EBF2E2]">
+              <thead className="bg-[#F8FAF4] font-bold text-[#4D6340]">
+                <tr>
+                  <th className="py-2.5 px-3">Bidhaa Iliyouzwa</th>
+                  <th className="py-2.5 px-3 text-center">Idadi</th>
+                  <th className="py-2.5 px-3">Mteja</th>
+                  <th className="py-2.5 px-3">Aliyeuza</th>
+                  <th className="py-2.5 px-3">Malipo</th>
+                  <th className="py-2.5 px-3 text-right">Jumla (TZS)</th>
+                  <th className="py-2.5 px-3 text-right">Hatua</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-[#F1F6EB] text-[#1A2E0A]">
+                {filteredSales.length === 0 ? (
+                  <tr>
+                    <td colSpan={7} className="py-8 text-center text-gray-400">
+                      Hakuna mauzo yaliyoandikwa bado. Tumia fomu ya kushoto kuandika mauzo ya leo.
+                    </td>
+                  </tr>
+                ) : (
+                  filteredSales.map((s) => {
+                    const totalQty = s.items.reduce((sum, i) => sum + i.quantity, 0);
+                    return (
+                      <tr key={s.id} className="hover:bg-[#F9FBF6] transition">
+                        <td className="py-3 px-3 font-extrabold text-[#162709]">
+                          {s.items.map((i) => `${i.productName} (×${i.quantity})`).join(", ")}
+                        </td>
+                        <td className="py-3 px-3 text-center">
+                          <span className="px-2 py-0.5 rounded-full bg-[#E1FFAC] text-[#182D09] font-black border border-[#aae056]">
+                            {totalQty} pcs
+                          </span>
+                        </td>
+                        <td className="py-3 px-3 font-semibold">
+                          {s.customerName || "Mteja wa Dukani"}
+                        </td>
+                        <td className="py-3 px-3 text-[#48603C]">{s.cashierName}</td>
+                        <td className="py-3 px-3">
+                          <span
+                            className={`px-2 py-0.5 rounded-md font-bold text-[10px] ${
+                              s.paymentMethod === "CREDIT"
+                                ? "bg-amber-100 text-amber-900"
+                                : "bg-[#EDF3E6] text-[#20360B]"
+                            }`}
+                          >
+                            {s.paymentMethod === "CREDIT" ? "MKOPO (DENI)" : s.paymentMethod}
+                          </span>
+                        </td>
+                        <td className="py-3 px-3 text-right font-black text-emerald-800">
+                          TZS {s.total.toLocaleString()}
+                        </td>
+                        <td className="py-3 px-3 text-right">
+                          <button
+                            onClick={() => refundSale(s.id)}
+                            className="p-1.5 rounded-lg text-rose-700 hover:bg-rose-50 transition cursor-pointer"
+                            title="Futa / Rudisha Mauzo"
+                          >
+                            <RotateCcw className="w-3.5 h-3.5" />
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
-      )}
+      </div>
     </div>
   );
 };

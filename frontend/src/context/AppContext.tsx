@@ -68,7 +68,11 @@ interface AppContextType {
   refundSale: (saleId: string) => void;
   recordStockMovement: (movement: Omit<StockMovement, "id" | "tenantId" | "createdAt">) => void;
   addExpense: (expense: Omit<Expense, "id" | "tenantId">) => void;
-  addCustomer: (customer: Omit<Customer, "id" | "tenantId" | "totalSpent" | "debtBalance" | "loyaltyPoints">) => void;
+  addCustomer: (
+    customer: Omit<Customer, "id" | "tenantId" | "totalSpent" | "debtBalance" | "loyaltyPoints"> & {
+      initialDebt?: number;
+    }
+  ) => void;
   payCustomerDebt: (customerId: string, amount: number, method?: string) => void;
   addCustomerDebt: (customerId: string, amount: number) => void;
   addSupplier: (supplier: Omit<Supplier, "id" | "tenantId" | "totalPurchased" | "amountOwed">) => void;
@@ -1329,14 +1333,31 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const addCustomer = (custData: Omit<Customer, "id" | "tenantId" | "totalSpent" | "debtBalance" | "loyaltyPoints">) => {
+  const addCustomer = (
+    custData: Omit<Customer, "id" | "tenantId" | "totalSpent" | "debtBalance" | "loyaltyPoints"> & {
+      initialDebt?: number;
+    }
+  ) => {
     if (!business) return;
+    const debt = custData.initialDebt || 0;
+    const existing = customers.find(
+      (c) => c.name.trim().toLowerCase() === custData.name.trim().toLowerCase()
+    );
+    if (existing) {
+      if (debt > 0) {
+        addCustomerDebt(existing.id, debt);
+      }
+      return;
+    }
     const newCust: Customer = {
-      ...custData,
+      name: custData.name,
+      phone: custData.phone,
+      email: custData.email,
+      address: custData.address,
       id: "cust-" + Date.now(),
       tenantId: business.id,
-      totalSpent: 0,
-      debtBalance: 0,
+      totalSpent: debt,
+      debtBalance: debt,
       loyaltyPoints: 10,
       lastPurchaseDate: new Date().toISOString().split("T")[0],
     };

@@ -13,7 +13,8 @@ import {
   Boxes,
   TrendingDown,
   TrendingUp,
-  X
+  X,
+  CheckCircle2
 } from "lucide-react";
 
 export const InventoryModule: React.FC = () => {
@@ -21,7 +22,7 @@ export const InventoryModule: React.FC = () => {
     user,
     currentBranch,
     products,
-     sales,
+    sales,
     addProduct,
     deleteProduct,
     stockMovements,
@@ -34,24 +35,32 @@ export const InventoryModule: React.FC = () => {
   const [isMovementModalOpen, setIsMovementModalOpen] = useState(false);
   const [movementType, setMovementType] = useState<"IN" | "OUT">("IN");
 
+  // Custom bundle sizes per product name (default: 1 Bando = 10 Pcs, just like the user's shoe/bundle example!)
+  const [bundleSizes, setBundleSizes] = useState<{ [prodName: string]: number }>({
+    "Nivea Nourishing Body Milk 400ml": 10,
+    "Maybelline Matte Lip Gloss Velvet": 10,
+    "CeraVe Hydrating Facial Cleanser 236ml": 10,
+    "Garnier Micellar Cleansing Water 400ml": 10,
+  });
+
   // Unified Stock IN / Stock OUT Modal Form State (User types product name directly)
   const [movProductName, setMovProductName] = useState("");
   const [movQuantity, setMovQuantity] = useState("");
+  const [movInputMode, setMovInputMode] = useState<"PCS" | "BUNDLE">("PCS");
+  const [movUnitsPerBundle, setMovUnitsPerBundle] = useState("10");
   const [movCategory, setMovCategory] = useState("Bidhaa za Dukani");
   const [movUnit, setMovUnit] = useState("Pcs");
-  const [movReason, setMovReason] = useState("Mzigo Mpya (Ununuzi)");
+  const [movReason, setMovReason] = useState("Mzigo Mpya Ulioingia Stoo");
   const [movBuyingPrice, setMovBuyingPrice] = useState("");
   const [movSellingPrice, setMovSellingPrice] = useState("");
   const [movNotes, setMovNotes] = useState("");
 
-  // Per-product calculation of:
-  // 1. Stock Iliyotoka kutokana na Mauzo (Sales)
-  // 2. Stock Iliyotoka kwa kutolewa mwenyewe (Manual Stock OUT)
-  // 3. Stock Iliyoingizwa (Total Stock IN = Remaining + Total OUT)
-  // 4. Stock Iliyopo Sasa (Remaining Stock = p.stockQuantity)
   const validSales = (sales || []).filter((s) => s.status !== "REFUNDED");
 
+  // Per-product calculation including Smart Bundle/Carton Auto-Reconciliation
   const getProductStockBreakdown = (p: typeof products[0]) => {
+    const unitsPerBundle = bundleSizes[p.name] || 10;
+
     // 1. Units sold via Sales records
     let soldFromSales = 0;
     validSales.forEach((s) => {
@@ -87,7 +96,6 @@ export const InventoryModule: React.FC = () => {
       )
       .reduce((acc, m) => acc + m.quantity, 0);
 
-    // System automatically takes the larger of sales ledger vs sale movements so initial demo data & new sales never double-count
     const totalSoldOut = Math.max(soldFromSales, movSaleOut);
     const totalOut = totalSoldOut + manualOut;
 
@@ -100,19 +108,42 @@ export const InventoryModule: React.FC = () => {
       )
       .reduce((acc, m) => acc + m.quantity, 0);
 
-    // Total Stock IN that entered store (ensuring In - Out = Current Stock Iliyopo)
     const totalEnteredIn = Math.max(recordedIn, p.stockQuantity + totalOut);
 
+    // SMART BUNDLE / CARTON RECONCILIATION (Stoo vs Dukani):
+    // How many bundles had to be opened from Store to satisfy totalSoldOut?
+    const bundlesOpenedBySales =
+      totalSoldOut > 0 ? Math.ceil(totalSoldOut / unitsPerBundle) : 0;
+
+    // How many bundles were manually recorded as taken out from Store?
+    const manuallyRecordedBundlesOut = Math.floor(manualOut / unitsPerBundle);
+
+    // If sales crossed into a new bundle (e.g. 10 pcs per bundle, 11 sold -> 2nd bundle opened without manual record)
+    const unrecordedBundlesFromStore = Math.max(
+      0,
+      bundlesOpenedBySales - manuallyRecordedBundlesOut
+    );
+
+    // Full unopened bundles remaining in Back Store vs loose pieces in opened bundle at Shop Counter
+    const fullBundlesRemainingInStore = Math.floor(p.stockQuantity / unitsPerBundle);
+    const loosePiecesInOpenedBundle = p.stockQuantity % unitsPerBundle;
+    const totalBundlesEntered = (totalEnteredIn / unitsPerBundle).toFixed(1).replace(/\.0$/, "");
+
     return {
+      unitsPerBundle,
       totalEnteredIn,
+      totalBundlesEntered,
       totalSoldOut,
       manualOut,
       totalOut,
       currentStock: p.stockQuantity,
+      bundlesOpenedBySales,
+      unrecordedBundlesFromStore,
+      fullBundlesRemainingInStore,
+      loosePiecesInOpenedBundle,
     };
   };
 
-  // Global Totals across all products for Top Summary Cards
   const allBreakdowns = products.map((p) => ({
     product: p,
     ...getProductStockBreakdown(p),
@@ -138,6 +169,10 @@ export const InventoryModule: React.FC = () => {
     0
   );
 
+  const totalUnrecordedBundlesAlert = allBreakdowns.filter(
+    (b) => b.unrecordedBundlesFromStore > 0 && b.totalSoldOut > 0
+  );
+
   const filteredBreakdowns = allBreakdowns.filter(
     ({ product }) =>
       product.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -152,13 +187,16 @@ export const InventoryModule: React.FC = () => {
       setMovUnit(prefillProduct.unit);
       setMovBuyingPrice(String(prefillProduct.buyingPrice));
       setMovSellingPrice(String(prefillProduct.sellingPrice));
+      setMovUnitsPerBundle(String(bundleSizes[prefillProduct.name] || 10));
     } else {
       setMovProductName("");
       setMovCategory("Bidhaa za Dukani");
       setMovUnit("Pcs");
       setMovBuyingPrice("");
       setMovSellingPrice("");
+      setMovUnitsPerBundle("10");
     }
+    setMovInputMode("PCS");
     setMovQuantity("");
     setMovReason(
       type === "IN" ? "Mzigo Mpya Ulioingia Stoo" : "Imetolewa Stoo Mwenyewe (Manual)"
@@ -170,8 +208,18 @@ export const InventoryModule: React.FC = () => {
   const handleSaveMovement = (e: React.FormEvent) => {
     e.preventDefault();
     const cleanName = movProductName.trim();
-    const qty = parseInt(movQuantity);
-    if (!cleanName || !qty || qty <= 0) return;
+    const rawQty = parseInt(movQuantity);
+    const uPerBundle = Math.max(1, parseInt(movUnitsPerBundle) || 10);
+    if (!cleanName || !rawQty || rawQty <= 0) return;
+
+    // Save bundle size for this product
+    setBundleSizes((prev) => ({
+      ...prev,
+      [cleanName]: uPerBundle,
+    }));
+
+    // If user entered in BANDO mode, convert Bando -> Pcs automatically
+    const finalQtyInPcs = movInputMode === "BUNDLE" ? rawQty * uPerBundle : rawQty;
 
     const existingProd = products.find((p) => p.name.toLowerCase() === cleanName.toLowerCase());
     const enteredCost = parseFloat(movBuyingPrice) || (existingProd ? existingProd.buyingPrice : 0);
@@ -180,7 +228,6 @@ export const InventoryModule: React.FC = () => {
       (existingProd ? existingProd.sellingPrice : Math.round(enteredCost * 1.3));
 
     if (existingProd) {
-      // If Stock OUT is marked as a sale, record it via processSale so sales & stock both update
       if (movementType === "OUT" && movReason === "Mauzo ya Siku (Imeuzwa)") {
         const salePrice = enteredSell > 0 ? enteredSell : existingProd.sellingPrice;
         processSale({
@@ -189,16 +236,16 @@ export const InventoryModule: React.FC = () => {
             {
               productId: existingProd.id,
               productName: existingProd.name,
-              quantity: qty,
+              quantity: finalQtyInPcs,
               price: salePrice,
-              total: qty * salePrice,
+              total: finalQtyInPcs * salePrice,
             },
           ],
-          subtotal: qty * salePrice,
+          subtotal: finalQtyInPcs * salePrice,
           tax: 0,
           discount: 0,
-          total: qty * salePrice,
-          paidAmount: qty * salePrice,
+          total: finalQtyInPcs * salePrice,
+          paidAmount: finalQtyInPcs * salePrice,
           balance: 0,
           paymentMethod: "CASH",
           customerName: "Mteja wa Dukani",
@@ -212,16 +259,19 @@ export const InventoryModule: React.FC = () => {
           productId: existingProd.id,
           productName: existingProd.name,
           type: movementType,
-          quantity: qty,
+          quantity: finalQtyInPcs,
           reason: movReason,
           unitCost: cost,
-          totalValue: qty * cost,
+          totalValue: finalQtyInPcs * cost,
           recordedBy: user?.name || "Baraka Mushi",
-          notes: movNotes || undefined,
+          notes:
+            movNotes ||
+            (movInputMode === "BUNDLE"
+              ? `Bando ${rawQty} (×${uPerBundle} pcs = ${finalQtyInPcs} pcs)`
+              : undefined),
         });
       }
     } else {
-      // Product typed by user doesn't exist yet -> create it automatically and log movement!
       const newProd = addProduct({
         branchId: currentBranch?.id || "br-01",
         name: cleanName,
@@ -233,7 +283,7 @@ export const InventoryModule: React.FC = () => {
         sellingPrice: enteredSell > 0 ? enteredSell : enteredCost,
         wholesalePrice: enteredSell > 0 ? enteredSell : enteredCost,
         stockQuantity: 0,
-        minStock: 5,
+        minStock: uPerBundle,
         maxStock: 500,
         unit: movUnit.trim() || "Pcs",
       });
@@ -244,12 +294,14 @@ export const InventoryModule: React.FC = () => {
           productId: newProd.id,
           productName: newProd.name,
           type: movementType,
-          quantity: qty,
+          quantity: finalQtyInPcs,
           reason: movReason,
           unitCost: enteredCost,
-          totalValue: qty * enteredCost,
+          totalValue: finalQtyInPcs * enteredCost,
           recordedBy: user?.name || "Baraka Mushi",
-          notes: movNotes || "Bidhaa mpya imeingizwa kwenye stoo",
+          notes:
+            movNotes ||
+            `Bidhaa mpya (${movInputMode === "BUNDLE" ? `Bando ${rawQty}` : `${finalQtyInPcs} pcs`})`,
         });
       }
     }
@@ -263,7 +315,7 @@ export const InventoryModule: React.FC = () => {
   };
 
   return (
-    <div className="flex-1 flex flex-col h-full p-4 lg:p-6 overflow-hidden gap-4">
+    <div className="flex-1 flex flex-col h-full p-4 lg:p-6 overflow-y-auto gap-4">
       {/* Datalist for optional autocomplete when typing product name */}
       <datalist id="inventory-products-datalist">
         {products.map((p) => (
@@ -273,18 +325,18 @@ export const InventoryModule: React.FC = () => {
         ))}
       </datalist>
 
-      {/* Top Header (Single Unified View — No Split Tabs) */}
+      {/* Top Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <h2 className="text-xl font-black text-[#172709] tracking-tight">
             {language === "sw"
-              ? "Stoo Kuu: Stock Iliyoingizwa, Iliyotoka (Mauzo/Manual) & Iliyobaki"
-              : "Unified Store Inventory: Stock In, Stock Out (Sales/Manual) & Remaining"}
+              ? "4. Stoo & Bidhaa: Kuweka/Kutoa Stock & Hesabu ya Bando za Stoo"
+              : "4. Store Stock: In/Out & Automatic Bundle Reconciliation"}
           </h2>
           <p className="text-xs text-[#52654c]">
             {language === "sw"
-              ? "Sehemu moja inayoonyesha stock iliyopo, iliyoingizwa, na iliyotoka moja kwa moja kulingana na mauzo au ukitoa mwenyewe."
-              : "Single unified table showing incoming stock, automatic deductions from sales or manual removal, and current remaining stock."}
+              ? "Mfumo unahesabu stock kwa Vipande na kwa Bando/Katoni. Kama bando imefunguliwa stoo bila kuandikwa, mfumo unagundua moja kwa moja kupitia mauzo!"
+              : "Tracks both units and bundles. Automatically detects when a store bundle is opened via sales even if not manually recorded."}
           </p>
         </div>
 
@@ -294,7 +346,7 @@ export const InventoryModule: React.FC = () => {
             className="px-4 py-2.5 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-black flex items-center gap-1.5 shadow-xs transition cursor-pointer"
           >
             <Plus className="w-4 h-4" />
-            <span>+ Ingiza Stock / Bidhaa</span>
+            <span>+ Weka Stock Stoo (Bando / Pcs)</span>
           </button>
 
           <button
@@ -302,18 +354,36 @@ export const InventoryModule: React.FC = () => {
             className="px-4 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-black flex items-center gap-1.5 shadow-xs transition cursor-pointer"
           >
             <ArrowUpRight className="w-4 h-4" />
-            <span>- Toa Stock Mwenyewe</span>
+            <span>- Toa Stock Stoo Mwenyewe</span>
           </button>
         </div>
       </div>
 
-      {/* 3 UNIFIED SUMMARY CARDS: ILIYOINGIZWA vs ILIYOTOKA (MAUZO + MANUAL) vs ILIYOPO SASA */}
+      {/* SMART BUNDLE / CARTON RECONCILIATION BANNER (Explains & Alerts when Sales Open a Store Bundle Automatically) */}
+      <div className="p-3.5 rounded-2xl bg-[#F6FAF0] border-2 border-[#BFE973] flex flex-col lg:flex-row lg:items-center justify-between gap-3 text-xs">
+        <div className="space-y-1">
+          <span className="font-black text-[#162709] uppercase flex items-center gap-1.5">
+            <Boxes className="w-4 h-4 text-[#3A6112]" />
+            <span>Ukaguzi wa Bando za Stoo vs Mauzo ya Dukani (Auto-Detection):</span>
+          </span>
+          <p className="text-[#4B613F]">
+            Mfano Bando 1 ina vipande/viatu <strong>10</strong>. Kama dukani kulikuwa na bando zikaisha na mfanyakazi akafungua bando nyingine kutoka stoo bila kuandika (mfano akauza kipande cha <strong>11</strong>), mfumo unapiga hesabu moja kwa moja na kuonyesha kuwa <strong>Bando imetoka Stoo</strong> na kupunguza stoo!
+          </p>
+        </div>
+
+        {totalUnrecordedBundlesAlert.length > 0 && (
+          <div className="px-3 py-2 rounded-xl bg-amber-50 border border-amber-300 text-amber-950 shrink-0 font-bold">
+            ! Bidhaa {totalUnrecordedBundlesAlert.length} zimefunguliwa Bando kutoka Stoo kupitia Mauzo (imekaguliwa auto)
+          </div>
+        )}
+      </div>
+
+      {/* 3 UNIFIED SUMMARY CARDS */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5">
-        {/* 1. Stock Iliyoingizwa */}
         <div className="neu-card-flat p-3.5 rounded-2xl border border-emerald-200 bg-emerald-50/40">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-black text-emerald-900 uppercase">
-              1. Jumla ya Stock Iliyoingizwa (+ IN)
+              1. Stock Iliyoingizwa Stoo (+ IN)
             </span>
             <TrendingUp className="w-4 h-4 text-emerald-700" />
           </div>
@@ -325,7 +395,6 @@ export const InventoryModule: React.FC = () => {
           </span>
         </div>
 
-        {/* 2. Stock Iliyotoka (Mauzo + Kutolewa Mwenyewe) */}
         <div className="neu-card-flat p-3.5 rounded-2xl border border-rose-200 bg-rose-50/40">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-black text-rose-900 uppercase">
@@ -337,16 +406,14 @@ export const InventoryModule: React.FC = () => {
             -{totalStockOutQty} <span className="text-xs font-bold">Vipande</span>
           </p>
           <span className="text-[11px] font-bold text-rose-800">
-            Mauzo: {totalSoldOutQty} pcs | Imetolewa Mkononi: {totalManualOutQty} pcs (TZS{" "}
-            {totalStockOutValue.toLocaleString()})
+            Mauzo: {totalSoldOutQty} pcs | Iliyotolewa Mkononi: {totalManualOutQty} pcs
           </span>
         </div>
 
-        {/* 3. Stock Iliyopo Sasa (Iliyobaki Stoo) */}
         <div className="neu-card-flat p-3.5 rounded-2xl border-2 border-[#b2e269] bg-white">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-black text-[#172709] uppercase">
-              3. Stock Iliyopo Sasa (Iliyobaki Stoo)
+              3. Stock Iliyobaki Sasa (Bando & Pcs)
             </span>
             <Boxes className="w-4 h-4 text-[#253f0e]" />
           </div>
@@ -354,8 +421,8 @@ export const InventoryModule: React.FC = () => {
             {totalCurrentStockUnits} <span className="text-xs font-bold text-[#52654c]">Vipande</span>
           </p>
           <span className="text-[11px] font-semibold text-[#42553a]">
-            Hesabu: Iliyoingizwa ({totalStockInQty}) - Iliyotoka ({totalStockOutQty}) ={" "}
-            <strong>{totalCurrentStockUnits} pcs</strong> (TZS {totalCurrentStockValue.toLocaleString()})
+            Iliyoingizwa ({totalStockInQty}) - Iliyotoka ({totalStockOutQty}) ={" "}
+            <strong>{totalCurrentStockUnits} pcs</strong>
           </span>
         </div>
       </div>
@@ -374,127 +441,154 @@ export const InventoryModule: React.FC = () => {
         </div>
       </div>
 
-      {/* ONE UNIFIED TABLE SHOWING: BIDHAA, BEI, STOCK ILIYOINGIZWA, STOCK ILIYOTOKA (MAUZO/MANUAL), & STOCK ILIYOPO SASA */}
-      <div className="flex-1 overflow-y-auto bg-white rounded-2xl border border-[#dce8cd] shadow-neu-card">
+      {/* UNIFIED STORE TABLE WITH SMART BUNDLE / CARTON RECONCILIATION */}
+      <div className="flex-1 overflow-x-auto bg-white rounded-2xl border border-[#dce8cd] shadow-neu-card">
         <table className="w-full text-left text-xs divide-y divide-[#e8f0df]">
-          <thead className="bg-[#F8FAF4] font-bold text-[#44573d] sticky top-0 z-10">
+          <thead className="bg-[#F8FAF4] font-bold text-[#44573d]">
             <tr>
-              <th className="py-3 px-4">Jina la Bidhaa & Kundi</th>
+              <th className="py-3 px-4">Bidhaa & Kipimo cha Bando</th>
               <th className="py-3 px-4">Bei (Kununua / Kuuza)</th>
-              <th className="py-3 px-4 text-center">Iliyoingizwa (+ Stock IN)</th>
+              <th className="py-3 px-4 text-center">Iliyoingizwa (+ IN)</th>
               <th className="py-3 px-4 text-center">Iliyotoka (Mauzo & Manual)</th>
-              <th className="py-3 px-4 text-center">Stock Iliyopo Sasa (Iliyobaki)</th>
-              <th className="py-3 px-4 text-right">Ingiza / Toa</th>
+              <th className="py-3 px-4">Ukaguzi wa Bando (Stoo vs Mauzo)</th>
+              <th className="py-3 px-4 text-center">Stock Iliyobaki Sasa</th>
+              <th className="py-3 px-4 text-right">Weka / Toa</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-[#eff5e9] text-[#1c2c0e]">
-            {filteredBreakdowns.length === 0 ? (
-              <tr>
-                <td colSpan={6} className="py-8 text-center text-gray-400">
-                  Hakuna bidhaa iliyopatikana. Bonyeza &ldquo;+ Ingiza Stock / Bidhaa&rdquo; kuingiza bidhaa.
-                </td>
-              </tr>
-            ) : (
-              filteredBreakdowns.map(
-                ({ product: p, totalEnteredIn, totalSoldOut, manualOut, totalOut, currentStock }) => {
-                  const isLow = currentStock <= p.minStock;
-                  const margin =
-                    p.sellingPrice > 0
-                      ? Math.round(((p.sellingPrice - p.buyingPrice) / p.sellingPrice) * 100)
-                      : 0;
-                  return (
-                    <tr key={p.id} className="hover:bg-[#FAFCF7] transition">
-                      {/* 1. Product Name & Category */}
-                      <td className="py-3 px-4">
-                        <span className="font-extrabold text-[#162709] block">{p.name}</span>
-                        <span className="text-[11px] text-[#5B714F]">{p.category}</span>
-                      </td>
+            {filteredBreakdowns.map(
+              ({
+                product: p,
+                unitsPerBundle,
+                totalEnteredIn,
+                totalBundlesEntered,
+                totalSoldOut,
+                manualOut,
+                totalOut,
+                currentStock,
+                bundlesOpenedBySales,
+                unrecordedBundlesFromStore,
+                fullBundlesRemainingInStore,
+                loosePiecesInOpenedBundle,
+              }) => {
+                const isLow = currentStock <= p.minStock;
+                return (
+                  <tr key={p.id} className="hover:bg-[#FAFCF7] transition">
+                    {/* 1. Product Name & Bundle Size */}
+                    <td className="py-3 px-4">
+                      <span className="font-extrabold text-[#162709] block">{p.name}</span>
+                      <span className="inline-block mt-0.5 px-2 py-0.5 rounded-md bg-[#EDF3E6] text-[#263E12] font-bold text-[10px]">
+                        Bando 1 = {unitsPerBundle} {p.unit}
+                      </span>
+                    </td>
 
-                      {/* 2. Buying & Selling Price */}
-                      <td className="py-3 px-4">
-                        <div className="font-bold text-[#162709]">
-                          Kuuza: TZS {p.sellingPrice.toLocaleString()}
+                    {/* 2. Prices */}
+                    <td className="py-3 px-4">
+                      <div className="font-bold text-[#162709]">
+                        Kuuza: TZS {p.sellingPrice.toLocaleString()}
+                      </div>
+                      <div className="text-[11px] text-[#5B714F]">
+                        Kununua: TZS {p.buyingPrice.toLocaleString()}
+                      </div>
+                    </td>
+
+                    {/* 3. Stock IN (Pcs & Bundles) */}
+                    <td className="py-3 px-4 text-center">
+                      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-900 border border-emerald-200 font-black">
+                        +{totalEnteredIn} {p.unit}
+                      </span>
+                      <span className="block text-[10px] text-emerald-800 font-bold mt-0.5">
+                        (Bando {totalBundlesEntered})
+                      </span>
+                    </td>
+
+                    {/* 4. Stock OUT (Sales + Manual) */}
+                    <td className="py-3 px-4 text-center">
+                      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-rose-50 text-rose-900 border border-rose-200 font-black">
+                        -{totalOut} {p.unit}
+                      </span>
+                      <span className="block text-[10px] text-[#5C7250] font-semibold mt-0.5">
+                        Mauzo: {totalSoldOut} | Manual: {manualOut}
+                      </span>
+                    </td>
+
+                    {/* 5. Smart Bundle Auto-Reconciliation */}
+                    <td className="py-3 px-4 max-w-[250px]">
+                      {unrecordedBundlesFromStore > 0 && totalSoldOut > 0 ? (
+                        <div className="p-2 rounded-xl bg-amber-50 border border-amber-300 text-[11px] text-amber-950">
+                          <span className="font-black block">
+                            ! Bando {unrecordedBundlesFromStore} imefunguliwa Stoo (Auto)
+                          </span>
+                          <span className="text-[10px] block text-amber-900">
+                            Mauzo ({totalSoldOut} {p.unit}) yamefungua Bando {bundlesOpenedBySales} bila kuandikwa manual. Stoo imepunguzwa auto!
+                          </span>
                         </div>
-                        <div className="text-[11px] text-[#5B714F]">
-                          Kununua: TZS {p.buyingPrice.toLocaleString()}{" "}
-                          <span className="text-emerald-800 font-bold">({margin}% faida)</span>
+                      ) : (
+                        <div className="text-[11px] text-[#4A613E] font-semibold">
+                          <span className="text-emerald-800 font-bold flex items-center gap-1">
+                            <CheckCircle2 className="w-3.5 h-3.5" /> Hesabu ya Bando iko sawa
+                          </span>
+                          <span className="text-[10px] text-[#637B56] block">
+                            Bando zilizofunguliwa kwa mauzo: {bundlesOpenedBySales}
+                          </span>
                         </div>
-                      </td>
+                      )}
+                    </td>
 
-                      {/* 3. Stock Iliyoingizwa (+ IN) */}
-                      <td className="py-3 px-4 text-center">
-                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-900 border border-emerald-200 font-black">
-                          +{totalEnteredIn} {p.unit}
+                    {/* 6. Remaining Stock (Full Bundles in Store + Loose in Shop) */}
+                    <td className="py-3 px-4 text-center">
+                      <span
+                        className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-black ${
+                          isLow
+                            ? "bg-amber-100 text-amber-900 border border-amber-300"
+                            : "bg-[#E1FFAC] text-[#172B08] border border-[#9CE034]"
+                        }`}
+                      >
+                        {isLow && <AlertTriangle className="w-3 h-3 text-amber-700" />}
+                        <span>
+                          {currentStock} {p.unit}
                         </span>
-                      </td>
+                      </span>
+                      <span className="block text-[10px] font-bold text-[#3D542E] mt-1">
+                        Stoo: <strong>Bando {fullBundlesRemainingInStore}</strong>
+                        {loosePiecesInOpenedBundle > 0
+                          ? ` + Dukani: ${loosePiecesInOpenedBundle} ${p.unit}`
+                          : ""}
+                      </span>
+                    </td>
 
-                      {/* 4. Stock Iliyotoka (Calculated from Sales + Manual) */}
-                      <td className="py-3 px-4 text-center">
-                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-rose-50 text-rose-900 border border-rose-200 font-black">
-                          -{totalOut} {p.unit}
-                        </span>
-                        <span className="block text-[10px] text-[#5C7250] font-semibold mt-0.5">
-                          Mauzo: {totalSoldOut} | Manual: {manualOut}
-                        </span>
-                      </td>
-
-                      {/* 5. Stock Iliyopo Sasa (Remaining in Store) */}
-                      <td className="py-3 px-4 text-center">
-                        <span
-                          className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-black ${
-                            isLow
-                              ? "bg-amber-100 text-amber-900 border border-amber-300"
-                              : "bg-[#E1FFAC] text-[#172B08] border border-[#9CE034]"
-                          }`}
+                    {/* 7. Quick Actions */}
+                    <td className="py-3 px-4 text-right whitespace-nowrap">
+                      <div className="inline-flex items-center gap-1.5">
+                        <button
+                          onClick={() => openQuickModal("IN", p)}
+                          className="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-black text-[11px] transition cursor-pointer"
                         >
-                          {isLow && <AlertTriangle className="w-3 h-3 text-amber-700" />}
-                          <span>
-                            {currentStock} {p.unit}
-                          </span>
-                        </span>
-                        {isLow && (
-                          <span className="block text-[10px] font-bold text-amber-800 mt-0.5">
-                            Inakaribia kuisha
-                          </span>
-                        )}
-                      </td>
-
-                      {/* 6. Direct Row Actions: + Ingiza / - Toa / Delete */}
-                      <td className="py-3 px-4 text-right">
-                        <div className="inline-flex items-center gap-1.5">
-                          <button
-                            onClick={() => openQuickModal("IN", p)}
-                            className="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-black text-[11px] transition cursor-pointer"
-                            title="Ongeza Stock ya bidhaa hii"
-                          >
-                            + Ingiza
-                          </button>
-                          <button
-                            onClick={() => openQuickModal("OUT", p)}
-                            className="px-2.5 py-1 rounded-lg bg-rose-600 hover:bg-rose-700 text-white font-black text-[11px] transition cursor-pointer"
-                            title="Toa Stock ya bidhaa hii mwenyewe"
-                          >
-                            - Toa
-                          </button>
-                          <button
-                            onClick={() => deleteProduct(p.id)}
-                            className="p-1.5 rounded-lg text-red-600 hover:bg-red-50 transition cursor-pointer"
-                            title="Futa bidhaa"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                }
-              )
+                          + Weka
+                        </button>
+                        <button
+                          onClick={() => openQuickModal("OUT", p)}
+                          className="px-2.5 py-1 rounded-lg bg-rose-600 hover:bg-rose-700 text-white font-black text-[11px] transition cursor-pointer"
+                        >
+                          - Toa
+                        </button>
+                        <button
+                          onClick={() => deleteProduct(p.id)}
+                          className="p-1.5 rounded-lg text-red-600 hover:bg-red-50 transition cursor-pointer"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              }
             )}
           </tbody>
         </table>
       </div>
 
-      {/* UNIFIED MODAL FOR STOCK IN (INGIZA STOCK / BIDHAA MPYA) OR STOCK OUT (TOA STOCK MWENYEWE) */}
+      {/* MODAL FOR STOCK IN / STOCK OUT (SUPPORTS BOTH BANDO & PCS) */}
       {isMovementModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs p-4">
           <div className="w-full max-w-md bg-white rounded-3xl p-6 shadow-2xl border-2 border-[#b8ea66] animate-slide-up max-h-[90vh] overflow-y-auto">
@@ -513,8 +607,8 @@ export const InventoryModule: React.FC = () => {
                 </div>
                 <h3 className="text-base font-black text-[#17270a]">
                   {movementType === "IN"
-                    ? "Ingiza Stock Stoo (Stock IN)"
-                    : "Toa Stock Stoo Mwenyewe (Stock OUT)"}
+                    ? "Weka Stock Stoo (Kwa Bando au Vipande)"
+                    : "Toa Stock Stoo Mwenyewe (Bando au Vipande)"}
                 </h3>
               </div>
               <button
@@ -525,13 +619,7 @@ export const InventoryModule: React.FC = () => {
               </button>
             </div>
 
-            <p className="text-xs text-[#54684b] mb-4">
-              {movementType === "IN"
-                ? "Andika jina la bidhaa na idadi inayoingia stoo. Kama bidhaa ni mpya itasajiliwa moja kwa moja."
-                : "Andika jina la bidhaa na idadi unayotoa stoo. Mfumo utapunguza stock iliyopo papo hapo."}
-            </p>
-
-            <form onSubmit={handleSaveMovement} className="space-y-3 text-xs">
+            <form onSubmit={handleSaveMovement} className="space-y-3 text-xs mt-3">
               <div>
                 <label className="block font-bold text-[#35482c] mb-1">
                   Andika Jina la Bidhaa:
@@ -552,62 +640,95 @@ export const InventoryModule: React.FC = () => {
                       setMovUnit(matched.unit);
                       setMovBuyingPrice(String(matched.buyingPrice));
                       setMovSellingPrice(String(matched.sellingPrice));
+                      setMovUnitsPerBundle(String(bundleSizes[matched.name] || 10));
                     }
                   }}
-                  placeholder="Andika jina la bidhaa hapa..."
+                  placeholder="Mfano: Viatu vya Ngozi au Nivea..."
                   className="w-full py-2.5 px-3 rounded-xl neu-input font-bold"
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block font-bold text-[#35482c] mb-1">
-                    {movementType === "IN" ? "Idadi Inayoingia" : "Idadi Inayotoka"}
-                  </label>
-                  <input
-                    type="number"
-                    min="1"
-                    required
-                    value={movQuantity}
-                    onChange={(e) => setMovQuantity(e.target.value)}
-                    placeholder="Mfano: 20"
-                    className="w-full py-2 px-3 rounded-xl neu-input font-black"
-                  />
+              {/* Choose whether entering by Bando/Carton or Individual Pieces */}
+              <div className="p-2.5 rounded-xl bg-[#F4F8EC] border border-[#C6DDA8] space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="font-bold text-[#253C12]">Unaingiza/Kutoa kwa:</span>
+                  <div className="flex gap-1">
+                    <button
+                      type="button"
+                      onClick={() => setMovInputMode("BUNDLE")}
+                      className={`px-2.5 py-1 rounded-lg font-black text-[11px] cursor-pointer ${
+                        movInputMode === "BUNDLE"
+                          ? "bg-[#1C320A] text-[#E1FFAC]"
+                          : "bg-white text-[#35482c] border border-[#C6DDA8]"
+                      }`}
+                    >
+                      Kwa Bando / Katoni
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setMovInputMode("PCS")}
+                      className={`px-2.5 py-1 rounded-lg font-black text-[11px] cursor-pointer ${
+                        movInputMode === "PCS"
+                          ? "bg-[#1C320A] text-[#E1FFAC]"
+                          : "bg-white text-[#35482c] border border-[#C6DDA8]"
+                      }`}
+                    >
+                      Kwa Vipande (Pcs)
+                    </button>
+                  </div>
                 </div>
 
-                <div>
-                  <label className="block font-bold text-[#35482c] mb-1">Sababu</label>
-                  <select
-                    value={movReason}
-                    onChange={(e) => setMovReason(e.target.value)}
-                    className="w-full py-2 px-3 rounded-xl neu-input font-semibold"
-                  >
-                    {movementType === "IN" ? (
-                      <>
-                        <option value="Mzigo Mpya Ulioingia Stoo">Mzigo Mpya Ulioingia Stoo</option>
-                        <option value="Kurudishwa Stoo (Return)">Kurudishwa Stoo (Return)</option>
-                        <option value="Marekebisho ya Hesabu">Marekebisho ya Hesabu</option>
-                      </>
-                    ) : (
-                      <>
-                        <option value="Imetolewa Stoo Mwenyewe (Manual)">
-                          Imetolewa Stoo Mwenyewe (Manual)
-                        </option>
-                        <option value="Mauzo ya Siku (Imeuzwa)">Mauzo ya Siku (Imeuzwa)</option>
-                        <option value="Imeharibika / Imemwagika (Damage)">
-                          Imeharibika / Imemwagika (Damage)
-                        </option>
-                        <option value="Imehamishwa Tawi Jingine">Imehamishwa Tawi Jingine</option>
-                      </>
-                    )}
-                  </select>
+                <div className="grid grid-cols-2 gap-2.5">
+                  <div>
+                    <label className="block font-bold text-[#35482c] mb-1">
+                      {movInputMode === "BUNDLE" ? "Idadi ya Bando" : "Idadi ya Vipande (Pcs)"}
+                    </label>
+                    <input
+                      type="number"
+                      min="1"
+                      required
+                      value={movQuantity}
+                      onChange={(e) => setMovQuantity(e.target.value)}
+                      placeholder={movInputMode === "BUNDLE" ? "Mfano: 10 (Bando)" : "Mfano: 20"}
+                      className="w-full py-2 px-3 rounded-xl neu-input font-black"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block font-bold text-[#35482c] mb-1">
+                      Bando 1 Ina Vipande Ngapi?
+                    </label>
+                    <input
+                      type="number"
+                      min="1"
+                      required
+                      value={movUnitsPerBundle}
+                      onChange={(e) => setMovUnitsPerBundle(e.target.value)}
+                      placeholder="10"
+                      className="w-full py-2 px-3 rounded-xl neu-input font-black"
+                    />
+                  </div>
                 </div>
+
+                {movQuantity && (
+                  <span className="block text-[11px] font-bold text-emerald-800">
+                    Hesabu ya Mfumo:{" "}
+                    {movInputMode === "BUNDLE"
+                      ? `Bando ${movQuantity} × ${movUnitsPerBundle || 10} = Vipande ${
+                          (parseInt(movQuantity) || 0) * (parseInt(movUnitsPerBundle) || 10)
+                        } (Pcs)`
+                      : `Vipande ${movQuantity} (Sawa na Bando ${(
+                          (parseInt(movQuantity) || 0) /
+                          Math.max(1, parseInt(movUnitsPerBundle) || 10)
+                        ).toFixed(1)})`}
+                  </span>
+                )}
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block font-bold text-[#35482c] mb-1">
-                    Bei ya Kununua (TZS)
+                    Bei ya Kununua 1 Pc (TZS)
                   </label>
                   <input
                     type="number"
@@ -619,7 +740,7 @@ export const InventoryModule: React.FC = () => {
                 </div>
                 <div>
                   <label className="block font-bold text-[#35482c] mb-1">
-                    Bei ya Kuuza (TZS)
+                    Bei ya Kuuza 1 Pc (TZS)
                   </label>
                   <input
                     type="number"
@@ -632,19 +753,30 @@ export const InventoryModule: React.FC = () => {
               </div>
 
               <div>
-                <label className="block font-bold text-[#35482c] mb-1">
-                  Maelezo ya Ziada (Hiari)
-                </label>
-                <input
-                  type="text"
-                  value={movNotes}
-                  onChange={(e) => setMovNotes(e.target.value)}
-                  placeholder="Mfano: Katoni 2 zimeingia leo..."
-                  className="w-full py-2 px-3 rounded-xl neu-input"
-                />
+                <label className="block font-bold text-[#35482c] mb-1">Sababu</label>
+                <select
+                  value={movReason}
+                  onChange={(e) => setMovReason(e.target.value)}
+                  className="w-full py-2 px-3 rounded-xl neu-input font-semibold"
+                >
+                  {movementType === "IN" ? (
+                    <>
+                      <option value="Mzigo Mpya Ulioingia Stoo">Mzigo Mpya Ulioingia Stoo</option>
+                      <option value="Kurudishwa Stoo (Return)">Kurudishwa Stoo (Return)</option>
+                    </>
+                  ) : (
+                    <>
+                      <option value="Imetolewa Stoo Kwenda Dukani">
+                        Imetolewa Stoo Kwenda Dukani
+                      </option>
+                      <option value="Mauzo ya Siku (Imeuzwa)">Mauzo ya Siku (Imeuzwa)</option>
+                      <option value="Imeharibika (Damage)">Imeharibika (Damage)</option>
+                    </>
+                  )}
+                </select>
               </div>
 
-              <div className="flex gap-2 pt-3">
+              <div className="flex gap-2 pt-2">
                 <button
                   type="button"
                   onClick={() => setIsMovementModalOpen(false)}
@@ -654,7 +786,7 @@ export const InventoryModule: React.FC = () => {
                 </button>
                 <button
                   type="submit"
-                  className={`flex-1 py-2.5 rounded-xl font-black text-white shadow-md ${
+                  className={`flex-1 py-2.5 rounded-xl font-black text-white shadow-md cursor-pointer ${
                     movementType === "IN"
                       ? "bg-emerald-600 hover:bg-emerald-700"
                       : "bg-rose-600 hover:bg-rose-700"

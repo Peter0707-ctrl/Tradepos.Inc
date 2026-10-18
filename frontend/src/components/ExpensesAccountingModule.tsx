@@ -4,325 +4,259 @@ import React, { useState } from "react";
 import { useApp } from "@/context/AppContext";
 import {
   DollarSign,
-  Plus,
-  PieChart,
-  TrendingDown,
-  TrendingUp,
-  FileText,
-  Calendar,
+  PlusCircle,
   Wallet
 } from "lucide-react";
-import { Expense } from "@/types";
 
 export const ExpensesAccountingModule: React.FC = () => {
-  const { expenses, addExpense, sales, products, language, t } = useApp();
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const { user, currentBranch, expenses, addExpense, sales, language } = useApp();
 
+  const [category, setCategory] = useState("Usafiri & Bodaboda");
   const [title, setTitle] = useState("");
-  const [category, setCategory] = useState<Expense["category"]>("Rent");
   const [amount, setAmount] = useState("");
+  const [paymentMethod, setPaymentMethod] = useState<"CASH" | "MPESA">("CASH");
   const [notes, setNotes] = useState("");
 
-  const handleSave = (e: React.FormEvent) => {
+  const handleSaveExpense = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title || !amount) return;
+    const amt = parseFloat(amount) || 0;
+    if (!title.trim() || amt <= 0) return;
 
     addExpense({
-      branchId: "br-01",
-      title,
+      branchId: currentBranch?.id || "br-01",
+      title: title.trim(),
+      description: title.trim(),
       category,
-      amount: parseFloat(amount) || 0,
+      amount: amt,
       date: new Date().toISOString().split("T")[0],
-      recordedBy: "Baraka Mushi",
-      notes,
+      recordedBy: user?.name || "Baraka Mushi",
+      paymentMethod,
+      notes: notes.trim() || undefined,
     });
 
-    setIsModalOpen(false);
     setTitle("");
     setAmount("");
     setNotes("");
   };
 
-  // Financial calculations (excluding refunded sales)
-  const completedSales = sales.filter((s) => s.status !== "REFUNDED");
-  const totalRevenue = completedSales.reduce((a, b) => a + b.total, 0);
-  const totalExpenses = expenses.reduce((a, b) => a + b.amount, 0);
+  const totalExpenses = expenses.reduce((acc, e) => acc + e.amount, 0);
+  const cashExpenses = expenses
+    .filter((e) => !e.paymentMethod || e.paymentMethod === "CASH")
+    .reduce((acc, e) => acc + e.amount, 0);
+  const mobileExpenses = expenses
+    .filter((e) => e.paymentMethod && e.paymentMethod !== "CASH")
+    .reduce((acc, e) => acc + e.amount, 0);
 
-  // Calculate exact COGS using product buyingPrice (fallback 70% for quick-cash items without product catalog entry)
-  const cogs = Math.round(
-    completedSales.reduce((accSale, s) => {
-      const saleCost = s.items.reduce((accItem, it) => {
-        const matchedProd = products.find((p) => p.id === it.productId);
-        if (matchedProd && matchedProd.buyingPrice > 0) {
-          return accItem + matchedProd.buyingPrice * it.quantity;
-        }
-        return accItem + it.total * 0.7;
-      }, 0);
-      return accSale + saleCost;
-    }, 0)
-  );
-  const grossProfit = totalRevenue - cogs;
-  const netProfit = grossProfit - totalExpenses;
+  const totalSalesToday = sales
+    .filter((s) => s.status !== "REFUNDED")
+    .reduce((acc, s) => acc + s.total, 0);
+  const remainingAfterExpenses = totalSalesToday - totalExpenses;
 
   return (
-    <div className="flex-1 flex flex-col h-full p-4 lg:p-6 overflow-hidden">
+    <div className="flex-1 flex flex-col h-full p-4 lg:p-6 overflow-y-auto gap-4">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-5">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <h2 className="text-xl font-black text-[#172709] tracking-tight">
-            {language === "sw" ? "Daftari la Fedha & Matumizi ya Biashara" : "Financial Ledger & Operating Expenses"}
+            {language === "sw"
+              ? "3. Matumizi ya Siku Hiyo (Andika Matumizi ya Dukani Leo)"
+              : "3. Daily Shop Expenses"}
           </h2>
           <p className="text-xs text-[#52654c]">
             {language === "sw"
-              ? "Fuatilia gharama za uendeshaji, hesabu Faida Ghafi (Gross Profit), COGS na Faida Halisi (Net Profit)."
-              : "Track daily operating costs, calculate Gross Profit, COGS and automated Net Profit."}
+              ? "Andika pesa zote zilizotumika dukani leo (chakula, bodaboda, umeme, vifungashio). Mfumo unapiga jumla automatically."
+              : "Record all daily shop expenses. The system calculates totals automatically."}
           </p>
-        </div>
-
-        <button
-          onClick={() => setIsModalOpen(true)}
-          className="px-4 py-2.5 rounded-xl neu-btn text-xs font-bold flex items-center gap-2 shadow-neu-flat"
-        >
-          <Plus className="w-4 h-4" />
-          <span>{language === "sw" ? "+ Rekodi Matumizi" : "+ Record Expense"}</span>
-        </button>
-      </div>
-
-      {/* BOSS DECISION BANNER: FAIDA AU HASARA */}
-      <div
-        className={`p-4 rounded-2xl mb-4 border flex flex-col md:flex-row md:items-center justify-between gap-3 shadow-xs ${
-          netProfit >= 0
-            ? "bg-gradient-to-r from-emerald-50 to-[#F2FBE5] border-emerald-300"
-            : "bg-gradient-to-r from-rose-50 to-orange-50 border-rose-300"
-        }`}
-      >
-        <div className="flex items-center gap-3">
-          <div
-            className={`w-12 h-12 rounded-xl flex items-center justify-center font-black ${
-              netProfit >= 0
-                ? "bg-emerald-600 text-white shadow-xs"
-                : "bg-rose-600 text-white shadow-xs"
-            }`}
-          >
-            {netProfit >= 0 ? <TrendingUp className="w-6 h-6" /> : <TrendingDown className="w-6 h-6" />}
-          </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <span
-                className={`text-xs font-black uppercase px-2 py-0.5 rounded-full ${
-                  netProfit >= 0
-                    ? "bg-emerald-200 text-emerald-950"
-                    : "bg-rose-200 text-rose-950"
-                }`}
-              >
-                {netProfit >= 0
-                  ? (language === "sw" ? "BIASHARA INATENGENEZA FAIDA (PROFIT)" : "BUSINESS IS PROFITABLE (NET PROFIT)")
-                  : (language === "sw" ? "TAHADHARI: BIASHARA INAPATA HASARA (LOSS)" : "WARNING: OPERATING AT A LOSS")}
-              </span>
-              <span className="text-xs font-bold text-[#445b37]">
-                {language === "sw" ? "Uwiano wa Faida: " : "Net Margin: "}
-                {totalRevenue > 0 ? Math.round((netProfit / totalRevenue) * 100) : 0}%
-              </span>
-            </div>
-            <p className="text-xs text-[#425838] mt-0.5">
-              {netProfit >= 0
-                ? (language === "sw"
-                    ? `Baada ya kutoa gharama za ununuzi wa bidhaa (COGS) na matumizi yote ya uendeshaji, biashara imebakiwa na ziada ya TZS ${netProfit.toLocaleString()}.`
-                    : `After deducting cost of goods sold (COGS) and all operational expenses, business retains a net surplus of TZS ${netProfit.toLocaleString()}.`)
-                : (language === "sw"
-                    ? `Matumizi na gharama za ununuzi zimezidi mapato ya mauzo kwa TZS ${Math.abs(netProfit).toLocaleString()}. Inahitaji kupunguza matumizi au kuongeza mauzo.`
-                    : `Operating expenses and COGS exceed sales revenue by TZS ${Math.abs(netProfit).toLocaleString()}. Requires cutting overhead or boosting sales.`)}
-            </p>
-          </div>
-        </div>
-
-        <div className="text-right shrink-0">
-          <span className="text-[11px] font-bold text-[#556b49] block">
-            {language === "sw" ? "Salio Halisi la Faida/Hasara:" : "Net Profit / Loss Balance:"}
-          </span>
-          <span
-            className={`text-2xl font-black font-mono ${
-              netProfit >= 0 ? "text-emerald-800" : "text-rose-700"
-            }`}
-          >
-            {netProfit >= 0 ? "+" : "-"}TZS {Math.abs(netProfit).toLocaleString()}
-          </span>
         </div>
       </div>
 
-      {/* Accounting Statement Overview */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-5">
-        <div className="p-4 rounded-2xl bg-white border border-[#d6e5c5] shadow-neu-card">
-          <span className="text-xs font-bold text-[#5c7054]">
-            {language === "sw" ? "Jumla ya Mapato (Revenue)" : "Total Revenue (Sales)"}
+      {/* 3 Automatic Expense Summary Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+        <div className="p-3.5 rounded-2xl bg-white border-2 border-rose-200 shadow-xs">
+          <span className="text-xs font-bold text-[#5c7054] block">
+            Jumla ya Matumizi ya Siku (Auto)
           </span>
-          <p className="text-xl font-black text-[#17280a] mt-1">
-            TZS {totalRevenue.toLocaleString()}
-          </p>
-          <span className="text-[11px] text-emerald-700 font-bold">
-            {language === "sw" ? "Jumla ya Mauzo Yote" : "Total Gross Sales"}
-          </span>
-        </div>
-
-        <div className="p-4 rounded-2xl bg-white border border-[#d6e5c5] shadow-neu-card">
-          <span className="text-xs font-bold text-[#5c7054]">
-            {language === "sw" ? "Gharama za Bidhaa (COGS)" : "Cost of Goods (COGS)"}
-          </span>
-          <p className="text-xl font-black text-[#17280a] mt-1">
-            TZS {cogs.toLocaleString()}
-          </p>
-          <span className="text-[11px] text-[#6d8065]">
-            {language === "sw" ? "Thamani ya mzigo uliouzwa" : "Inventory cost of sold goods"}
-          </span>
-        </div>
-
-        <div className="p-4 rounded-2xl bg-white border border-[#d6e5c5] shadow-neu-card">
-          <span className="text-xs font-bold text-[#5c7054]">
-            {language === "sw" ? "Matumizi ya Uendeshaji (Expenses)" : "Operating Overhead (Expenses)"}
-          </span>
-          <p className="text-xl font-black text-rose-700 mt-1">
+          <p className="text-xl font-black text-rose-700 mt-0.5">
             TZS {totalExpenses.toLocaleString()}
           </p>
-          <span className="text-[11px] text-[#6d8065]">
-            {language === "sw" ? "Kodi, umeme, mishahara n.k." : "Rent, power, wages etc."}
+          <span className="text-[11px] text-[#6d8065] font-bold">
+            Rekodi {expenses.length} za matumizi
           </span>
         </div>
 
-        <div className="p-4 rounded-2xl bg-white border border-[#d6e5c5] shadow-neu-card">
-          <span className="text-xs font-bold text-[#5c7054]">
-            {language === "sw" ? "Faida / Hasara Halisi" : "Net Profit / Loss"}
+        <div className="p-3.5 rounded-2xl bg-white border border-[#d6e5c5] shadow-xs">
+          <span className="text-xs font-bold text-[#5c7054] block">
+            Matumizi ya Cash vs Simu
           </span>
-          <p
-            className={`text-xl font-black mt-1 ${
-              netProfit >= 0 ? "text-emerald-700" : "text-rose-700"
-            }`}
-          >
-            TZS {netProfit.toLocaleString()}
+          <p className="text-xl font-black text-[#17280a] mt-0.5">
+            Cash: TZS {cashExpenses.toLocaleString()}
           </p>
-          <span className="text-[11px] font-bold text-[#556b49]">
-            {netProfit >= 0
-              ? (language === "sw" ? "Biashara Ina Faida" : "Net Operating Surplus")
-              : (language === "sw" ? "Biashara Ina Hasara" : "Operating Net Loss")}
+          <span className="text-[11px] text-[#6d8065] font-bold">
+            Simu (M-Pesa): TZS {mobileExpenses.toLocaleString()}
+          </span>
+        </div>
+
+        <div className="p-3.5 rounded-2xl bg-white border border-[#d6e5c5] shadow-xs">
+          <span className="text-xs font-bold text-[#5c7054] block">
+            Mauzo Ukitoa Matumizi ya Siku
+          </span>
+          <p className="text-xl font-black text-emerald-800 mt-0.5">
+            TZS {remainingAfterExpenses.toLocaleString()}
+          </p>
+          <span className="text-[11px] text-emerald-700 font-bold">
+            Mauzo (TZS {totalSalesToday.toLocaleString()}) - Matumizi
           </span>
         </div>
       </div>
 
-      {/* Expenses Table */}
-      <div className="flex-1 overflow-y-auto bg-white rounded-2xl border border-[#dce8cd] shadow-neu-card">
-        <table className="w-full text-left text-xs divide-y divide-[#e8f0df]">
-          <thead className="bg-[#F8FAF4] font-bold text-[#44573d] sticky top-0 z-10">
-            <tr>
-              <th className="py-3 px-4">{language === "sw" ? "Maelezo / Kusudi" : "Title / Purpose"}</th>
-              <th className="py-3 px-4">{language === "sw" ? "Aina" : "Category"}</th>
-              <th className="py-3 px-4">{language === "sw" ? "Kiasi" : "Amount"}</th>
-              <th className="py-3 px-4">{language === "sw" ? "Tarehe" : "Date"}</th>
-              <th className="py-3 px-4">{language === "sw" ? "Iliyoandikwa Na" : "Recorded By"}</th>
-              <th className="py-3 px-4">{language === "sw" ? "Maelezo ya Ziada" : "Notes"}</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-[#eff5e9] text-[#1c2c0e]">
-            {expenses.map((exp) => (
-              <tr key={exp.id} className="hover:bg-[#FAFCF7] transition">
-                <td className="py-3 px-4 font-bold">{exp.title}</td>
-                <td className="py-3 px-4">
-                  <span className="px-2 py-0.5 rounded-md bg-[#EDF2E8] font-semibold text-[#304524]">
-                    {exp.category}
-                  </span>
-                </td>
-                <td className="py-3 px-4 font-black text-rose-700">
-                  TZS {exp.amount.toLocaleString()}
-                </td>
-                <td className="py-3 px-4 text-[#5b6e54]">{exp.date}</td>
-                <td className="py-3 px-4">{exp.recordedBy}</td>
-                <td className="py-3 px-4 text-[#798d72]">{exp.notes || "—"}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      {/* Main Content: Left = Enter Daily Expense | Right = Expenses List */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 flex-1">
+        {/* Left: Direct Expense Entry Form */}
+        <div className="bg-white rounded-2xl border-2 border-[#BFE973] p-4 shadow-xs h-fit">
+          <h3 className="font-black text-sm text-[#162709] mb-1 flex items-center gap-1.5">
+            <PlusCircle className="w-4 h-4 text-[#3A6112]" />
+            <span>Andika Matumizi ya Siku Hiyo</span>
+          </h3>
+          <p className="text-[11px] text-[#5B714F] mb-3">
+            Kila matumizi unayoandika hapa yanaonekana kwa Mwenye Duka na kuingia kwenye Ripoti ya Faida na Hasara ya Siku.
+          </p>
 
-      {/* ADD EXPENSE MODAL */}
-      {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs p-4">
-          <div className="w-full max-w-md bg-white rounded-3xl p-6 shadow-2xl border-2 border-[#b8ea66] animate-slide-up">
-            <h3 className="text-lg font-black text-[#17270a] mb-4">
-              Record New Expense
-            </h3>
-            <form onSubmit={handleSave} className="space-y-3.5 text-xs">
-              <div>
-                <label className="block font-bold text-[#35482c] mb-1">Expense Description</label>
-                <input
-                  type="text"
-                  required
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  placeholder="e.g. Monthly Internet Fibre Cable"
-                  className="w-full py-2 px-3 rounded-xl neu-input"
-                />
-              </div>
+          <form onSubmit={handleSaveExpense} className="space-y-3 text-xs">
+            <div>
+              <label className="block font-bold text-[#334A26] mb-1">
+                Maelezo ya Matumizi (Kimetumika Kwenye Nini?)
+              </label>
+              <input
+                type="text"
+                required
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="Mfano: Nauli ya bodaboda, Chakula, LUKU, Mifuko..."
+                className="w-full py-2.5 px-3 rounded-xl neu-input font-bold"
+              />
+            </div>
 
-              <div>
-                <label className="block font-bold text-[#35482c] mb-1">Expense Category</label>
-                <select
-                  value={category}
-                  onChange={(e) => setCategory(e.target.value as any)}
-                  className="w-full py-2 px-3 rounded-xl neu-input"
-                >
-                  <option value="Rent">Rent</option>
-                  <option value="Electricity">Electricity / LUKU</option>
-                  <option value="Water">Water</option>
-                  <option value="Salary">Salary & Staff Wages</option>
-                  <option value="Transport">Transport & Fuel</option>
-                  <option value="Internet">Internet & Telecom</option>
-                  <option value="Repairs">Repairs & Maintenance</option>
-                  <option value="Marketing">Marketing & Ads</option>
-                  <option value="Delivery">Delivery & Logistics</option>
-                  <option value="Other">Other</option>
-                </select>
-              </div>
+            <div>
+              <label className="block font-bold text-[#334A26] mb-1">Aina ya Matumizi</label>
+              <select
+                value={category}
+                onChange={(e) => setCategory(e.target.value)}
+                className="w-full py-2 px-3 rounded-xl neu-input font-semibold"
+              >
+                <option value="Usafiri & Bodaboda">Usafiri & Bodaboda</option>
+                <option value="Chakula & Maji Dukani">Chakula & Maji Dukani</option>
+                <option value="Umeme (LUKU) & Maji">Umeme (LUKU) & Maji</option>
+                <option value="Vifungashio & Mifuko">Vifungashio & Mifuko</option>
+                <option value="Pango la Duka (Rent)">Pango la Duka (Rent)</option>
+                <option value="Posho / Mishahara">Posho / Mishahara</option>
+                <option value="Mengineyo">Mengineyo</option>
+              </select>
+            </div>
 
+            <div className="grid grid-cols-2 gap-2.5">
               <div>
-                <label className="block font-bold text-[#35482c] mb-1">Amount (TZS)</label>
+                <label className="block font-bold text-[#334A26] mb-1">Kiasi (TZS)</label>
                 <input
                   type="number"
+                  min="1"
                   required
                   value={amount}
                   onChange={(e) => setAmount(e.target.value)}
-                  placeholder="e.g. 150000"
-                  className="w-full py-2 px-3 rounded-xl neu-input"
+                  placeholder="10000"
+                  className="w-full py-2 px-3 rounded-xl neu-input font-black text-sm"
                 />
               </div>
 
               <div>
-                <label className="block font-bold text-[#35482c] mb-1">Additional Notes</label>
-                <textarea
-                  value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
-                  placeholder="Optional notes or receipt invoice reference..."
-                  rows={2}
-                  className="w-full py-2 px-3 rounded-xl neu-input"
-                />
+                <label className="block font-bold text-[#334A26] mb-1">Imelipwa kwa</label>
+                <select
+                  value={paymentMethod}
+                  onChange={(e) => setPaymentMethod(e.target.value as "CASH" | "MPESA")}
+                  className="w-full py-2 px-3 rounded-xl neu-input font-bold"
+                >
+                  <option value="CASH">Cash ya Drooni</option>
+                  <option value="MPESA">M-Pesa / Simu</option>
+                </select>
               </div>
+            </div>
 
-              <div className="flex gap-2 pt-3">
-                <button
-                  type="button"
-                  onClick={() => setIsModalOpen(false)}
-                  className="flex-1 py-2.5 rounded-xl neu-btn-secondary font-bold"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="flex-1 py-2.5 rounded-xl neu-btn font-bold"
-                >
-                  Save Expense
-                </button>
-              </div>
-            </form>
+            <div>
+              <label className="block font-bold text-[#334A26] mb-1">Maelezo ya Ziada (Hiari)</label>
+              <input
+                type="text"
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                placeholder="Hiari..."
+                className="w-full py-2 px-3 rounded-xl neu-input"
+              />
+            </div>
+
+            <button
+              type="submit"
+              className="w-full py-3 rounded-xl neu-btn font-black text-xs uppercase tracking-wider cursor-pointer"
+            >
+              + Hifadhi Matumizi ya Siku
+            </button>
+          </form>
+        </div>
+
+        {/* Right: Expenses Table */}
+        <div className="lg:col-span-2 bg-white rounded-2xl border border-[#dce8cd] p-4 shadow-xs flex flex-col">
+          <div className="flex items-center justify-between pb-3 border-b border-[#EBF2E2]">
+            <div>
+              <h3 className="font-black text-sm text-[#162709] flex items-center gap-1.5">
+                <Wallet className="w-4 h-4 text-[#233F0D]" />
+                <span>Orodha ya Matumizi ya Siku</span>
+              </h3>
+              <p className="text-[11px] text-[#5B714F]">
+                Matumizi yote yaliyoandikwa na wafanyakazi au mwenye duka
+              </p>
+            </div>
+            <span className="px-3 py-1 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs font-black">
+              Jumla: TZS {totalExpenses.toLocaleString()}
+            </span>
+          </div>
+
+          <div className="overflow-x-auto mt-3 flex-1">
+            <table className="w-full text-left text-xs divide-y divide-[#e8f0df]">
+              <thead className="bg-[#F8FAF4] font-bold text-[#44573d]">
+                <tr>
+                  <th className="py-2.5 px-3">Maelezo ya Matumizi</th>
+                  <th className="py-2.5 px-3">Aina</th>
+                  <th className="py-2.5 px-3">Malipo</th>
+                  <th className="py-2.5 px-3">Aliyeandika</th>
+                  <th className="py-2.5 px-3">Tarehe</th>
+                  <th className="py-2.5 px-3 text-right">Kiasi (TZS)</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-[#eff5e9] text-[#1c2c0e]">
+                {expenses.map((exp) => (
+                  <tr key={exp.id} className="hover:bg-[#FAFCF7] transition">
+                    <td className="py-3 px-3 font-bold text-[#162709]">
+                      {exp.description || exp.title}
+                    </td>
+                    <td className="py-3 px-3">
+                      <span className="px-2 py-0.5 rounded-md bg-[#EDF2E8] font-semibold text-[#304524]">
+                        {exp.category}
+                      </span>
+                    </td>
+                    <td className="py-3 px-3">
+                      <span className="px-2 py-0.5 rounded-md bg-[#EDF3E6] font-bold text-[10px]">
+                        {exp.paymentMethod || "CASH"}
+                      </span>
+                    </td>
+                    <td className="py-3 px-3 text-[#4C6240]">{exp.recordedBy}</td>
+                    <td className="py-3 px-3 font-mono text-[11px] text-[#5b6e54]">{exp.date}</td>
+                    <td className="py-3 px-3 text-right font-black text-rose-700">
+                      TZS {exp.amount.toLocaleString()}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         </div>
-      )}
+      </div>
     </div>
   );
 };

@@ -20,7 +20,8 @@ import {
   LogOut,
   ChevronLeft,
   ChevronRight,
-  ShieldAlert
+  ShieldAlert,
+  TrendingUp
 } from "lucide-react";
 
 interface SidebarProps {
@@ -45,57 +46,62 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeModule, setActiveModule,
   const isOwner = !user || user.role === "OWNER" || isSuperAdmin;
   const pendingReportsCount = (dailyReports || []).filter((r) => r.status === "PENDING_REVIEW").length;
 
-  // EMPLOYEE / STAFF NAVIGATION (No POS machine or receipts — focused on Daily Sales/Expenses/Stock & Sending to Owner)
-  const staffCoreNav: { id: string; label: string; icon: any; badge?: string }[] = [
+  // EXACT SIDEBAR ORDER REQUESTED BY USER:
+  // 1. Dashibodi Kuu (dashboard)
+  // 2. Mauzo ya Siku (sales) — Owner anaona mauzo & Mfanyakazi anaandika mauzo ya leo, mfumo unapiga mahesabu automatically
+  // 3. Matumizi ya Siku (expenses) — Anaweka matumizi ya siku hiyo
+  // 4. Stoo & Bidhaa (inventory) — Store stock kuweka na kutoa + hesabu ya Bando/Katoni vs Mauzo
+  // 5. Ufuatiliaji wa Delivery (deliveries) — Kutrack delivery
+  // 6. Wateja & Madeni (customers) — Kurekodi deni la mteja na jina
+  // 7. Ripoti za Siku: Faida & Hasara (cash-register) — Kuonyesha faida na hasara ya kila siku
+  const mainDailyWorkflowNav: { id: string; label: string; icon: any; badge?: string }[] = [
+    ...(isOwner
+      ? [
+          {
+            id: "dashboard",
+            label: language === "sw" ? "1. Dashibodi Kuu" : "1. Main Dashboard",
+            icon: Store,
+          },
+        ]
+      : []),
     {
-      id: "cash-register",
-      label: language === "sw" ? "Mahesabu ya Siku & Mauzo" : "Daily Sales & Handover",
-      icon: Calculator,
-      badge: "TUMA",
+      id: "sales",
+      label: language === "sw" ? "2. Mauzo ya Siku" : "2. Daily Sales",
+      icon: ShoppingBag,
+      badge: "AUTO",
+    },
+    {
+      id: "expenses",
+      label: language === "sw" ? "3. Matumizi ya Siku" : "3. Daily Expenses",
+      icon: DollarSign,
     },
     {
       id: "inventory",
-      label: language === "sw" ? "Stoo & Bidhaa (IN / OUT)" : "Stock (IN / OUT)",
+      label: language === "sw" ? "4. Stoo & Bidhaa (Store)" : "4. Store Stock (IN/OUT)",
       icon: Layers,
     },
-    { id: "customers", label: t.nav.customers, icon: Users },
-    { id: "deliveries", label: t.nav.deliveries, icon: Truck },
-  ];
-
-  // OWNER NAVIGATION (Ordered Most Used -> Least Used, with POS Machine & Receipts removed)
-  // 1. MOST USED (Every Hour - Daily Shop Operations)
-  const highUsageNav: { id: string; label: string; icon: any; badge?: string }[] = [
     {
-      id: "dashboard",
-      label: t.nav.dashboard,
-      icon: Store,
-      badge: pendingReportsCount > 0 ? `${pendingReportsCount} MPYA` : undefined,
+      id: "deliveries",
+      label: language === "sw" ? "5. Kutrack Delivery" : "5. Track Deliveries",
+      icon: Truck,
+    },
+    {
+      id: "customers",
+      label: language === "sw" ? "6. Wateja & Madeni" : "6. Customers & Debts",
+      icon: Users,
     },
     {
       id: "cash-register",
-      label: language === "sw" ? "Mahesabu ya Siku & Mauzo" : "Daily Sales & Handover",
-      icon: Calculator,
+      label: language === "sw" ? "7. Ripoti za Siku (Faida & Hasara)" : "7. Daily Reports (Profit & Loss)",
+      icon: TrendingUp,
       badge: pendingReportsCount > 0 ? String(pendingReportsCount) : undefined,
     },
-    { id: "inventory", label: t.nav.inventory, icon: Layers },
-    { id: "customers", label: t.nav.customers, icon: Users },
-    { id: "deliveries", label: t.nav.deliveries, icon: Truck },
   ];
 
-  // 2. MEDIUM USAGE (Profit/Loss & Analytics)
-  const dailyFinanceNav: { id: string; label: string; icon: any; badge?: string }[] = [
-    {
-      id: "expenses",
-      label: language === "sw" ? "Matumizi & Faida" : "Expenses & Profit",
-      icon: DollarSign,
-    },
-    { id: "reports", label: t.nav.reports, icon: BarChart3 },
-    { id: "ai-assistant", label: t.nav.aiAssistant, icon: Sparkles, badge: "COPETRA" },
-  ];
-
-  // 3. LEAST USED (Staff, Alerts, Settings & Subscription)
+  // LOWER SECTION FOR OWNER: MANAGEMENT & SETTINGS
   const lowUsageNav: { id: string; label: string; icon: any; badge?: string }[] = [
     { id: "employees", label: t.nav.employees, icon: UserCheck },
+    { id: "ai-assistant", label: t.nav.aiAssistant, icon: Sparkles, badge: "AI" },
     {
       id: "notifications",
       label: t.nav.notifications,
@@ -108,7 +114,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeModule, setActiveModule,
   ];
 
   if (isSuperAdmin) {
-    highUsageNav.unshift({ id: "super-admin", label: t.nav.superAdmin, icon: ShieldAlert, badge: "ROOT" });
+    mainDailyWorkflowNav.unshift({ id: "super-admin", label: t.nav.superAdmin, icon: ShieldAlert, badge: "ROOT" });
   }
 
   const handleNavClick = (id: string) => {
@@ -124,7 +130,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeModule, setActiveModule,
     const isActive =
       activeModule === item.id ||
       (item.id === "expenses" && activeModule === "accounting") ||
-      (item.id === "inventory" && activeModule === "products");
+      (item.id === "inventory" && activeModule === "products") ||
+      (item.id === "cash-register" && activeModule === "reports");
     return (
       <button
         key={item.id}
@@ -132,7 +139,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeModule, setActiveModule,
         title={collapsed ? item.label : undefined}
         className={`w-full flex items-center ${
           collapsed ? "justify-center px-2" : "justify-between px-3"
-        } py-2 rounded-xl text-xs font-bold transition duration-150 ${
+        } py-2.5 rounded-xl text-xs font-bold transition duration-150 cursor-pointer ${
           isActive
             ? "bg-[#E1FFAC] text-[#162708] border border-[#A6DF52] shadow-xs font-black"
             : "text-[#3D5233] hover:bg-white/80 hover:text-[#182A0B]"
@@ -189,28 +196,21 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeModule, setActiveModule,
 
         {/* Scrollable Navigation Items */}
         <div className="overflow-y-auto max-h-[calc(100vh-170px)] p-2.5 space-y-1">
-          {!isOwner ? (
-            <>
-              <div className="px-2 py-1 text-[10px] font-extrabold text-[#4E683D] uppercase tracking-wider">
-                {!collapsed ? (language === "sw" ? "Kazi za Mfanyakazi" : "Staff Workspace") : "•"}
-              </div>
-              {staffCoreNav.map(renderNavItem)}
-            </>
-          ) : (
-            <>
-              {/* TIER 1: HIGH USAGE */}
-              <div className="px-2 py-1 text-[10px] font-extrabold text-[#4E683D] uppercase tracking-wider">
-                {!collapsed ? (language === "sw" ? "Kazi za Kila Saa" : "Daily Core") : "•"}
-              </div>
-              {highUsageNav.map(renderNavItem)}
+          <div className="px-2 py-1 text-[10px] font-extrabold text-[#4E683D] uppercase tracking-wider">
+            {!collapsed
+              ? isOwner
+                ? language === "sw"
+                  ? "Mtiririko wa Biashara Kila Siku"
+                  : "Daily Business Workflow"
+                : language === "sw"
+                ? "Kazi za Mfanyakazi Kila Siku"
+                : "Daily Staff Workflow"
+              : "•"}
+          </div>
+          {mainDailyWorkflowNav.map(renderNavItem)}
 
-              {/* TIER 2: DAILY CLOSING & FINANCE */}
-              <div className="pt-2 px-2 pb-1 text-[10px] font-extrabold text-[#5F7750] uppercase tracking-wider border-t border-[#DDE9D1] mt-2">
-                {!collapsed ? (language === "sw" ? "Hesabu & Faida" : "Daily Finance") : "•"}
-              </div>
-              {dailyFinanceNav.map(renderNavItem)}
-
-              {/* TIER 3: LOW USAGE / ADMIN & SETTINGS */}
+          {isOwner && (
+            <>
               <div className="pt-2 px-2 pb-1 text-[10px] font-extrabold text-[#6E8560] uppercase tracking-wider border-t border-[#DDE9D1] mt-2">
                 {!collapsed ? (language === "sw" ? "Usimamizi & Mipangilio" : "Management & Setup") : "•"}
               </div>
@@ -227,7 +227,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeModule, setActiveModule,
             onClick={() => {
               if (isOwner) {
                 switchEmployeeAccount("emp-02");
-                setActiveModule("cash-register");
+                setActiveModule("sales");
               } else {
                 switchEmployeeAccount("emp-01");
                 setActiveModule("dashboard");
@@ -250,13 +250,13 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeModule, setActiveModule,
 
         <button
           onClick={onLogout}
+          title={collapsed ? (language === "sw" ? "Toka Nje" : "Sign Out") : undefined}
           className={`w-full flex items-center ${
-            collapsed ? "justify-center" : "justify-start gap-2.5"
-          } px-3 py-2 rounded-xl text-xs font-bold text-rose-800 hover:bg-rose-50 border border-transparent hover:border-rose-200 transition`}
-          title={t.logout}
+            collapsed ? "justify-center" : "gap-2.5 px-3"
+          } py-2 rounded-xl text-xs font-bold text-rose-700 hover:bg-rose-50 transition cursor-pointer`}
         >
-          <LogOut className="w-4 h-4" />
-          {!collapsed && <span>{t.logout}</span>}
+          <LogOut className="w-4 h-4 shrink-0" />
+          {!collapsed && <span>{language === "sw" ? "Toka Nje" : "Sign Out"}</span>}
         </button>
       </div>
     </aside>

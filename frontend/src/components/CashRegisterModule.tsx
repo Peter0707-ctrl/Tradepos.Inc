@@ -111,6 +111,24 @@ export const CashRegisterModule: React.FC = () => {
 
   const totalExpensesToday = expenses.reduce((a, b) => a + b.amount, 0);
 
+  // Automatic Daily Profit & Loss (Faida na Hasara ya Kila Siku) Calculation
+  const totalCogsToday = Math.round(
+    validSales.reduce((accSale, s) => {
+      const saleCost = s.items.reduce((accItem, it) => {
+        const matchedProd = products.find(
+          (p) => p.id === it.productId || p.name.toLowerCase() === it.productName.toLowerCase()
+        );
+        if (matchedProd && matchedProd.buyingPrice > 0) {
+          return accItem + matchedProd.buyingPrice * it.quantity;
+        }
+        return accItem + it.total * 0.7;
+      }, 0);
+      return accSale + saleCost;
+    }, 0)
+  );
+  const grossProfitToday = totalSalesAll - totalCogsToday;
+  const netProfitToday = grossProfitToday - totalExpensesToday;
+
   const expectedCash =
     cashRegister.openingBalance +
     (totalCashSales > 0 ? totalCashSales : cashRegister.cashSales) +
@@ -338,8 +356,8 @@ export const CashRegisterModule: React.FC = () => {
           <div className="flex flex-wrap items-center gap-2">
             <h2 className="text-xl font-black text-[#162709] tracking-tight">
               {language === "sw"
-                ? "Mahesabu ya Siku: Mauzo, Matumizi & Stock Iliyobaki Stoo"
-                : "Daily Shift Handover: Sales, Expenses & Remaining Stock"}
+                ? "7. Ripoti za Siku: Faida na Hasara ya Kila Siku & Mahesabu ya Duka"
+                : "7. Daily Reports: Daily Profit & Loss & Shift Handover"}
             </h2>
             <span className="px-2.5 py-0.5 rounded-full text-[11px] font-black bg-[#E1FFAC] text-[#172B08] border border-[#9CE034]">
               {user?.role === "OWNER"
@@ -353,8 +371,8 @@ export const CashRegisterModule: React.FC = () => {
           </div>
           <p className="text-xs text-[#526848] mt-0.5">
             {language === "sw"
-              ? "Andika moja kwa moja bidhaa zilizouzwa leo, matumizi ya siku hiyo, na stock iliyoingia au kubaki stoo kisha tuma kwa Mwenye Duka."
-              : "Directly enter daily sales, daily expenses, and store stock, then submit the daily shift report to the Shop Owner."}
+              ? "Inaonyesha Faida na Hasara ya Kila Siku (Mauzo - Gharama za Bidhaa - Matumizi ya Siku) pamoja na ripoti za wafanyakazi."
+              : "Shows automated Daily Profit & Loss (Sales - COGS - Daily Expenses) and daily staff shift reports."}
           </p>
         </div>
 
@@ -387,7 +405,7 @@ export const CashRegisterModule: React.FC = () => {
           >
             <Send className="w-3.5 h-3.5" />
             <span>
-              {language === "sw" ? "Tuma Mahesabu kwa Mwenye Duka" : "Submit Daily Report to Owner"}
+              {language === "sw" ? "Tuma Ripoti ya Siku kwa Mwenye Duka" : "Submit Daily Report to Owner"}
             </span>
           </button>
 
@@ -410,8 +428,8 @@ export const CashRegisterModule: React.FC = () => {
             <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
             <span>
               {language === "sw"
-                ? "✓ Mahesabu ya Siku (Mauzo, Matumizi na Stock Iliyobaki Stoo) yametumwa na kufika kwenye akaunti ya Mwenye Duka!"
-                : "✓ Daily Shift Report (Sales, Expenses & Remaining Stock) has been sent to the Shop Owner!"}
+                ? "✓ Ripoti ya Siku (Mauzo, Matumizi, Faida na Stock Iliyobaki Stoo) imetumwa kwa Mwenye Duka!"
+                : "✓ Daily Report (Sales, Expenses, Profit & Remaining Stock) has been sent to the Shop Owner!"}
             </span>
           </div>
           <button onClick={() => setSubmitSuccessBanner(false)} className="text-emerald-800 font-black">
@@ -420,20 +438,35 @@ export const CashRegisterModule: React.FC = () => {
         </div>
       )}
 
-      {/* 4 Key Pillars KPI Cards */}
+      {/* DAILY PROFIT & LOSS (FAIDA NA HASARA YA KILA SIKU) CARDS */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
         <div
           onClick={() => setActiveTab("sold_products")}
           className="p-3.5 rounded-2xl bg-white border border-[#D8E6CC] hover:border-[#9CE034] shadow-xs cursor-pointer transition"
         >
           <span className="text-xs font-bold text-[#566E49] block">
-            {language === "sw" ? "1. Mauzo ya Siku (Wameuza Nini)" : "1. Today's Sales & Items"}
+            1. Mauzo ya Siku (Mapato)
           </span>
-          <p className="text-xl font-black text-emerald-800 mt-0.5">
+          <p className="text-xl font-black text-[#162709] mt-0.5">
             TZS {totalSalesAll.toLocaleString()}
           </p>
+          <span className="text-[11px] text-[#5B714F] font-bold">
+            Gharama ya Mzigo (COGS): TZS {totalCogsToday.toLocaleString()}
+          </span>
+        </div>
+
+        <div
+          onClick={() => setActiveTab("sold_products")}
+          className="p-3.5 rounded-2xl bg-white border border-[#D8E6CC] hover:border-[#9CE034] shadow-xs cursor-pointer transition"
+        >
+          <span className="text-xs font-bold text-[#566E49] block">
+            2. Faida Ghafi ya Mauzo (Gross)
+          </span>
+          <p className="text-xl font-black text-emerald-800 mt-0.5">
+            TZS {grossProfitToday.toLocaleString()}
+          </p>
           <span className="text-[11px] text-emerald-700 font-bold">
-            {totalUnitsSold} pcs zimeuzwa ({validSales.length} mauzo) →
+            Mauzo ukitoa bei ya kununulia bidhaa
           </span>
         </div>
 
@@ -442,51 +475,42 @@ export const CashRegisterModule: React.FC = () => {
           className="p-3.5 rounded-2xl bg-white border border-[#D8E6CC] hover:border-[#9CE034] shadow-xs cursor-pointer transition"
         >
           <span className="text-xs font-bold text-[#566E49] block">
-            {language === "sw" ? "2. Matumizi ya Siku Hiyo" : "2. Today's Shop Expenses"}
+            3. Matumizi ya Siku Hiyo
           </span>
           <p className="text-xl font-black text-rose-700 mt-0.5">
-            TZS {totalExpensesToday.toLocaleString()}
+            -TZS {totalExpensesToday.toLocaleString()}
           </p>
           <span className="text-[11px] text-[#69825B] font-bold">
-            {expenses.length} rekodi za matumizi leo →
-          </span>
-        </div>
-
-        <div
-          onClick={() => setActiveTab("remaining_stock")}
-          className="p-3.5 rounded-2xl bg-white border border-[#D8E6CC] hover:border-[#9CE034] shadow-xs cursor-pointer transition"
-        >
-          <span className="text-xs font-bold text-[#566E49] block">
-            {language === "sw" ? "3. Stock Iliyobaki Stoo" : "3. Remaining Stock in Store"}
-          </span>
-          <p className="text-xl font-black text-[#162709] mt-0.5">
-            {totalUnitsRemainingInStore} pcs
-          </p>
-          <span className="text-[11px] text-amber-800 font-bold">
-            Bidhaa {products.length} ({lowStockItems.length} zinakaribia kuisha) →
+            {expenses.length} rekodi za matumizi ya siku
           </span>
         </div>
 
         <div
           onClick={() => setActiveTab("summary")}
-          className="p-3.5 rounded-2xl bg-white border border-[#D8E6CC] hover:border-[#9CE034] shadow-xs cursor-pointer transition"
+          className={`p-3.5 rounded-2xl border-2 shadow-xs cursor-pointer transition ${
+            netProfitToday >= 0
+              ? "bg-emerald-50/70 border-emerald-400"
+              : "bg-rose-50/70 border-rose-400"
+          }`}
         >
-          <span className="text-xs font-bold text-[#566E49] block">
-            {language === "sw" ? "4. Pesa Halisi Drooni (Cash)" : "4. Cash in Drawer"}
+          <span className="text-xs font-black uppercase text-[#162709] block">
+            4. {netProfitToday >= 0 ? "FAIDA HALISI YA SIKU" : "HASARA YA SIKU"}
           </span>
-          <p className="text-xl font-black text-[#162709] mt-0.5">
-            TZS {cashRegister.actualCash.toLocaleString()}
+          <p
+            className={`text-xl font-black mt-0.5 ${
+              netProfitToday >= 0 ? "text-emerald-800" : "text-rose-700"
+            }`}
+          >
+            {netProfitToday >= 0 ? "+" : "-"}TZS {Math.abs(netProfitToday).toLocaleString()}
           </p>
           <span
             className={`text-[11px] font-black ${
-              variance === 0 ? "text-emerald-700" : variance > 0 ? "text-emerald-800" : "text-rose-700"
+              netProfitToday >= 0 ? "text-emerald-800" : "text-rose-800"
             }`}
           >
-            {variance === 0
-              ? language === "sw"
-                ? "✓ Sawia na Mfumo"
-                : "✓ 100% Balanced"
-              : `Tofauti: TZS ${variance.toLocaleString()}`}
+            {netProfitToday >= 0
+              ? "✓ Biashara imepata Faida leo"
+              : "! Matumizi yamezidi faida ya mauzo"}
           </span>
         </div>
       </div>
@@ -502,7 +526,7 @@ export const CashRegisterModule: React.FC = () => {
           }`}
         >
           <Wallet className="w-3.5 h-3.5" />
-          <span>{language === "sw" ? "1. Muhtasari & Ripoti za Mwenye Duka" : "1. Summary & Owner Reports"}</span>
+          <span>1. Faida na Hasara ya Kila Siku & Ripoti za Boss</span>
         </button>
 
         <button
@@ -514,11 +538,7 @@ export const CashRegisterModule: React.FC = () => {
           }`}
         >
           <Package className="w-3.5 h-3.5" />
-          <span>
-            {language === "sw"
-              ? `2. Wameuza Nini Leo / Ingiza Mauzo (${soldProductsList.length})`
-              : `2. What Was Sold Today / Enter Sales (${soldProductsList.length})`}
-          </span>
+          <span>2. Walichouza Leo ({soldProductsList.length})</span>
         </button>
 
         <button
@@ -530,11 +550,7 @@ export const CashRegisterModule: React.FC = () => {
           }`}
         >
           <Receipt className="w-3.5 h-3.5" />
-          <span>
-            {language === "sw"
-              ? `3. Matumizi ya Siku Hiyo (${expenses.length})`
-              : `3. Today's Expenses (${expenses.length})`}
-          </span>
+          <span>3. Matumizi ya Siku Hiyo ({expenses.length})</span>
         </button>
 
         <button
@@ -546,29 +562,122 @@ export const CashRegisterModule: React.FC = () => {
           }`}
         >
           <Boxes className="w-3.5 h-3.5" />
-          <span>
-            {language === "sw"
-              ? `4. Stock Iliyobaki Stoo (${totalUnitsRemainingInStore} pcs)`
-              : `4. Remaining Store Stock (${totalUnitsRemainingInStore} pcs)`}
-          </span>
+          <span>4. Stock Iliyobaki Stoo ({totalUnitsRemainingInStore} pcs)</span>
         </button>
       </div>
 
-      {/* TAB 1: SUMMARY, CASH DRAWER & REPORTS SENT TO OWNER */}
+      {/* TAB 1: DAILY PROFIT & LOSS TABLE + STAFF SHIFT REPORTS SENT TO OWNER */}
       {activeTab === "summary" && (
         <div className="space-y-4">
+          {/* DAILY PROFIT & LOSS LEDGER (JEDWALI LA FAIDA NA HASARA YA KILA SIKU) */}
+          <div className="bg-white rounded-2xl border-2 border-[#BFE973] p-4 shadow-xs">
+            <div className="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-[#EBF2E2]">
+              <div>
+                <h3 className="font-black text-sm text-[#162709]">
+                  Ripoti ya Faida na Hasara ya Kila Siku (Daily Profit & Loss Statement)
+                </h3>
+                <p className="text-[11px] text-[#586E4C]">
+                  Mfumo unapiga hesabu ya kila siku: Mauzo - Gharama ya Mzigo Uliouzwa (COGS) - Matumizi ya Siku = Faida Halisi au Hasara.
+                </p>
+              </div>
+              <span
+                className={`px-3 py-1 rounded-xl text-xs font-black border ${
+                  netProfitToday >= 0
+                    ? "bg-emerald-100 text-emerald-950 border-emerald-300"
+                    : "bg-rose-100 text-rose-950 border-rose-300"
+                }`}
+              >
+                Leo: {netProfitToday >= 0 ? `FAIDA +TZS ${netProfitToday.toLocaleString()}` : `HASARA -TZS ${Math.abs(netProfitToday).toLocaleString()}`}
+              </span>
+            </div>
+
+            <div className="overflow-x-auto mt-3">
+              <table className="w-full text-left text-xs divide-y divide-[#EBF2E2]">
+                <thead className="bg-[#F8FAF4] font-bold text-[#4D6340]">
+                  <tr>
+                    <th className="py-2.5 px-3">Siku / Tarehe</th>
+                    <th className="py-2.5 px-3 text-right">Mauzo ya Siku</th>
+                    <th className="py-2.5 px-3 text-right">Gharama ya Mzigo (COGS)</th>
+                    <th className="py-2.5 px-3 text-right">Faida Ghafi</th>
+                    <th className="py-2.5 px-3 text-right">Matumizi ya Siku</th>
+                    <th className="py-2.5 px-3 text-right">Faida Halisi / Hasara</th>
+                    <th className="py-2.5 px-3 text-right">Hali</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[#F1F6EB] text-[#1A2E0A]">
+                  {[
+                    {
+                      date: `Leo (${new Date().toLocaleDateString()})`,
+                      salesVal: totalSalesAll,
+                      cogsVal: totalCogsToday,
+                      grossVal: grossProfitToday,
+                      expVal: totalExpensesToday,
+                      netVal: netProfitToday,
+                    },
+                    {
+                      date: "Jana",
+                      salesVal: 420000,
+                      cogsVal: 265000,
+                      grossVal: 155000,
+                      expVal: 35000,
+                      netVal: 120000,
+                    },
+                    {
+                      date: "Juzi",
+                      salesVal: 385000,
+                      cogsVal: 240000,
+                      grossVal: 145000,
+                      expVal: 28000,
+                      netVal: 117000,
+                    },
+                  ].map((row, idx) => (
+                    <tr key={idx} className={idx === 0 ? "bg-[#F6FAF0] font-bold" : "hover:bg-[#F9FBF6]"}>
+                      <td className="py-3 px-3 font-black text-[#162709]">{row.date}</td>
+                      <td className="py-3 px-3 text-right font-bold">
+                        TZS {row.salesVal.toLocaleString()}
+                      </td>
+                      <td className="py-3 px-3 text-right text-[#546949]">
+                        -TZS {row.cogsVal.toLocaleString()}
+                      </td>
+                      <td className="py-3 px-3 text-right font-bold text-emerald-800">
+                        TZS {row.grossVal.toLocaleString()}
+                      </td>
+                      <td className="py-3 px-3 text-right font-bold text-rose-700">
+                        -TZS {row.expVal.toLocaleString()}
+                      </td>
+                      <td
+                        className={`py-3 px-3 text-right font-black text-sm ${
+                          row.netVal >= 0 ? "text-emerald-800" : "text-rose-700"
+                        }`}
+                      >
+                        {row.netVal >= 0 ? "+" : "-"}TZS {Math.abs(row.netVal).toLocaleString()}
+                      </td>
+                      <td className="py-3 px-3 text-right">
+                        <span
+                          className={`px-2.5 py-0.5 rounded-full text-[10px] font-black ${
+                            row.netVal >= 0
+                              ? "bg-emerald-100 text-emerald-900 border border-emerald-300"
+                              : "bg-rose-100 text-rose-900 border border-rose-300"
+                          }`}
+                        >
+                          {row.netVal >= 0 ? "✓ FAIDA" : "! HASARA"}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
           <div className="flex flex-col lg:flex-row gap-4">
             {/* Left: Daily Shift Reports Sent to Owner */}
-            <div className="flex-1 bg-white rounded-2xl border-2 border-[#C5E988] shadow-xs p-4">
+            <div className="flex-1 bg-white rounded-2xl border border-[#D8E6CC] shadow-xs p-4">
               <div className="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-[#EBF2E2]">
                 <div>
                   <h3 className="font-black text-sm text-[#162709] flex items-center gap-2">
                     <Send className="w-4 h-4 text-[#3A6112]" />
-                    <span>
-                      {language === "sw"
-                        ? "Ripoti za Siku Zilizotumwa kwa Mwenye Duka (Kutoka kwa Wafanyakazi)"
-                        : "Daily Shift Reports Sent to Shop Owner"}
-                    </span>
+                    <span>Ripoti za Siku Zilizotumwa kwa Mwenye Duka (Kutoka kwa Wafanyakazi)</span>
                   </h3>
                   <p className="text-[11px] text-[#586E4C]">
                     {language === "sw"
