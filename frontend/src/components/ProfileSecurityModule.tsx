@@ -128,7 +128,7 @@ export const ProfileSecurityModule: React.FC = () => {
             </div>
 
             <div className="p-3 rounded-xl bg-[#F7FCF0] border border-[#D2E7BD] text-[11px] text-[#4F6742]">
-              🛡️ <strong>Session Security:</strong> Authenticated sessions expire automatically after 8 hours of inactivity.
+              <strong>Session Security:</strong> Authenticated sessions expire automatically after 8 hours of inactivity.
             </div>
 
             <button

@@ -319,7 +319,7 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate
             <div>
               <div className="flex flex-wrap items-center gap-2">
                 <h3 className="text-sm sm:text-base font-black text-[#152508]">
-                  📬 {language === "sw" ? "Mahesabu ya Siku Kutoka kwa Wafanyakazi" : "Daily Staff Shift Reports"}
+                  {language === "sw" ? "Mahesabu ya Siku Kutoka kwa Wafanyakazi" : "Daily Staff Shift Reports"}
                 </h3>
                 <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-[#E1FFAC] text-[#172C08] border border-[#9CE034]">
                   {dailyReports[0].submittedBy} ({dailyReports[0].staffRole}) • {dailyReports[0].submittedAt}
@@ -331,7 +331,7 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate
                       : "bg-amber-100 text-amber-900 border border-amber-300"
                   }`}
                 >
-                  {dailyReports[0].status === "APPROVED" ? "✓ IMEHAKIKIWA NA MWENYE DUKA" : "⏳ MPYA: KAGUA MAHESABU HAYA"}
+                  {dailyReports[0].status === "APPROVED" ? "✓ IMEHAKIKIWA NA MWENYE DUKA" : "MPYA: KAGUA MAHESABU HAYA"}
                 </span>
               </div>
               <p className="text-xs text-[#546A49] mt-0.5">
@@ -669,7 +669,7 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate
           </div>
 
           <div className="mt-3 p-2.5 rounded-xl bg-white border border-[#D5E5C4] text-[11px] text-[#344B26]">
-            💡 <strong>Action:</strong> Order 40 units of Garnier Micellar Water to prevent stockout before Saturday.
+            <strong>Action:</strong> Order 40 units of Garnier Micellar Water to prevent stockout before Saturday.
           </div>
         </div>
       </div>

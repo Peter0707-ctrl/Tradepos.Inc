@@ -264,10 +264,10 @@ export const OnlineStoreDeliveriesModule: React.FC = () => {
                       {ord.status === "DELIVERED"
                         ? "✓ IMEPOKELEWA SALAMA"
                         : ord.status === "OUT_FOR_DELIVERY"
-                        ? "🚚 NJIANI NA DEREVA"
+                        ? "NJIANI NA DEREVA"
                         : ord.status === "CANCELLED"
                         ? "⚠ SHIDA / IMERUDISHWA"
-                        : "📦 INAANDALIWA DUKANI"}
+                        : "INAANDALIWA DUKANI"}
                     </span>
                     <span className="text-xs font-black text-emerald-800">
                       Thamani: TZS {ord.total.toLocaleString()}

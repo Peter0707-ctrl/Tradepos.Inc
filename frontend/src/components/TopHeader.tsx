@@ -169,7 +169,7 @@ export const TopHeader: React.FC<TopHeaderProps> = ({ pageTitle, onNavigate, onL
             <div className="hidden lg:block text-left pr-1">
               <span className="block text-xs font-black text-[#172709] leading-tight">{user?.name || "Peter Joseph"}</span>
               <span className="block text-[10px] font-bold text-[#5C724F]">
-                {user?.role === "OWNER" ? "👑 Mwenye Duka" : `👤 ${user?.role}`}
+                {user?.role === "OWNER" ? "Mwenye Duka" : `${user?.role}`}
               </span>
             </div>
             <ChevronDown className="w-3.5 h-3.5 text-[#5B6F50]" />
@@ -204,10 +204,7 @@ export const TopHeader: React.FC<TopHeaderProps> = ({ pageTitle, onNavigate, onL
                             : "hover:bg-white text-[#334A24]"
                         }`}
                       >
-                        <span className="truncate">
-                          {emp.role === "OWNER" ? "👑 " : "👤 "}
-                          {emp.name}
-                        </span>
+                        <span className="truncate">{emp.name}</span>
                         <span className="text-[9px] px-1.5 py-0.5 rounded bg-white/80 text-[#3F582E] font-bold">
                           {emp.role === "OWNER" ? "Boss" : emp.role}
                         </span>

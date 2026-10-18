@@ -173,7 +173,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeModule, setActiveModule,
               <div>
                 <h2 className="text-sm font-black text-[#152508] tracking-tight">TradePOS</h2>
                 <span className="text-[10px] font-bold text-[#556D48] uppercase tracking-wider block">
-                  {isOwner ? "👑 Mwenye Duka" : `👤 ${user?.role}`}
+                  {isOwner ? "Mwenye Duka" : `${user?.role}`}
                 </span>
               </div>
             </div>
@@ -197,7 +197,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeModule, setActiveModule,
           {!isOwner ? (
             <>
               <div className="px-2 py-1 text-[10px] font-extrabold text-[#4E683D] uppercase tracking-wider">
-                {!collapsed ? (language === "sw" ? "👤 Kazi za Mfanyakazi" : "👤 Staff Workspace") : "•"}
+                {!collapsed ? (language === "sw" ? "Kazi za Mfanyakazi" : "Staff Workspace") : "•"}
               </div>
               {staffCoreNav.map(renderNavItem)}
             </>
@@ -205,19 +205,19 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeModule, setActiveModule,
             <>
               {/* TIER 1: HIGH USAGE */}
               <div className="px-2 py-1 text-[10px] font-extrabold text-[#4E683D] uppercase tracking-wider">
-                {!collapsed ? (language === "sw" ? "🔥 Kazi za Kila Saa" : "🔥 Daily Core") : "•"}
+                {!collapsed ? (language === "sw" ? "Kazi za Kila Saa" : "Daily Core") : "•"}
               </div>
               {highUsageNav.map(renderNavItem)}
 
               {/* TIER 2: DAILY CLOSING & FINANCE */}
               <div className="pt-2 px-2 pb-1 text-[10px] font-extrabold text-[#5F7750] uppercase tracking-wider border-t border-[#DDE9D1] mt-2">
-                {!collapsed ? (language === "sw" ? "📊 Hesabu & Faida" : "📊 Daily Finance") : "•"}
+                {!collapsed ? (language === "sw" ? "Hesabu & Faida" : "Daily Finance") : "•"}
               </div>
               {dailyFinanceNav.map(renderNavItem)}
 
               {/* TIER 3: LOW USAGE / ADMIN & SETTINGS */}
               <div className="pt-2 px-2 pb-1 text-[10px] font-extrabold text-[#6E8560] uppercase tracking-wider border-t border-[#DDE9D1] mt-2">
-                {!collapsed ? (language === "sw" ? "⚙️ Usimamizi & Mipangilio" : "⚙️ Management & Setup") : "•"}
+                {!collapsed ? (language === "sw" ? "Usimamizi & Mipangilio" : "Management & Setup") : "•"}
               </div>
               {lowUsageNav.map(renderNavItem)}
             </>
@@ -247,8 +247,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeModule, setActiveModule,
                   ? "Jaribu Akaunti ya Mfanyakazi"
                   : "Switch to Staff View"
                 : language === "sw"
-                ? "👑 Rudi Akaunti ya Mwenye Duka"
-                : "👑 Back to Owner View"}
+                ? "Rudi Akaunti ya Mwenye Duka"
+                : "Back to Owner View"}
             </span>
           </button>
         )}

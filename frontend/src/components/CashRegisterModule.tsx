@@ -207,11 +207,11 @@ export const CashRegisterModule: React.FC = () => {
             <span className="px-2.5 py-0.5 rounded-full text-[11px] font-black bg-[#E1FFAC] text-[#172B08] border border-[#9CE034]">
               {user?.role === "OWNER"
                 ? language === "sw"
-                  ? "👑 Mwonekano wa Mwenye Duka"
-                  : "👑 Owner View"
+                  ? "Mwonekano wa Mwenye Duka"
+                  : "Owner View"
                 : language === "sw"
-                ? `👤 Akaunti ya Mfanyakazi: ${user?.name}`
-                : `👤 Staff Account: ${user?.name}`}
+                ? `Akaunti ya Mfanyakazi: ${user?.name}`
+                : `Staff Account: ${user?.name}`}
             </span>
           </div>
           <p className="text-xs text-[#526848] mt-0.5">
@@ -473,7 +473,7 @@ export const CashRegisterModule: React.FC = () => {
                         >
                           {rep.status === "APPROVED"
                             ? `✓ IMEHAKIKIWA (${rep.approvedBy})`
-                            : "⏳ INASUBIRI KUHAKIKIWA NA MWENYE DUKA"}
+                            : "INASUBIRI KUHAKIKIWA NA MWENYE DUKA"}
                         </span>
                       </div>
 
@@ -909,7 +909,7 @@ export const CashRegisterModule: React.FC = () => {
             <div className="flex items-center justify-between border-b border-[#E6EFE0] pb-3">
               <div>
                 <h3 className="text-base font-black text-[#162709]">
-                  📤 Tuma Mahesabu ya Siku kwa Mwenye Duka
+                  Tuma Mahesabu ya Siku kwa Mwenye Duka
                 </h3>
                 <p className="text-xs text-[#556B4B]">
                   Inajumuisha: Walichouza leo, Matumizi ya siku hiyo, na Stock iliyobaki stoo.
@@ -1002,7 +1002,7 @@ export const CashRegisterModule: React.FC = () => {
             <div className="flex items-center justify-between border-b border-[#E6EFE0] pb-3">
               <div>
                 <h3 className="text-base font-black text-[#162709]">
-                  📋 Ripoti Kamili ya Siku — {selectedReport.submittedBy} ({selectedReport.staffRole})
+                  Ripoti Kamili ya Siku — {selectedReport.submittedBy} ({selectedReport.staffRole})
                 </h3>
                 <p className="text-xs text-[#556B4B]">
                   Tarehe: {selectedReport.submittedAt} • Tawi: {selectedReport.branchName}
