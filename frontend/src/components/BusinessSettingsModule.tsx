@@ -15,17 +15,23 @@ import {
 } from "lucide-react";
 
 export const BusinessSettingsModule: React.FC = () => {
-  const { business, currentBranch, language, setLanguage, t } = useApp();
+  const { business, updateBusinessProfile, language, setLanguage } = useApp();
 
-  const [bizName, setBizName] = useState(business?.name || "Peter Cosmetics & Beauty");
-  const [bizType, setBizType] = useState(business?.businessType || "Cosmetics & Retail");
-  const [currency, setCurrency] = useState("TZS");
-  const [taxRate, setTaxRate] = useState("18");
+  const [bizName, setBizName] = useState(business?.name || "");
+  const [bizType, setBizType] = useState(business?.businessType || "Retail Shop");
+  const [currency, setCurrency] = useState(business?.currency || "TZS");
+  const [taxRate, setTaxRate] = useState(String(business?.taxRate ?? 18));
   const [receiptFooter, setReceiptFooter] = useState("Asante kwa kufanya biashara nasi! Karibu tena.");
   const [savedSuccess, setSavedSuccess] = useState(false);
 
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
+    updateBusinessProfile({
+      name: bizName.trim() || business?.name || "Biashara Yangu",
+      businessType: bizType.trim() || "Retail Shop",
+      currency,
+      taxRate: Number(taxRate) || 18,
+    });
     setSavedSuccess(true);
     setTimeout(() => setSavedSuccess(false), 2000);
   };

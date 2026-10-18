@@ -17,9 +17,9 @@ import {
 export const ProfileSecurityModule: React.FC = () => {
   const { user, business } = useApp();
 
-  const [name, setName] = useState(user?.name || "Peter Joseph");
-  const [email, setEmail] = useState(user?.email || "peter@petercosmetics.co.tz");
-  const [phone, setPhone] = useState(user?.phone || "+255 712 345 678");
+  const [name, setName] = useState(user?.name || "");
+  const [email, setEmail] = useState(user?.email || "");
+  const [phone, setPhone] = useState(user?.phone || "");
 
   const [currentPwd, setCurrentPwd] = useState("");
   const [newPwd, setNewPwd] = useState("");
@@ -36,7 +36,7 @@ export const ProfileSecurityModule: React.FC = () => {
       {/* Header */}
       <div>
         <h2 className="text-xl font-black text-[#162709] tracking-tight">
-          User Account Profile & Security Controls
+          User Account Profile &amp; Security Controls
         </h2>
         <p className="text-xs text-[#526848]">
           Manage your personal credentials, contact phone for SMS alerts, two-factor authentication, and password security.
@@ -48,11 +48,11 @@ export const ProfileSecurityModule: React.FC = () => {
         <div className="p-5 rounded-2xl bg-white border border-[#D8E6CC] shadow-xs space-y-4">
           <div className="flex items-center gap-3 pb-3 border-b border-[#EDF4E4]">
             <div className="w-12 h-12 rounded-2xl bg-[#E1FFAC] border border-[#A6DF52] flex items-center justify-center font-black text-lg text-[#1D3508]">
-              {name.charAt(0)}
+              {(name || user?.name || "U").charAt(0).toUpperCase()}
             </div>
             <div>
-              <h3 className="font-black text-sm text-[#162709]">{name}</h3>
-              <span className="text-xs text-[#556F48] font-bold">{user?.role || "Owner"} • {business?.name}</span>
+              <h3 className="font-black text-sm text-[#162709]">{name || user?.name || "User"}</h3>
+              <span className="text-xs text-[#556F48] font-bold">{user?.role || "OWNER"} • {business?.name || "Store"}</span>
             </div>
           </div>
 

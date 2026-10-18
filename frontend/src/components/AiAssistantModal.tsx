@@ -15,14 +15,14 @@ import {
 } from "lucide-react";
 
 export const AiAssistantModal: React.FC = () => {
-  const { isAiModalOpen, setIsAiModalOpen, products, sales, expenses, customers, business, language } = useApp();
+  const { isAiModalOpen, setIsAiModalOpen, products, sales, expenses, customers, business, user, language } = useApp();
   const [query, setQuery] = useState("");
   const [messages, setMessages] = useState<
     { sender: "user" | "ai"; text: string; details?: any; type?: "FACT" | "PREDICTION" | "RECOMMENDATION" }[]
   >([
     {
       sender: "ai",
-      text: `Habari ${business?.name ? business.name : "Peter"}! Mimi ni Copetra AI, mfumo wako mahiri wa kiintelijensia ya biashara ndani ya TradePOS. Ninafuatilia taarifa zako za mauzo ya moja kwa moja, stoo ya bidhaa, madeni, na faida halisi. Una swali gani kuhusu biashara yako leo?`,
+      text: `Habari ${user?.name || business?.name || "Mmiliki wa Duka"}! Mimi ni Copetra AI, mfumo wako mahiri wa kiintelijensia ya biashara ndani ya TradePOS. Ninafuatilia taarifa zako za mauzo ya moja kwa moja, stoo ya bidhaa, madeni, na faida halisi. Una swali gani kuhusu biashara yako leo?`,
     },
   ]);
   const [isThinking, setIsThinking] = useState(false);
@@ -30,9 +30,33 @@ export const AiAssistantModal: React.FC = () => {
   if (!isAiModalOpen) return null;
 
   // Real data calculations for AI responses
-  const totalSalesAmount = sales.reduce((acc, s) => acc + s.total, 0);
+  const validSales = sales.filter((s) => s.status !== "REFUNDED");
+  const totalSalesAmount = validSales.reduce((acc, s) => acc + s.total, 0);
+  const totalProfitAmount = validSales.reduce((acc, s) => {
+    const saleProfit = s.items.reduce((iAcc, item) => {
+      const prod = products.find(
+        (p) => p.id === item.productId || p.name.toLowerCase() === item.productName.toLowerCase()
+      );
+      const unitCost = prod ? prod.buyingPrice : Math.round(item.price * 0.7);
+      return iAcc + (item.price - unitCost) * item.quantity;
+    }, 0);
+    return acc + saleProfit;
+  }, 0);
   const totalExpensesAmount = expenses.reduce((acc, e) => acc + e.amount, 0);
+  const netProfitAmount = totalProfitAmount - totalExpensesAmount;
   const lowStockProds = products.filter((p) => p.stockQuantity <= p.minStock);
+  const healthScore =
+    totalSalesAmount === 0 && products.length === 0
+      ? 0
+      : Math.min(
+          100,
+          Math.max(
+            20,
+            70 +
+              (netProfitAmount > 0 ? 15 : -15) +
+              (lowStockProds.length === 0 ? 15 : -Math.min(20, lowStockProds.length * 5))
+          )
+        );
 
   const sampleQuestions = language === "sw" ? [
     "Je, nimeuza kiasi gani leo?",
@@ -70,7 +94,7 @@ export const AiAssistantModal: React.FC = () => {
             expensesTotal: totalExpensesAmount,
             lowStockItems: lowStockProds.map((p) => p.name),
             productsCount: products.length,
-            transactionsCount: sales.length,
+            transactionsCount: validSales.length,
             currency: business?.currency || "TZS",
           },
         }),
@@ -97,17 +121,19 @@ export const AiAssistantModal: React.FC = () => {
 
       if (q.includes("nimeuza") || q.includes("how much") || q.includes("leo") || q.includes("today")) {
         type = "FACT";
-        fallbackText = `Kulingana na mfumo wa TradePOS, jumla ya mauzo ya leo ni TZS ${totalSalesAmount.toLocaleString()} kutokana na wateja ${sales.length}.`;
+        fallbackText = `Kulingana na mfumo wa TradePOS, jumla ya mauzo ni TZS ${totalSalesAmount.toLocaleString()} kutokana na miamala ${validSales.length}.`;
       } else if (q.includes("kuisha") || q.includes("stock") || q.includes("run out")) {
         type = "PREDICTION";
         if (lowStockProds.length > 0) {
           fallbackText = `Tahadhari ya stoo: Bidhaa ${lowStockProds.map(p => `"${p.name}" (zimebaki ${p.stockQuantity})`).join(", ")} zinakaribia kuisha. Agiza kwa wasambazaji sasa.`;
         } else {
-          fallbackText = `Bidhaa zote ziko juu ya kiwango cha usalama wa stoo kwa siku 7 zijazo.`;
+          fallbackText = products.length > 0
+            ? `Bidhaa zote ziko juu ya kiwango cha usalama wa stoo.`
+            : `Bado haujaingiza bidhaa kwenye Store Stock.`;
         }
       } else {
         type = "RECOMMENDATION";
-        fallbackText = `Copetra AI inakushauri: Weka ofa fupi ya vifurushi vya bidhaa zinazoendana ili kukuza ukubwa wa kikapu cha kila mteja na kupunguza bidhaa zilizokaa muda mrefu.`;
+        fallbackText = `Copetra AI inakushauri: Rekodi mauzo na matumizi ya kila siku kwa wakati ili kufuatilia faida halisi na mwenendo wa stoo yako.`;
       }
 
       setMessages((prev) => [
@@ -141,7 +167,7 @@ export const AiAssistantModal: React.FC = () => {
                 </span>
               </div>
               <p className="text-xs text-[#415332] font-semibold">
-                Intelligence Engine kwa ajili ya {business?.name}
+                Intelligence Engine kwa ajili ya {business?.name || "Biashara Yako"}
               </p>
             </div>
           </div>
@@ -160,12 +186,14 @@ export const AiAssistantModal: React.FC = () => {
               Business Health Score
             </span>
             <div className="flex items-baseline gap-2 mt-0.5">
-              <span className="text-2xl font-black text-[#1b2b0a]">84</span>
-              <span className="text-xs font-bold text-emerald-600">/ 100 • Strong & Liquid</span>
+              <span className="text-2xl font-black text-[#1b2b0a]">{healthScore}</span>
+              <span className="text-xs font-bold text-emerald-600">
+                / 100 • {healthScore === 0 ? "Awaiting Data" : healthScore >= 75 ? "Strong & Liquid" : "Active"}
+              </span>
             </div>
           </div>
-          <div className="h-10 w-24 bg-[#E1FFAC] rounded-xl flex items-center justify-center font-bold text-xs text-[#20330a] shadow-inner">
-            +6.4% MoM
+          <div className="h-10 px-3 bg-[#E1FFAC] rounded-xl flex items-center justify-center font-bold text-xs text-[#20330a] shadow-inner">
+            {validSales.length} Sales
           </div>
         </div>
 

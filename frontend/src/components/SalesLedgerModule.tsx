@@ -296,7 +296,7 @@ export const SalesLedgerModule: React.FC = () => {
       customerName:
         customerName.trim() ||
         (paymentMethod === "CREDIT" ? "Mteja wa Mkopo" : "Mteja wa Dukani"),
-      cashierName: user?.name || "Baraka Mushi",
+      cashierName: user?.name || "Mhudumu",
       status: "COMPLETED",
     });
 

@@ -181,7 +181,7 @@ export const ExpensesAccountingModule: React.FC = () => {
       category,
       amount: amt,
       date: todayStr,
-      recordedBy: user?.name || "Baraka Mushi",
+      recordedBy: user?.name || "Mhudumu",
       paymentMethod,
       notes: notes.trim() || undefined,
     });

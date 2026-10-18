@@ -66,8 +66,8 @@ function MainApp() {
   // Restore authenticated session and view state on page reload
   React.useEffect(() => {
     try {
-      const storedView = localStorage.getItem("tradepos_view_state");
-      const storedUser = localStorage.getItem("tradepos_session_user");
+      const storedView = localStorage.getItem("tradepos_prod_view_v1");
+      const storedUser = localStorage.getItem("tradepos_prod_user_v1");
       const hasSeenSplash = sessionStorage.getItem("tradepos_splash_shown");
 
       if (!hasSeenSplash) {
@@ -75,7 +75,7 @@ function MainApp() {
         sessionStorage.setItem("tradepos_splash_shown", "true");
       }
 
-      if (storedUser || storedView === "app") {
+      if (storedUser && storedView === "app") {
         setView("app");
       }
     } catch (e) {}
@@ -93,15 +93,6 @@ function MainApp() {
       setActiveModule("sales");
     }
   }, [isOwner, activeModule]);
-
-  const handleDemoLogin = () => {
-    loginUser("peter@petercosmetics.co.tz");
-    setView("app");
-    setActiveModule("dashboard");
-    try {
-      localStorage.setItem("tradepos_view_state", "app");
-    } catch (e) {}
-  };
 
   // Human readable title lookup
   const getModuleTitle = (mod: string) => {
@@ -165,7 +156,6 @@ function MainApp() {
         <LandingPage
           onGetStarted={() => setAuthModal("register")}
           onLoginClick={() => setAuthModal("login")}
-          onDemoLogin={handleDemoLogin}
         />
       ) : (
         /* ===================== LOGGED-IN PROFESSIONAL BUSINESS MANAGEMENT OS ===================== */

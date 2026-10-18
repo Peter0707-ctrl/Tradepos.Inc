@@ -35,13 +35,8 @@ export const InventoryModule: React.FC = () => {
   const [isMovementModalOpen, setIsMovementModalOpen] = useState(false);
   const [movementType, setMovementType] = useState<"IN" | "OUT">("IN");
 
-  // Custom bundle sizes per product name (default: 1 Bando = 10 Pcs, just like the user's shoe/bundle example!)
-  const [bundleSizes, setBundleSizes] = useState<{ [prodName: string]: number }>({
-    "Nivea Nourishing Body Milk 400ml": 10,
-    "Maybelline Matte Lip Gloss Velvet": 10,
-    "CeraVe Hydrating Facial Cleanser 236ml": 10,
-    "Garnier Micellar Cleansing Water 400ml": 10,
-  });
+  // Custom bundle sizes per product name (default: 1 Bando = 10 Pcs)
+  const [bundleSizes, setBundleSizes] = useState<{ [prodName: string]: number }>({});
 
   // Unified Stock IN / Stock OUT Modal Form State (User types product name directly)
   const [movProductName, setMovProductName] = useState("");
@@ -249,7 +244,7 @@ export const InventoryModule: React.FC = () => {
           balance: 0,
           paymentMethod: "CASH",
           customerName: "Mteja wa Dukani",
-          cashierName: user?.name || "Baraka Mushi",
+          cashierName: user?.name || "Mhudumu",
           status: "COMPLETED",
         });
       } else {
@@ -263,7 +258,7 @@ export const InventoryModule: React.FC = () => {
           reason: movReason,
           unitCost: cost,
           totalValue: finalQtyInPcs * cost,
-          recordedBy: user?.name || "Baraka Mushi",
+          recordedBy: user?.name || "Mhudumu",
           notes:
             movNotes ||
             (movInputMode === "BUNDLE"
@@ -298,7 +293,7 @@ export const InventoryModule: React.FC = () => {
           reason: movReason,
           unitCost: enteredCost,
           totalValue: finalQtyInPcs * enteredCost,
-          recordedBy: user?.name || "Baraka Mushi",
+          recordedBy: user?.name || "Mhudumu",
           notes:
             movNotes ||
             `Bidhaa mpya (${movInputMode === "BUNDLE" ? `Bando ${rawQty}` : `${finalQtyInPcs} pcs`})`,

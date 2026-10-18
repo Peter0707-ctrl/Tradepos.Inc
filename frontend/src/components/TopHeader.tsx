@@ -184,10 +184,10 @@ export const TopHeader: React.FC<TopHeaderProps> = ({ pageTitle, onNavigate, onL
               className="flex items-center gap-2 p-1 pl-2 rounded-xl bg-white border border-[#D5E5C4] hover:border-[#8ECE28] shadow-xs transition cursor-pointer"
             >
               <div className="w-7 h-7 rounded-lg bg-[#E1FFAC] border border-[#A6DF52] flex items-center justify-center font-black text-xs text-[#1F3609]">
-                {user?.name ? user.name.charAt(0) : "P"}
+                {user?.name ? user.name.charAt(0).toUpperCase() : "U"}
               </div>
               <div className="hidden lg:block text-left pr-1">
-                <span className="block text-xs font-black text-[#172709] leading-tight">{user?.name || "Peter Joseph"}</span>
+                <span className="block text-xs font-black text-[#172709] leading-tight">{user?.name || "Mmiliki wa Duka"}</span>
                 <span className="block text-[10px] font-bold text-[#5C724F]">
                   {isOwner ? "Mwenye Duka (Boss)" : `Muuzaji (${user?.role})`}
                 </span>

@@ -23,9 +23,21 @@ export const ReportsCenterModule: React.FC = () => {
 
   const [dateRange, setDateRange] = useState("THIS_MONTH");
 
-  const totalSales = sales.reduce((a, b) => a + b.total, 0);
+  const validSales = sales.filter((s) => s.status !== "REFUNDED");
+  const getSaleProfit = (s: typeof sales[0]) =>
+    s.items.reduce((acc, item) => {
+      const prod = products.find(
+        (p) => p.id === item.productId || p.name.toLowerCase() === item.productName.toLowerCase()
+      );
+      const unitCost = prod ? prod.buyingPrice : Math.round(item.price * 0.7);
+      return acc + (item.price - unitCost) * item.quantity;
+    }, 0);
+
+  const totalSales = validSales.reduce((a, b) => a + b.total, 0);
+  const totalGrossProfit = validSales.reduce((a, b) => a + getSaleProfit(b), 0);
   const totalExpenses = expenses.reduce((a, b) => a + b.amount, 0);
-  const estProfit = Math.round(totalSales * 0.38) - totalExpenses;
+  const estProfit = totalGrossProfit - totalExpenses;
+  const todayDateStr = new Date().toISOString().split("T")[0];
 
   return (
     <div className="flex-1 flex flex-col h-full p-4 lg:p-6 overflow-hidden">
@@ -51,7 +63,7 @@ export const ReportsCenterModule: React.FC = () => {
             <span>{language === "sw" ? "Chapisha Ripoti" : "Print Report"}</span>
           </button>
           <button
-            onClick={() => alert(language === "sw" ? "Inapakua ripoti ya Excel/PDF..." : "Exporting formatted Excel spreadsheet...")}
+            onClick={() => window.print()}
             className="px-4 py-2 rounded-xl neu-btn text-xs font-bold flex items-center gap-1.5 shadow-xs"
           >
             <Download className="w-4 h-4" />
@@ -102,10 +114,10 @@ export const ReportsCenterModule: React.FC = () => {
                 : "Credit Accounts Receivable Aging Report"}
             </h3>
             <span className="text-xs text-[#5D7351]">
-              Reporting Entity: {currentBranch?.name} • Period: Current Calendar Cycle
+              Reporting Entity: {currentBranch?.name || "Main Branch"} • Period: Current Calendar Cycle
             </span>
           </div>
-          <span className="text-xs font-mono text-[#6A815E]">Generated: 2026-10-08</span>
+          <span className="text-xs font-mono text-[#6A815E]">Generated: {todayDateStr}</span>
         </div>
 
         {/* Dynamic Summary Cards */}
@@ -126,7 +138,7 @@ export const ReportsCenterModule: React.FC = () => {
 
           <div className="p-4 rounded-xl bg-[#F7FCF0] border border-[#D2E7BD]">
             <span className="text-xs text-[#566E49] font-bold block">Calculated Net Operating Surplus</span>
-            <span className="text-xl font-black text-emerald-800 mt-0.5 block">
+            <span className={`text-xl font-black mt-0.5 block ${estProfit >= 0 ? "text-emerald-800" : "text-rose-700"}`}>
               TZS {estProfit.toLocaleString()}
             </span>
           </div>
@@ -145,17 +157,29 @@ export const ReportsCenterModule: React.FC = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-[#F1F6EB] text-[#1A2E0A]">
-              {sales.map((s, idx) => (
-                <tr key={s.id} className="hover:bg-[#F9FBF6]">
-                  <td className="py-3 px-4 font-bold">{s.saleNumber} ({s.customerName || "Walk-in"})</td>
-                  <td className="py-3 px-4">{s.paymentMethod}</td>
-                  <td className="py-3 px-4 text-[#5D7351]">TZS {(s.total * 0.62).toFixed(0)}</td>
-                  <td className="py-3 px-4 font-black">TZS {s.total.toLocaleString()}</td>
-                  <td className="py-3 px-4 text-right font-black text-emerald-800">
-                    +TZS {(s.total * 0.38).toFixed(0)}
+              {validSales.length === 0 ? (
+                <tr>
+                  <td colSpan={5} className="py-8 text-center text-[#65795e]">
+                    No transactions recorded yet.
                   </td>
                 </tr>
-              ))}
+              ) : (
+                validSales.map((s) => {
+                  const saleProfit = getSaleProfit(s);
+                  const costBasis = Math.max(0, s.total - saleProfit);
+                  return (
+                    <tr key={s.id} className="hover:bg-[#F9FBF6]">
+                      <td className="py-3 px-4 font-bold">{s.saleNumber} ({s.customerName || "Walk-in"})</td>
+                      <td className="py-3 px-4">{s.paymentMethod}</td>
+                      <td className="py-3 px-4 text-[#5D7351]">TZS {costBasis.toLocaleString()}</td>
+                      <td className="py-3 px-4 font-black">TZS {s.total.toLocaleString()}</td>
+                      <td className="py-3 px-4 text-right font-black text-emerald-800">
+                        +TZS {saleProfit.toLocaleString()}
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
             </tbody>
           </table>
         </div>

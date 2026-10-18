@@ -24,7 +24,7 @@ export const EmployeesRolesModule: React.FC<EmployeesRolesModuleProps> = ({ onNa
   const [phone, setPhone] = useState("");
   const [pin, setPin] = useState("1111");
   const [role, setRole] = useState<"CASHIER" | "STOREKEEPER" | "ACCOUNTANT" | "MANAGER">("CASHIER");
-  const [branch, setBranch] = useState(currentBranch?.name || "Kariakoo Branch (HQ)");
+  const [branch, setBranch] = useState(currentBranch?.name || business?.branches[0]?.name || "Tawi Kuu (HQ)");
 
   const handleAdd = (e: React.FormEvent) => {
     e.preventDefault();

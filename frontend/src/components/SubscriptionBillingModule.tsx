@@ -14,8 +14,7 @@ import {
 } from "lucide-react";
 
 export const SubscriptionBillingModule: React.FC = () => {
-  const { business, renewSubscription, language } = useApp();
-  const [selectedPlan, setSelectedPlan] = useState(business?.subscriptionPlan || "PROFESSIONAL");
+  const { business, renewSubscription, updateBusinessProfile, auditLogs, language } = useApp();
   const [isProcessing, setIsProcessing] = useState(false);
 
   const handleRenewOrUpgrade = () => {
@@ -23,40 +22,26 @@ export const SubscriptionBillingModule: React.FC = () => {
     setTimeout(() => {
       renewSubscription();
       setIsProcessing(false);
-      alert(
-        language === "sw"
-          ? "Kifurushi chako kimehuishwa kikamilifu kwa siku 30 zijazo!"
-          : "Subscription renewed successfully for another 30 calendar days!"
-      );
-    }, 1000);
+    }, 800);
   };
 
-  const paymentHistory = [
-    {
-      invoice: "SUB-INV-2026-09",
-      date: "2026-10-08",
-      amount: "TZS 150,000",
-      plan: "PROFESSIONAL",
-      method: "M-Pesa Express",
+  const handleSwitchPlan = (planName: "PROFESSIONAL" | "BUSINESS" | "ENTERPRISE") => {
+    updateBusinessProfile({ subscriptionPlan: planName as any });
+  };
+
+  const currentPlan = business?.subscriptionPlan || "PROFESSIONAL";
+  const currentMonthlyRate = currentPlan === "BUSINESS" ? "TZS 300,000" : "TZS 150,000";
+
+  const paymentHistory = auditLogs
+    .filter((log) => log.action === "SUBSCRIPTION_RENEWED" || log.action === "BUSINESS_REGISTERED")
+    .map((log, idx) => ({
+      invoice: `SUB-${log.id.slice(-6).toUpperCase() || idx + 1}`,
+      date: log.timestamp.split(" ")[0] || new Date().toISOString().split("T")[0],
+      amount: currentMonthlyRate,
+      plan: currentPlan,
+      method: "Mobile Money",
       status: "SUCCESSFUL",
-    },
-    {
-      invoice: "SUB-INV-2026-08",
-      date: "2026-09-08",
-      amount: "TZS 150,000",
-      plan: "PROFESSIONAL",
-      method: "M-Pesa Express",
-      status: "SUCCESSFUL",
-    },
-    {
-      invoice: "SUB-INV-2026-07",
-      date: "2026-08-08",
-      amount: "TZS 150,000",
-      plan: "PROFESSIONAL",
-      method: "Airtel Money",
-      status: "SUCCESSFUL",
-    },
-  ];
+    }));
 
   return (
     <div className="flex-1 flex flex-col h-full p-4 lg:p-6 overflow-y-auto space-y-6">
@@ -85,15 +70,24 @@ export const SubscriptionBillingModule: React.FC = () => {
           </div>
 
           <h3 className="text-3xl font-black text-[#152709]">
-            {business?.subscriptionPlan || "PROFESSIONAL"} PLAN
+            {currentPlan} PLAN
           </h3>
 
           <div className="flex flex-wrap items-center gap-4 mt-3 text-xs text-[#4F6742]">
-            <span>Next Billing Date: <strong className="text-[#152709]">{business?.subscriptionExpiry || "2026-11-08"}</strong></span>
+            <span>
+              Next Billing Date:{" "}
+              <strong className="text-[#152709]">
+                {business?.subscriptionExpiry || new Date(Date.now() + 30 * 86400000).toISOString().split("T")[0]}
+              </strong>
+            </span>
             <span>•</span>
-            <span>Monthly Rate: <strong className="text-[#152709]">TZS 150,000 / month</strong></span>
+            <span>
+              Monthly Rate: <strong className="text-[#152709]">{currentMonthlyRate} / month</strong>
+            </span>
             <span>•</span>
-            <span>Branches Allowed: <strong className="text-[#152709]">Unlimited</strong></span>
+            <span>
+              Branches Allowed: <strong className="text-[#152709]">Unlimited</strong>
+            </span>
           </div>
         </div>
 
@@ -113,9 +107,10 @@ export const SubscriptionBillingModule: React.FC = () => {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {[
           {
+            id: "PROFESSIONAL",
             name: "PROFESSIONAL",
             price: "TZS 150,000 / mo",
-            current: true,
+            current: currentPlan === "PROFESSIONAL",
             features: [
               "Unlimited Branches & Warehouses",
               "AI Business Assistant (Copetra)",
@@ -125,8 +120,10 @@ export const SubscriptionBillingModule: React.FC = () => {
             ],
           },
           {
+            id: "BUSINESS",
             name: "BUSINESS CHAIN",
             price: "TZS 300,000 / mo",
+            current: currentPlan === "BUSINESS",
             features: [
               "Multi-Warehouse Automated Drops",
               "Wholesale Multi-Tier Pricing",
@@ -135,8 +132,10 @@ export const SubscriptionBillingModule: React.FC = () => {
             ],
           },
           {
+            id: "ENTERPRISE",
             name: "ENTERPRISE",
             price: "Custom",
+            current: currentPlan === "ENTERPRISE",
             features: [
               "Dedicated Server & Database Partition",
               "Custom Integrations (TRA EFD, SAP, ERP)",
@@ -173,6 +172,7 @@ export const SubscriptionBillingModule: React.FC = () => {
 
             <button
               disabled={plan.current}
+              onClick={() => handleSwitchPlan(plan.id as any)}
               className={`mt-5 w-full py-2.5 rounded-xl text-xs font-bold transition ${
                 plan.current
                   ? "bg-[#EDF3E6] text-[#718866] cursor-default"
@@ -187,7 +187,7 @@ export const SubscriptionBillingModule: React.FC = () => {
 
       {/* Payment History Ledger */}
       <div className="bg-white rounded-2xl p-5 border border-[#D8E6CC] shadow-xs">
-        <h4 className="font-extrabold text-sm text-[#162709] mb-3">Billing & Payment Transaction Records</h4>
+        <h4 className="font-extrabold text-sm text-[#162709] mb-3">Billing &amp; Payment Transaction Records</h4>
         <table className="w-full text-left text-xs divide-y divide-[#EBF2E2]">
           <thead className="bg-[#F8FAF4] font-bold text-[#4D6340]">
             <tr>
@@ -200,20 +200,28 @@ export const SubscriptionBillingModule: React.FC = () => {
             </tr>
           </thead>
           <tbody className="divide-y divide-[#F1F6EB] text-[#1A2E0A]">
-            {paymentHistory.map((p, idx) => (
-              <tr key={idx} className="hover:bg-[#F9FBF6]">
-                <td className="py-2.5 px-3 font-bold font-mono">{p.invoice}</td>
-                <td className="py-2.5 px-3 text-[#58704D]">{p.date}</td>
-                <td className="py-2.5 px-3 font-semibold">{p.plan}</td>
-                <td className="py-2.5 px-3">{p.method}</td>
-                <td className="py-2.5 px-3 font-black">{p.amount}</td>
-                <td className="py-2.5 px-3 text-right">
-                  <span className="font-black text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
-                    {p.status}
-                  </span>
+            {paymentHistory.length === 0 ? (
+              <tr>
+                <td colSpan={6} className="py-6 text-center text-[#65795e]">
+                  No billing history recorded yet.
                 </td>
               </tr>
-            ))}
+            ) : (
+              paymentHistory.map((p, idx) => (
+                <tr key={idx} className="hover:bg-[#F9FBF6]">
+                  <td className="py-2.5 px-3 font-bold font-mono">{p.invoice}</td>
+                  <td className="py-2.5 px-3 text-[#58704D]">{p.date}</td>
+                  <td className="py-2.5 px-3 font-semibold">{p.plan}</td>
+                  <td className="py-2.5 px-3">{p.method}</td>
+                  <td className="py-2.5 px-3 font-black">{p.amount}</td>
+                  <td className="py-2.5 px-3 text-right">
+                    <span className="font-black text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
+                      {p.status}
+                    </span>
+                  </td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </div>

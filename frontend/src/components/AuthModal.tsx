@@ -25,13 +25,14 @@ export const AuthModal: React.FC<AuthModalProps> = ({ initialMode, onClose, onSu
   const [regPhone, setRegPhone] = useState("");
   const [regEmail, setRegEmail] = useState("");
   const [regPassword, setRegPassword] = useState("");
+  const [regPin, setRegPin] = useState("");
 
   const [bizName, setBizName] = useState("");
   const [bizType, setBizType] = useState("Retail Shop");
-  const [bizLocation, setBizLocation] = useState("Kariakoo, Dar es Salaam");
+  const [bizLocation, setBizLocation] = useState("");
   const [selectedPlan, setSelectedPlan] = useState<"STARTER" | "PROFESSIONAL" | "BUSINESS">("PROFESSIONAL");
   const [paymentMethod, setPaymentMethod] = useState("MPESA");
-  const [paymentPhone, setPaymentPhone] = useState("+255 712 345 678");
+  const [paymentPhone, setPaymentPhone] = useState("");
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
 
   const handleLogin = (e: React.FormEvent) => {
@@ -41,14 +42,12 @@ export const AuthModal: React.FC<AuthModalProps> = ({ initialMode, onClose, onSu
     onSuccess();
   };
 
-  const handleDemoLogin = () => {
-    loginUser("demo@tradepos.co.tz");
-    onSuccess();
-  };
-
   const handleRegisterStep1 = (e: React.FormEvent) => {
     e.preventDefault();
     if (!regFullName || !regEmail || !regPassword) return;
+    if (!paymentPhone && regPhone) {
+      setPaymentPhone(regPhone);
+    }
     setStep(2);
   };
 
@@ -66,7 +65,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ initialMode, onClose, onSu
     setIsProcessingPayment(true);
     setTimeout(() => {
       registerBusiness(
-        { name: regFullName, phone: regPhone, email: regEmail },
+        { name: regFullName, phone: regPhone, email: regEmail, pin: regPin || "1234" },
         { name: bizName, type: bizType, location: bizLocation },
         selectedPlan
       );
@@ -96,27 +95,6 @@ export const AuthModal: React.FC<AuthModalProps> = ({ initialMode, onClose, onSu
               : (language === "sw" ? `Hatua ya ${step} ya 4` : `Step ${step} of 4`)}
           </p>
         </div>
-
-        {/* 1-CLICK DEMO ACCOUNT CALLOUT */}
-        {mode === "login" && (
-          <div className="mb-5 p-4 rounded-2xl auth-neu-well flex items-center justify-between">
-            <div>
-              <h4 className="font-extrabold text-xs text-[#162709]">
-                {language === "sw" ? "Akaunti ya Majaribio (Demo)" : "Try Demo Account"}
-              </h4>
-              <p className="text-[11px] text-[#4d6144]">
-                {language === "sw" ? "Bonyeza hapa kuingia moja kwa moja bila kujisajili" : "Instant access with preloaded sample store"}
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={handleDemoLogin}
-              className="px-4 py-2 rounded-xl bg-[#1b2f0a] text-[#E1FFAC] text-xs font-black shadow-md hover:bg-[#122006] transition"
-            >
-              {language === "sw" ? "Fungua Demo" : "Open Demo"}
-            </button>
-          </div>
-        )}
 
         {/* ===================== LOGIN FORM ===================== */}
         {mode === "login" && (
@@ -201,7 +179,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ initialMode, onClose, onSu
                 required
                 value={regFullName}
                 onChange={(e) => setRegFullName(e.target.value)}
-                placeholder="mf. Baraka Mushi"
+                placeholder="Ingiza jina lako kamili"
                 className="w-full py-3 px-4 rounded-xl auth-neu-input text-sm text-[#142308]"
               />
             </div>
@@ -212,7 +190,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ initialMode, onClose, onSu
                 required
                 value={regPhone}
                 onChange={(e) => setRegPhone(e.target.value)}
-                placeholder="+255 712 345 678"
+                placeholder="+255 7..."
                 className="w-full py-3 px-4 rounded-xl auth-neu-input text-sm text-[#142308]"
               />
             </div>
@@ -227,16 +205,29 @@ export const AuthModal: React.FC<AuthModalProps> = ({ initialMode, onClose, onSu
                 className="w-full py-3 px-4 rounded-xl auth-neu-input text-sm text-[#142308]"
               />
             </div>
-            <div>
-              <label className="block text-xs font-bold text-[#2d3f23] mb-1">Nenosiri</label>
-              <input
-                type="password"
-                required
-                value={regPassword}
-                onChange={(e) => setRegPassword(e.target.value)}
-                placeholder="••••••••"
-                className="w-full py-3 px-4 rounded-xl auth-neu-input text-sm text-[#142308]"
-              />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-bold text-[#2d3f23] mb-1">Nenosiri</label>
+                <input
+                  type="password"
+                  required
+                  value={regPassword}
+                  onChange={(e) => setRegPassword(e.target.value)}
+                  placeholder="••••••••"
+                  className="w-full py-3 px-4 rounded-xl auth-neu-input text-sm text-[#142308]"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-[#2d3f23] mb-1">PIN ya Siri (Tarakimu 4)</label>
+                <input
+                  type="password"
+                  maxLength={4}
+                  value={regPin}
+                  onChange={(e) => setRegPin(e.target.value.replace(/\D/g, "").slice(0, 4))}
+                  placeholder="mf. 1234"
+                  className="w-full py-3 px-4 rounded-xl auth-neu-input text-sm text-[#142308] tracking-widest font-bold"
+                />
+              </div>
             </div>
             <button
               type="submit"
@@ -265,7 +256,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ initialMode, onClose, onSu
                 required
                 value={bizName}
                 onChange={(e) => setBizName(e.target.value)}
-                placeholder="mf. Karibu Premier Supermarket"
+                placeholder="Ingiza jina la duka au kampuni"
                 className="w-full py-3 px-4 rounded-xl auth-neu-input text-sm text-[#142308]"
               />
             </div>

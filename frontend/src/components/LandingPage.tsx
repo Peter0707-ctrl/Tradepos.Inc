@@ -27,24 +27,24 @@ import {
 interface LandingPageProps {
   onGetStarted: () => void;
   onLoginClick: () => void;
-  onDemoLogin: () => void;
+  onDemoLogin?: () => void;
 }
 
 const SW_PHRASES = [
   "Simamia Biashara Yako Yote Sehemu Moja.",
-  "Rahisisha Mauzo ya POS na Risiti Papo Hapo.",
+  "Rekodi Mauzo ya Siku na Faida Papo Hapo.",
   "Dhibiti Stoo, Wateja na Madeni kwa Usahihi.",
   "Fuatilia Faida Halisi na Matumizi Kila Siku."
 ];
 
 const EN_PHRASES = [
   "Run Your Entire Business From One Platform.",
-  "Fast POS Checkout, Mobile Money & Receipts.",
+  "Daily Sales Ledger, Mobile Money & Accounting.",
   "Real-Time Stock Control, Inventory & Debts.",
   "Track Daily Profits, Expenses & Financial Growth."
 ];
 
-export const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onLoginClick, onDemoLogin }) => {
+export const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onLoginClick }) => {
   const { t, language, setLanguage } = useApp();
 
   const phrases = t.landing.phrases;
@@ -146,15 +146,6 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onLoginC
               <span className="sm:hidden">{language === "en" ? "SW" : "EN"}</span>
             </button>
 
-            {/* DEMO ACCOUNT QUICK LOGIN BUTTON */}
-            <button
-              onClick={onDemoLogin}
-              className="px-2.5 sm:px-3.5 py-1.5 rounded-xl bg-white text-[#1f350c] border-2 border-[#8ece28] text-[11px] sm:text-xs font-black shadow-xs hover:bg-[#F2FFD6] transition"
-            >
-              <span className="hidden sm:inline">{t.demoAccount}</span>
-              <span className="sm:hidden">Demo</span>
-            </button>
-
             <button
               onClick={onLoginClick}
               className="px-2.5 sm:px-3.5 py-1.5 rounded-xl neu-btn-secondary text-[11px] sm:text-xs font-bold hover:bg-white transition"
@@ -185,7 +176,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onLoginC
           </h1>
 
           <p className="text-lg md:text-xl text-[#263520] max-w-3xl mx-auto font-medium mb-10 leading-relaxed bg-white/40 py-2 px-4 rounded-2xl backdrop-blur-xs">
-            Manage sales, inventory, customers, expenses, accounting, branches and business intelligence from one simple platform.
+            Manage daily sales, store stock &amp; bundle tracking, customer debts, expenses, and automatic end-of-day reports from one unified platform.
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-16">
@@ -198,14 +189,14 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onLoginC
             </button>
 
             <button
-              onClick={onDemoLogin}
+              onClick={onLoginClick}
               className="w-full sm:w-auto px-8 py-4 rounded-2xl bg-white text-[#213812] border-2 border-[#8ecc28] text-base font-extrabold shadow-neu-flat hover:bg-[#F4FFDC] transition"
             >
-              {t.demoAccount}
+              {t.login}
             </button>
           </div>
 
-          {/* Hero POS Dashboard Preview Mockup */}
+          {/* Hero Platform Architecture Overview */}
           <div className="relative max-w-5xl mx-auto rounded-3xl p-3 bg-white/90 border-2 border-[#b5eb65] shadow-neu-raised backdrop-blur-sm">
             <div className="bg-[#F8FAF4] rounded-2xl p-6 border border-[#d6e5c5] text-left">
               <div className="flex flex-wrap items-center justify-between pb-5 border-b border-[#dce8cf] gap-4">
@@ -214,38 +205,37 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onLoginC
                   <div className="w-3.5 h-3.5 rounded-full bg-amber-400" />
                   <div className="w-3.5 h-3.5 rounded-full bg-emerald-400" />
                   <span className="ml-3 text-xs font-semibold text-[#485942]">
-                    Karibu Premier Supermarket — Branch: Kariakoo Flagship
+                    TradePOS Operating System — Multi-Branch &amp; Role-Isolated Workspace
                   </span>
                 </div>
                 <div className="flex items-center gap-3">
                   <span className="text-xs px-2.5 py-1 rounded-md bg-[#E1FFAC] font-bold text-[#1f3309] border border-[#aae056]">
-                    ● LIVE ONLINE POS
+                    ● REAL-TIME SYNC
                   </span>
-                  <span className="text-xs font-medium text-[#485942]">Staff: Baraka Mushi</span>
                 </div>
               </div>
 
-              {/* Sample Dashboard metrics */}
+              {/* Core Modules Overview */}
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
                 <div className="p-4 rounded-xl bg-white border border-[#DCE8CD] shadow-sm">
-                  <span className="text-xs text-[#52634d] font-semibold">Today&apos;s Sales</span>
-                  <p className="text-2xl font-bold text-[#18290a] mt-1">TZS 1,845,000</p>
-                  <span className="text-[11px] font-bold text-emerald-700">+14% vs yesterday</span>
+                  <span className="text-xs text-[#52634d] font-semibold">Mauzo ya Siku</span>
+                  <p className="text-base font-extrabold text-[#18290a] mt-1">Auto-Calculated</p>
+                  <span className="text-[11px] font-bold text-emerald-700">Cash, Mobile &amp; Credit</span>
                 </div>
                 <div className="p-4 rounded-xl bg-white border border-[#DCE8CD] shadow-sm">
-                  <span className="text-xs text-[#52634d] font-semibold">Net Profit (After Expenses)</span>
-                  <p className="text-2xl font-bold text-[#18290a] mt-1">TZS 528,400</p>
-                  <span className="text-[11px] font-bold text-emerald-700">28.6% margin</span>
+                  <span className="text-xs text-[#52634d] font-semibold">Matumizi &amp; Funga Siku</span>
+                  <p className="text-base font-extrabold text-[#18290a] mt-1">1-Click Handover</p>
+                  <span className="text-[11px] font-bold text-emerald-700">Direct to Shop Owner</span>
                 </div>
                 <div className="p-4 rounded-xl bg-white border border-[#DCE8CD] shadow-sm">
-                  <span className="text-xs text-[#52634d] font-semibold">Low Stock Alerts</span>
-                  <p className="text-2xl font-bold text-amber-600 mt-1">3 Products</p>
-                  <span className="text-[11px] font-medium text-[#586952]">Require restock</span>
+                  <span className="text-xs text-[#52634d] font-semibold">Store Stock &amp; Bando</span>
+                  <p className="text-base font-extrabold text-[#18290a] mt-1">Smart Detection</p>
+                  <span className="text-[11px] font-medium text-[#586952]">Auto-detects opened bundles</span>
                 </div>
                 <div className="p-4 rounded-xl bg-white border border-[#DCE8CD] shadow-sm">
-                  <span className="text-xs text-[#52634d] font-semibold">Business Health Score</span>
-                  <p className="text-2xl font-bold text-[#233a0b] mt-1">84 / 100</p>
-                  <span className="text-[11px] font-bold text-emerald-700">Optimal Growth</span>
+                  <span className="text-xs text-[#52634d] font-semibold">Privacy &amp; PIN Lock</span>
+                  <p className="text-base font-extrabold text-[#233a0b] mt-1">Owner vs Staff</p>
+                  <span className="text-[11px] font-bold text-emerald-700">4-Digit PIN Isolation</span>
                 </div>
               </div>
             </div>

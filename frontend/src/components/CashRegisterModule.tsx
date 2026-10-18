@@ -152,7 +152,7 @@ export const CashRegisterModule: React.FC = () => {
           name: item.productName,
           quantity: 0,
           revenue: 0,
-          lastCashier: s.cashierName || "Baraka Mushi",
+          lastCashier: s.cashierName || "Mhudumu",
           remainingInStore: matchedProd ? matchedProd.stockQuantity : 0,
           unit: matchedProd ? matchedProd.unit : "Pcs",
         };
@@ -228,7 +228,7 @@ export const CashRegisterModule: React.FC = () => {
       balance: salePaymentMethod === "CREDIT" ? total : 0,
       paymentMethod: salePaymentMethod,
       customerName: saleCustomerName.trim() || "Mteja wa Dukani",
-      cashierName: user?.name || "Baraka Mushi",
+      cashierName: user?.name || "Mhudumu",
       status: "COMPLETED",
     });
 
@@ -250,7 +250,7 @@ export const CashRegisterModule: React.FC = () => {
       description: `${expDesc.trim()} (Imerekodiwa na ${user?.name || "Mfanyakazi"})`,
       amount: amt,
       date: new Date().toISOString().split("T")[0],
-      recordedBy: user?.name || "Baraka Mushi",
+      recordedBy: user?.name || "Mhudumu",
       paymentMethod: expMethod,
     });
     setExpDesc("");
@@ -337,7 +337,7 @@ export const CashRegisterModule: React.FC = () => {
     setTimeout(() => setSubmitSuccessBanner(false), 6000);
   };
 
-  const zReportMessage = `*TRADEPOS: RIPOTI YA SIKU KWA MWENYE DUKA*\nTarehe: ${new Date().toLocaleDateString()}\nImewasilishwa na: ${user?.name || "Baraka Mushi"} (${user?.role || "CASHIER"})\nTawi: ${currentBranch?.name || "Kariakoo"}\n\n*1. MAUZO YA LEO:* TZS ${totalSalesAll.toLocaleString()}\n- Cash: TZS ${totalCashSales.toLocaleString()}\n- Simu (M-Pesa/Airtel): TZS ${totalMobileSales.toLocaleString()}\n- Mkopo (Credit): TZS ${totalCreditSales.toLocaleString()}\n- Bidhaa Zilizouzwa: ${totalUnitsSold} pcs\n\n*2. MATUMIZI YA SIKU HIYO:* TZS ${totalExpensesToday.toLocaleString()}\n\n*3. STOCK ILIYobaki STOO:* ${totalUnitsRemainingInStore} pcs (${lowStockItems.length} zinaisha)\n\n*4. DROO YA PESA:*\n- Inayotakiwa: TZS ${expectedCash.toLocaleString()}\n- Iliyohesabiwa: TZS ${cashRegister.actualCash.toLocaleString()}`;
+  const zReportMessage = `*TRADEPOS: RIPOTI YA SIKU KWA MWENYE DUKA*\nTarehe: ${new Date().toLocaleDateString()}\nImewasilishwa na: ${user?.name || "Mhudumu"} (${user?.role || "CASHIER"})\nTawi: ${currentBranch?.name || "Tawi Kuu"}\n\n*1. MAUZO YA LEO:* TZS ${totalSalesAll.toLocaleString()}\n- Cash: TZS ${totalCashSales.toLocaleString()}\n- Simu (M-Pesa/Airtel): TZS ${totalMobileSales.toLocaleString()}\n- Mkopo (Credit): TZS ${totalCreditSales.toLocaleString()}\n- Bidhaa Zilizouzwa: ${totalUnitsSold} pcs\n\n*2. MATUMIZI YA SIKU HIYO:* TZS ${totalExpensesToday.toLocaleString()}\n\n*3. STOCK ILIYobaki STOO:* ${totalUnitsRemainingInStore} pcs (${lowStockItems.length} zinaisha)\n\n*4. DROO YA PESA:*\n- Inayotakiwa: TZS ${expectedCash.toLocaleString()}\n- Iliyohesabiwa: TZS ${cashRegister.actualCash.toLocaleString()}`;
 
   return (
     <div className="flex-1 flex flex-col h-full p-4 lg:p-6 overflow-y-auto gap-4">

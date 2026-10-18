@@ -24,9 +24,9 @@ export const PurchasesSuppliersModule: React.FC = () => {
   // New PO form state
   const [selectedSupplierId, setSelectedSupplierId] = useState(suppliers[0]?.id || "");
   const [selectedProduct, setSelectedProduct] = useState(products[0]?.name || "");
-  const [poQuantity, setPoQuantity] = useState("50");
-  const [poBuyingPrice, setPoBuyingPrice] = useState("15000");
-  const [dueDate, setDueDate] = useState("2026-10-25");
+  const [poQuantity, setPoQuantity] = useState("1");
+  const [poBuyingPrice, setPoBuyingPrice] = useState("");
+  const [dueDate, setDueDate] = useState(() => new Date(Date.now() + 7 * 86400000).toISOString().split("T")[0]);
 
   // New Supplier form state
   const [supName, setSupName] = useState("");
@@ -37,6 +37,8 @@ export const PurchasesSuppliersModule: React.FC = () => {
   const handleCreatePO = (e: React.FormEvent) => {
     e.preventDefault();
     const sup = suppliers.find((s) => s.id === selectedSupplierId) || suppliers[0];
+    if (!sup) return;
+    const prodName = selectedProduct || products[0]?.name || "General Item";
     const qty = parseInt(poQuantity) || 1;
     const price = parseFloat(poBuyingPrice) || 0;
     const total = qty * price;
@@ -44,7 +46,7 @@ export const PurchasesSuppliersModule: React.FC = () => {
     createPurchaseOrder({
       supplierId: sup.id,
       supplierName: sup.name,
-      items: [{ productName: selectedProduct, quantity: qty, buyingPrice: price, total }],
+      items: [{ productName: prodName, quantity: qty, buyingPrice: price, total }],
       totalAmount: total,
       paidAmount: total,
       status: "ORDERED",

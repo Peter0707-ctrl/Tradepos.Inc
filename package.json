@@ -1,0 +1,14 @@
+{
+  "name": "tradepos",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "install:frontend": "npm --prefix frontend install",
+    "build": "npm --prefix frontend install && npm --prefix frontend run build",
+    "start": "npm --prefix frontend run start",
+    "dev": "npm --prefix frontend run dev"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

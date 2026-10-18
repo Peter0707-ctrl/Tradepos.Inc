@@ -50,7 +50,7 @@ export const OnlineStoreDeliveriesModule: React.FC = () => {
   const [deliveryFee, setDeliveryFee] = useState("3000");
   const [driverName, setDriverName] = useState("");
   const [driverPhone, setDriverPhone] = useState("");
-  const [packedBy, setPackedBy] = useState(user?.name || "Baraka Mushi (Cashier)");
+  const [packedBy, setPackedBy] = useState(user?.name || "Mhudumu");
 
   const handleProductSelect = (pId: string) => {
     setSelectedProductId(pId);
@@ -312,7 +312,7 @@ export const OnlineStoreDeliveriesModule: React.FC = () => {
                       <ShieldCheck className="w-3.5 h-3.5 text-emerald-700" />
                       <span>
                         Aliyeandaa Dukani:{" "}
-                        <strong className="text-[#162709]">{ord.packedBy || "Baraka Mushi"}</strong>
+                        <strong className="text-[#162709]">{ord.packedBy || "Mhudumu"}</strong>
                       </span>
                     </div>
 

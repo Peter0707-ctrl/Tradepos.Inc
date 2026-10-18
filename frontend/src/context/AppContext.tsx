@@ -19,7 +19,7 @@ import {
   AuditLog,
   StockMovement,
   EmployeeAccount,
-  DailyShiftReport
+  DailyShiftReport,
 } from "@/types";
 import { en, sw } from "@/locales/translations";
 
@@ -31,6 +31,9 @@ interface AppContextType {
   business: Business | null;
   availableBusinesses: Business[];
   switchBusiness: (businessId: string) => void;
+  updateBusinessProfile: (updates: Partial<Business>) => void;
+  addBranch: (branchData: { name: string; location: string; phone?: string }) => void;
+  addWarehouse: (whData: { name: string; location: string; manager: string }) => void;
   currentBranch: Branch | null;
   setCurrentBranch: (branch: Branch) => void;
   products: Product[];
@@ -82,9 +85,9 @@ interface AppContextType {
   addSupplier: (supplier: Omit<Supplier, "id" | "tenantId" | "totalPurchased" | "amountOwed">) => void;
   createPurchaseOrder: (po: Omit<PurchaseOrder, "id" | "tenantId" | "createdAt" | "orderNumber">) => void;
   createOnlineOrder: (order: Omit<OnlineOrder, "id" | "tenantId" | "createdAt" | "orderNumber">) => OnlineOrder;
-  updateOrderStatus: (orderId: string, status: OnlineOrder['status']) => void;
+  updateOrderStatus: (orderId: string, status: OnlineOrder["status"]) => void;
   updateDeliveryDetails: (orderId: string, updates: Partial<OnlineOrder>) => void;
-  updateDeliveryStatus: (deliveryId: string, status: DeliveryItem['status']) => void;
+  updateDeliveryStatus: (deliveryId: string, status: DeliveryItem["status"]) => void;
   updateCashRegister: (data: Partial<CashRegister>) => void;
   renewSubscription: () => void;
   isAiModalOpen: boolean;
@@ -93,1149 +96,175 @@ interface AppContextType {
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
-// Preset Businesses for instant multi-business switching
-const businessProfiles: Business[] = [
-  {
-    id: "tenant-karibu-001",
-    name: "Peter Cosmetics & Beauty",
-    businessType: "Cosmetics & Retail",
-    location: "Kariakoo, Dar es Salaam",
-    currency: "TZS",
-    taxRate: 18,
-    phone: "+255 712 345 678",
-    email: "peter@petercosmetics.co.tz",
-    subscriptionPlan: "PROFESSIONAL",
-    subscriptionStatus: "ACTIVE",
-    subscriptionExpiry: "2026-11-08",
-    branches: [
-      { id: "br-01", name: "Kariakoo Branch (HQ)", location: "Kariakoo Msimbazi", isMain: true, phone: "+255 712 345 678" },
-      { id: "br-02", name: "Mbezi Beach Branch", location: "Mbezi Africana", isMain: false, phone: "+255 713 999 888" },
-      { id: "br-03", name: "Masaki Peninsula Outlet", location: "Masaki Village Walk", isMain: false, phone: "+255 714 555 444" },
-    ],
-  },
-  {
-    id: "tenant-hardware-002",
-    name: "Peter Hardware & Building Materials",
-    businessType: "Hardware & Tools",
-    location: "Buguruni, Dar es Salaam",
-    currency: "TZS",
-    taxRate: 18,
-    phone: "+255 754 888 999",
-    email: "info@peterhardware.co.tz",
-    subscriptionPlan: "BUSINESS",
-    subscriptionStatus: "ACTIVE",
-    subscriptionExpiry: "2026-12-15",
-    branches: [
-      { id: "br-hw-01", name: "Buguruni Central Depot", location: "Buguruni Shell", isMain: true, phone: "+255 754 888 999" },
-      { id: "br-hw-02", name: "Goba Yard Branch", location: "Goba Njia Nne", isMain: false, phone: "+255 755 111 222" },
-    ],
-  },
-  {
-    id: "tenant-restaurant-003",
-    name: "Peter Gourmet Cafe & Lounge",
-    businessType: "Restaurant & Cafe",
-    location: "Mikocheni, Dar es Salaam",
-    currency: "TZS",
-    taxRate: 18,
-    phone: "+255 784 333 444",
-    email: "manager@petergourmet.co.tz",
-    subscriptionPlan: "PROFESSIONAL",
-    subscriptionStatus: "ACTIVE",
-    subscriptionExpiry: "2026-11-20",
-    branches: [
-      { id: "br-rst-01", name: "Mikocheni Lounge", location: "Mikocheni Plaza", isMain: true, phone: "+255 784 333 444" },
-    ],
-  }
-];
-
-const defaultUser: User = {
-  id: "usr-001",
-  name: "Peter Joseph",
-  email: "peter@petercosmetics.co.tz",
-  phone: "+255 712 345 678",
-  role: "OWNER",
-  businessId: "tenant-karibu-001",
-  branchId: "br-01",
-};
-
-const initialProducts: Product[] = [
-  {
-    id: "prod-001",
-    tenantId: "tenant-karibu-001",
-    branchId: "br-01",
-    name: "Nivea Nourishing Body Milk 400ml",
-    sku: "NIV-BOD-400",
-    barcode: "6001234567890",
-    category: "Skin Care",
-    brand: "Nivea",
-    buyingPrice: 15000,
-    sellingPrice: 22000,
-    wholesalePrice: 19500,
-    stockQuantity: 42,
-    minStock: 15,
-    maxStock: 100,
-    unit: "Bottle",
-  },
-  {
-    id: "prod-002",
-    tenantId: "tenant-karibu-001",
-    branchId: "br-01",
-    name: "Maybelline Matte Lip Gloss Velvet",
-    sku: "MAY-LIP-VEL",
-    barcode: "6009876543210",
-    category: "Makeup",
-    brand: "Maybelline",
-    buyingPrice: 12000,
-    sellingPrice: 18500,
-    wholesalePrice: 16000,
-    stockQuantity: 18,
-    minStock: 8,
-    maxStock: 60,
-    unit: "Pcs",
-  },
-  {
-    id: "prod-003",
-    tenantId: "tenant-karibu-001",
-    branchId: "br-01",
-    name: "CeraVe Hydrating Facial Cleanser 236ml",
-    sku: "CER-CLE-236",
-    barcode: "6003344556677",
-    category: "Face Care",
-    brand: "CeraVe",
-    buyingPrice: 28000,
-    sellingPrice: 38000,
-    wholesalePrice: 34000,
-    stockQuantity: 25,
-    minStock: 10,
-    maxStock: 80,
-    unit: "Bottle",
-  },
-  {
-    id: "prod-004",
-    tenantId: "tenant-karibu-001",
-    branchId: "br-01",
-    name: "Garnier Micellar Cleansing Water 400ml",
-    sku: "GAR-MIC-400",
-    barcode: "6002233445566",
-    category: "Face Care",
-    brand: "Garnier",
-    buyingPrice: 16000,
-    sellingPrice: 24000,
-    wholesalePrice: 21000,
-    stockQuantity: 6, // Low stock trigger
-    minStock: 12,
-    maxStock: 70,
-    unit: "Bottle",
-  },
-  {
-    id: "prod-005",
-    tenantId: "tenant-karibu-001",
-    branchId: "br-01",
-    name: "L'Oreal Paris Elvive Serum 100ml",
-    sku: "LOR-ELV-100",
-    barcode: "6004455667788",
-    category: "Hair Care",
-    brand: "L'Oreal",
-    buyingPrice: 22000,
-    sellingPrice: 32000,
-    wholesalePrice: 28000,
-    stockQuantity: 4, // Low stock trigger
-    minStock: 10,
-    maxStock: 50,
-    unit: "Bottle",
-  },
-  {
-    id: "prod-006",
-    tenantId: "tenant-karibu-001",
-    branchId: "br-01",
-    name: "Vaseline Petroleum Jelly Original 250g",
-    sku: "VAS-JEL-250",
-    barcode: "6005566778899",
-    category: "Skin Care",
-    brand: "Vaseline",
-    buyingPrice: 5000,
-    sellingPrice: 7500,
-    wholesalePrice: 6500,
-    stockQuantity: 65,
-    minStock: 20,
-    maxStock: 150,
-    unit: "Tub",
-  },
-  {
-    id: "prod-007",
-    tenantId: "tenant-karibu-001",
-    branchId: "br-01",
-    name: "Yardley English Rose Deodorant 150ml",
-    sku: "YAR-DEO-150",
-    barcode: "6006677889900",
-    category: "Fragrance",
-    brand: "Yardley",
-    buyingPrice: 7000,
-    sellingPrice: 11000,
-    wholesalePrice: 9500,
-    stockQuantity: 32,
-    minStock: 10,
-    maxStock: 60,
-    unit: "Can",
-  }
-];
-
 const getOffsetDateStr = (daysAgo: number) => {
   const d = new Date();
   d.setDate(d.getDate() - daysAgo);
-  return d.toISOString().split("T")[0];
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  return `${yyyy}-${mm}-${dd}`;
 };
 
-const initialSales: Sale[] = [
-  // ===================== MAUZO YA LEO (TODAY) =====================
-  {
-    id: "sale-1024",
-    tenantId: "tenant-karibu-001",
-    branchId: "br-01",
-    saleNumber: "INV-1024",
-    items: [
-      { productId: "prod-001", productName: "Nivea Nourishing Body Milk 400ml", quantity: 2, price: 22000, total: 44000 },
-      { productId: "prod-003", productName: "CeraVe Hydrating Facial Cleanser 236ml", quantity: 1, price: 38000, total: 38000 },
-      { productId: "prod-006", productName: "Vaseline Petroleum Jelly 250g", quantity: 1, price: 7500, total: 7500 },
-    ],
-    subtotal: 89500,
-    tax: 0,
-    discount: 4500,
-    total: 85000,
-    paidAmount: 85000,
-    balance: 0,
-    paymentMethod: "MPESA",
-    customerName: "Amina Salum",
-    cashierName: "Baraka Mushi",
-    createdAt: `${getOffsetDateStr(0)}T11:42:00Z`,
-    status: "COMPLETED",
-  },
-  {
-    id: "sale-1023",
-    tenantId: "tenant-karibu-001",
-    branchId: "br-01",
-    saleNumber: "INV-1023",
-    items: [
-      { productId: "prod-002", productName: "Maybelline Matte Lip Gloss Velvet", quantity: 3, price: 18500, total: 55500 },
-    ],
-    subtotal: 55500,
-    tax: 0,
-    discount: 0,
-    total: 55500,
-    paidAmount: 55500,
-    balance: 0,
-    paymentMethod: "CASH",
-    customerName: "David Kimaro",
-    cashierName: "Baraka Mushi",
-    createdAt: `${getOffsetDateStr(0)}T10:15:00Z`,
-    status: "COMPLETED",
-  },
-  {
-    id: "sale-1022",
-    tenantId: "tenant-karibu-001",
-    branchId: "br-01",
-    saleNumber: "INV-1022",
-    items: [
-      { productId: "prod-007", productName: "Yardley English Rose Deodorant", quantity: 2, price: 11000, total: 22000 },
-      { productId: "prod-001", productName: "Nivea Nourishing Body Milk 400ml", quantity: 1, price: 22000, total: 22000 },
-    ],
-    subtotal: 44000,
-    tax: 0,
-    discount: 0,
-    total: 44000,
-    paidAmount: 20000,
-    balance: 24000,
-    paymentMethod: "CREDIT",
-    customerName: "Zuhura Rashid",
-    cashierName: "Baraka Mushi",
-    createdAt: `${getOffsetDateStr(0)}T09:30:00Z`,
-    status: "COMPLETED",
-  },
-  // ===================== MAUZO YA JANA (YESTERDAY - 1 DAY AGO) =====================
-  {
-    id: "sale-1021",
-    tenantId: "tenant-karibu-001",
-    branchId: "br-01",
-    saleNumber: "INV-1021",
-    items: [
-      { productId: "prod-004", productName: "Garnier Micellar Cleansing Water 400ml", quantity: 4, price: 24000, total: 96000 },
-      { productId: "prod-005", productName: "L'Oreal Paris Elvive Serum 100ml", quantity: 2, price: 32000, total: 64000 },
-    ],
-    subtotal: 160000,
-    tax: 0,
-    discount: 0,
-    total: 160000,
-    paidAmount: 160000,
-    balance: 0,
-    paymentMethod: "CASH",
-    customerName: "Neema Mwakasege",
-    cashierName: "Baraka Mushi",
-    createdAt: `${getOffsetDateStr(1)}T16:20:00Z`,
-    status: "COMPLETED",
-  },
-  {
-    id: "sale-1020",
-    tenantId: "tenant-karibu-001",
-    branchId: "br-01",
-    saleNumber: "INV-1020",
-    items: [
-      { productId: "prod-001", productName: "Nivea Nourishing Body Milk 400ml", quantity: 3, price: 22000, total: 66000 },
-    ],
-    subtotal: 66000,
-    tax: 0,
-    discount: 0,
-    total: 66000,
-    paidAmount: 66000,
-    balance: 0,
-    paymentMethod: "MPESA",
-    customerName: "Fatma Kassim",
-    cashierName: "Baraka Mushi",
-    createdAt: `${getOffsetDateStr(1)}T13:10:00Z`,
-    status: "COMPLETED",
-  },
-  // ===================== MAUZO YA SIKU 2 ZILIZOPITA (2 DAYS AGO) =====================
-  {
-    id: "sale-1021b",
-    tenantId: "tenant-karibu-001",
-    branchId: "br-01",
-    saleNumber: "INV-1021B",
-    items: [
-      { productId: "prod-002", productName: "Maybelline Matte Lip Gloss Velvet", quantity: 4, price: 18500, total: 74000 },
-      { productId: "prod-006", productName: "Vaseline Petroleum Jelly Original 250g", quantity: 3, price: 7500, total: 22500 },
-    ],
-    subtotal: 96500,
-    tax: 0,
-    discount: 0,
-    total: 96500,
-    paidAmount: 96500,
-    balance: 0,
-    paymentMethod: "CASH",
-    customerName: "Mariam Kilonzo",
-    cashierName: "Baraka Mushi",
-    createdAt: `${getOffsetDateStr(2)}T14:30:00Z`,
-    status: "COMPLETED",
-  },
-  // ===================== MAUZO YA SIKU 3 ZILIZOPITA (3 DAYS AGO) =====================
-  {
-    id: "sale-1021c",
-    tenantId: "tenant-karibu-001",
-    branchId: "br-01",
-    saleNumber: "INV-1021C",
-    items: [
-      { productId: "prod-001", productName: "Nivea Nourishing Body Milk 400ml", quantity: 5, price: 22000, total: 110000 },
-      { productId: "prod-007", productName: "Yardley English Rose Deodorant 150ml", quantity: 3, price: 11000, total: 33000 },
-    ],
-    subtotal: 143000,
-    tax: 0,
-    discount: 0,
-    total: 143000,
-    paidAmount: 143000,
-    balance: 0,
-    paymentMethod: "MPESA",
-    customerName: "Juma Mpoto",
-    cashierName: "Baraka Mushi",
-    createdAt: `${getOffsetDateStr(3)}T12:15:00Z`,
-    status: "COMPLETED",
-  },
-  // ===================== MAUZO YA SIKU 4 ZILIZOPITA (4 DAYS AGO) =====================
-  {
-    id: "sale-1021d",
-    tenantId: "tenant-karibu-001",
-    branchId: "br-01",
-    saleNumber: "INV-1021D",
-    items: [
-      { productId: "prod-003", productName: "CeraVe Hydrating Facial Cleanser 236ml", quantity: 3, price: 38000, total: 114000 },
-    ],
-    subtotal: 114000,
-    tax: 0,
-    discount: 0,
-    total: 114000,
-    paidAmount: 114000,
-    balance: 0,
-    paymentMethod: "CASH",
-    customerName: "Grace Mushi",
-    cashierName: "Baraka Mushi",
-    createdAt: `${getOffsetDateStr(4)}T16:05:00Z`,
-    status: "COMPLETED",
-  },
-  // ===================== MAUZO YA WIKI 1 NYUMA (5-7 DAYS AGO) =====================
-  {
-    id: "sale-1019",
-    tenantId: "tenant-karibu-001",
-    branchId: "br-01",
-    saleNumber: "INV-1019",
-    items: [
-      { productId: "prod-003", productName: "CeraVe Hydrating Facial Cleanser 236ml", quantity: 5, price: 38000, total: 190000 },
-      { productId: "prod-006", productName: "Vaseline Petroleum Jelly Original 250g", quantity: 4, price: 7500, total: 30000 },
-    ],
-    subtotal: 220000,
-    tax: 0,
-    discount: 0,
-    total: 220000,
-    paidAmount: 220000,
-    balance: 0,
-    paymentMethod: "CASH",
-    customerName: "Halima Bakari",
-    cashierName: "Baraka Mushi",
-    createdAt: `${getOffsetDateStr(5)}T15:05:00Z`,
-    status: "COMPLETED",
-  },
-  {
-    id: "sale-1018",
-    tenantId: "tenant-karibu-001",
-    branchId: "br-01",
-    saleNumber: "INV-1018",
-    items: [
-      { productId: "prod-002", productName: "Maybelline Matte Lip Gloss Velvet", quantity: 6, price: 18500, total: 111000 },
-    ],
-    subtotal: 111000,
-    tax: 0,
-    discount: 0,
-    total: 111000,
-    paidAmount: 111000,
-    balance: 0,
-    paymentMethod: "MPESA",
-    customerName: "Rehema Juma",
-    cashierName: "Peter Joseph",
-    createdAt: `${getOffsetDateStr(6)}T11:40:00Z`,
-    status: "COMPLETED",
-  },
-  {
-    id: "sale-1017b",
-    tenantId: "tenant-karibu-001",
-    branchId: "br-01",
-    saleNumber: "INV-1017B",
-    items: [
-      { productId: "prod-004", productName: "Garnier Micellar Cleansing Water 400ml", quantity: 5, price: 24000, total: 120000 },
-      { productId: "prod-005", productName: "L'Oreal Paris Elvive Serum 100ml", quantity: 2, price: 32000, total: 64000 },
-    ],
-    subtotal: 184000,
-    tax: 0,
-    discount: 0,
-    total: 184000,
-    paidAmount: 184000,
-    balance: 0,
-    paymentMethod: "CASH",
-    customerName: "Salma Abdallah",
-    cashierName: "Baraka Mushi",
-    createdAt: `${getOffsetDateStr(7)}T13:20:00Z`,
-    status: "COMPLETED",
-  },
-  // ===================== MAUZO YA WIKI 2 NYUMA (10-14 DAYS AGO) =====================
-  {
-    id: "sale-1017a",
-    tenantId: "tenant-karibu-001",
-    branchId: "br-01",
-    saleNumber: "INV-1017A",
-    items: [
-      { productId: "prod-001", productName: "Nivea Nourishing Body Milk 400ml", quantity: 6, price: 22000, total: 132000 },
-    ],
-    subtotal: 132000,
-    tax: 0,
-    discount: 0,
-    total: 132000,
-    paidAmount: 132000,
-    balance: 0,
-    paymentMethod: "MPESA",
-    customerName: "Upendo Massawe",
-    cashierName: "Baraka Mushi",
-    createdAt: `${getOffsetDateStr(10)}T10:45:00Z`,
-    status: "COMPLETED",
-  },
-  {
-    id: "sale-1017",
-    tenantId: "tenant-karibu-001",
-    branchId: "br-01",
-    saleNumber: "INV-1017",
-    items: [
-      { productId: "prod-001", productName: "Nivea Nourishing Body Milk 400ml", quantity: 10, price: 22000, total: 220000 },
-      { productId: "prod-004", productName: "Garnier Micellar Cleansing Water 400ml", quantity: 5, price: 24000, total: 120000 },
-    ],
-    subtotal: 340000,
-    tax: 0,
-    discount: 0,
-    total: 340000,
-    paidAmount: 340000,
-    balance: 0,
-    paymentMethod: "CASH",
-    customerName: "Mussa Salon Kariakoo",
-    cashierName: "Baraka Mushi",
-    createdAt: `${getOffsetDateStr(12)}T14:50:00Z`,
-    status: "COMPLETED",
-  },
-  {
-    id: "sale-1016",
-    tenantId: "tenant-karibu-001",
-    branchId: "br-01",
-    saleNumber: "INV-1016",
-    items: [
-      { productId: "prod-005", productName: "L'Oreal Paris Elvive Serum 100ml", quantity: 4, price: 32000, total: 128000 },
-      { productId: "prod-007", productName: "Yardley English Rose Deodorant 150ml", quantity: 6, price: 11000, total: 66000 },
-    ],
-    subtotal: 194000,
-    tax: 0,
-    discount: 0,
-    total: 194000,
-    paidAmount: 150000,
-    balance: 44000,
-    paymentMethod: "CREDIT",
-    customerName: "Amina Salum",
-    cashierName: "Baraka Mushi",
-    createdAt: `${getOffsetDateStr(14)}T17:15:00Z`,
-    status: "COMPLETED",
-  },
-];
-
-const initialCustomers: Customer[] = [
-  {
-    id: "cust-01",
-    tenantId: "tenant-karibu-001",
-    name: "Amina Salum",
-    phone: "+255 754 112 233",
-    email: "amina.salum@gmail.com",
-    address: "Kariakoo Mtaa wa Livingstone",
-    totalSpent: 1850000,
-    debtBalance: 45000,
-    loyaltyPoints: 340,
-    lastPurchaseDate: getOffsetDateStr(0),
-  },
-  {
-    id: "cust-02",
-    tenantId: "tenant-karibu-001",
-    name: "David Kimaro",
-    phone: "+255 768 445 566",
-    email: "dkimaro@yahoo.com",
-    address: "Sinza Mori",
-    totalSpent: 920000,
-    debtBalance: 0,
-    loyaltyPoints: 190,
-    lastPurchaseDate: getOffsetDateStr(0),
-  },
-  {
-    id: "cust-03",
-    tenantId: "tenant-karibu-001",
-    name: "Zuhura Rashid",
-    phone: "+255 715 778 899",
-    email: "zuhura.rashid@tzmail.com",
-    address: "Mikocheni B",
-    totalSpent: 2640000,
-    debtBalance: 120000,
-    loyaltyPoints: 520,
-    lastPurchaseDate: getOffsetDateStr(0),
-  }
-];
-
-const initialExpenses: Expense[] = [
-  // MATUMIZI YA LEO
-  {
-    id: "exp-01",
-    tenantId: "tenant-karibu-001",
-    branchId: "br-01",
-    category: "Usafiri & Bodaboda",
-    title: "Nauli ya Bodaboda kupeleka mzigo Posta",
-    description: "Nauli ya Bodaboda kupeleka mzigo Posta",
-    amount: 5000,
-    date: getOffsetDateStr(0),
-    recordedBy: "Baraka Mushi",
-    paymentMethod: "CASH",
-  },
-  {
-    id: "exp-02",
-    tenantId: "tenant-karibu-001",
-    branchId: "br-01",
-    category: "Chakula & Maji Dukani",
-    title: "Maji ya kunywa na chakula cha mchana dukani",
-    description: "Maji ya kunywa na chakula cha mchana dukani",
-    amount: 6000,
-    date: getOffsetDateStr(0),
-    recordedBy: "Baraka Mushi",
-    paymentMethod: "CASH",
-  },
-  // MATUMIZI YA JANA
-  {
-    id: "exp-03",
-    tenantId: "tenant-karibu-001",
-    branchId: "br-01",
-    category: "Vifungashio & Mifuko",
-    title: "Mifuko ya kufungia bidhaa za wateja",
-    description: "Mifuko ya kufungia bidhaa za wateja",
-    amount: 8000,
-    date: getOffsetDateStr(1),
-    recordedBy: "Baraka Mushi",
-    paymentMethod: "CASH",
-  },
-  {
-    id: "exp-04",
-    tenantId: "tenant-karibu-001",
-    branchId: "br-01",
-    category: "Chakula & Maji Dukani",
-    title: "Chakula cha mchana dukani",
-    description: "Chakula cha mchana dukani",
-    amount: 7000,
-    date: getOffsetDateStr(1),
-    recordedBy: "Baraka Mushi",
-    paymentMethod: "CASH",
-  },
-  // MATUMIZI YA SIKU 2 & 3 ZILIZOPITA
-  {
-    id: "exp-04b",
-    tenantId: "tenant-karibu-001",
-    branchId: "br-01",
-    category: "Usafiri & Bodaboda",
-    title: "Bodaboda kupeleka mzigo Sinza",
-    description: "Bodaboda kupeleka mzigo Sinza",
-    amount: 6000,
-    date: getOffsetDateStr(2),
-    recordedBy: "Baraka Mushi",
-    paymentMethod: "CASH",
-  },
-  {
-    id: "exp-04c",
-    tenantId: "tenant-karibu-001",
-    branchId: "br-01",
-    category: "Chakula & Maji Dukani",
-    title: "Chai na chakula cha mchana dukani",
-    description: "Chai na chakula cha mchana dukani",
-    amount: 5500,
-    date: getOffsetDateStr(3),
-    recordedBy: "Baraka Mushi",
-    paymentMethod: "CASH",
-  },
-  // MATUMIZI YA WIKI 1 NYUMA
-  {
-    id: "exp-05",
-    tenantId: "tenant-karibu-001",
-    branchId: "br-01",
-    category: "Umeme (LUKU) & Maji",
-    title: "Tokeni za LUKU dukani Kariakoo",
-    description: "Tokeni za LUKU dukani Kariakoo",
-    amount: 20000,
-    date: getOffsetDateStr(5),
-    recordedBy: "Baraka Mushi",
-    paymentMethod: "MPESA",
-  },
-  // MATUMIZI YA WIKI 2 NYUMA
-  {
-    id: "exp-06",
-    tenantId: "tenant-karibu-001",
-    branchId: "br-01",
-    category: "Usafiri & Bodaboda",
-    title: "Usafiri wa bajaji kuleta katoni stoo",
-    description: "Usafiri wa bajaji kuleta katoni stoo",
-    amount: 15000,
-    date: getOffsetDateStr(12),
-    recordedBy: "Baraka Mushi",
-    paymentMethod: "CASH",
-  },
-];
-
-const initialSuppliers: Supplier[] = [
-  {
-    id: "sup-01",
-    tenantId: "tenant-karibu-001",
-    name: "Cosmetic Brands Africa Distribution",
-    phone: "+255 22 211 4455",
-    email: "orders@cbafrica.co.tz",
-    address: "Nyerere Road Industrial Area, Dar es Salaam",
-    totalPurchased: 24500000,
-    amountOwed: 3200000,
-    lastPurchaseDate: "2026-10-02",
-  },
-  {
-    id: "sup-02",
-    tenantId: "tenant-karibu-001",
-    name: "Beiersdorf East Africa Ltd",
-    phone: "+255 22 286 1100",
-    email: "sales@beiersdorf-tz.com",
-    address: "Kariakoo Aggrey Street",
-    totalPurchased: 18200000,
-    amountOwed: 0,
-    lastPurchaseDate: "2026-10-05",
-  }
-];
-
-const initialPurchaseOrders: PurchaseOrder[] = [
-  {
-    id: "po-101",
-    tenantId: "tenant-karibu-001",
-    supplierId: "sup-01",
-    supplierName: "Cosmetic Brands Africa Distribution",
-    orderNumber: "PO-2026-089",
-    items: [
-      { productName: "Garnier Micellar Water 400ml", quantity: 60, buyingPrice: 16000, total: 960000 },
-      { productName: "L'Oreal Paris Elvive Serum 100ml", quantity: 40, buyingPrice: 22000, total: 880000 }
-    ],
-    totalAmount: 1840000,
-    paidAmount: 1840000,
-    status: "RECEIVED",
-    dueDate: "2026-10-20",
-    createdAt: "2026-10-02",
-  }
-];
-
-const initialOnlineOrders: OnlineOrder[] = [
-  {
-    id: "ord-881",
-    tenantId: "tenant-karibu-001",
-    orderNumber: "ORD-99120",
-    customerName: "Fatma Kassim",
-    phone: "+255 788 123 456",
-    address: "Mikocheni B, Plot 44",
-    items: [
-      { productName: "CeraVe Hydrating Facial Cleanser 236ml", quantity: 1, price: 38000 },
-      { productName: "Nivea Nourishing Body Milk 400ml", quantity: 1, price: 22000 }
-    ],
-    total: 60000,
-    deliveryFee: 5000,
-    status: "OUT_FOR_DELIVERY",
-    createdAt: "2026-10-08T08:15:00Z"
-  }
-];
-
-const initialDeliveries: DeliveryItem[] = [
-  {
-    id: "del-01",
-    tenantId: "tenant-karibu-001",
-    orderNumber: "ORD-99120",
-    customerName: "Fatma Kassim",
-    phone: "+255 788 123 456",
-    address: "Mikocheni B, Plot 44",
-    driverName: "Rashid Bodaboda",
-    fee: 5000,
-    status: "OUT_FOR_DELIVERY",
-    createdAt: "2026-10-08 09:30",
-  },
-  {
-    id: "del-02",
-    tenantId: "tenant-karibu-001",
-    orderNumber: "ORD-99118",
-    customerName: "Mariam Juma",
-    phone: "+255 713 555 777",
-    address: "Mbezi Beach Samaki",
-    driverName: "Juma Express",
-    fee: 7000,
-    status: "DELIVERED",
-    createdAt: "2026-10-07 14:10",
-  }
-];
-
-const initialWarehouses: Warehouse[] = [
-  {
-    id: "wh-01",
-    tenantId: "tenant-karibu-001",
-    name: "Kariakoo Main Stock Depot",
-    location: "Kariakoo Livingstone Yard",
-    stockValue: 64500000,
-    totalItems: 840,
-    manager: "Erick Mrema",
-  },
-  {
-    id: "wh-02",
-    tenantId: "tenant-karibu-001",
-    name: "Ubungo Transit Warehouse",
-    location: "Ubungo External Road",
-    stockValue: 38200000,
-    totalItems: 420,
-    manager: "Hamza Bakari",
-  }
-];
-
-const initialCashRegister: CashRegister = {
-  openingBalance: 250000,
-  cashSales: 55500,
+const emptyCashRegister: CashRegister = {
+  openingBalance: 0,
+  cashSales: 0,
   cashExpenses: 0,
   cashDeposits: 0,
   cashWithdrawals: 0,
-  actualCash: 305500,
+  actualCash: 0,
   isOpen: true,
-  openedAt: "2026-10-08 08:00 AM",
+  openedAt: `${getOffsetDateStr(0)} 08:00`,
 };
 
-const initialNotifications: AppNotification[] = [
-  {
-    id: "notif-01",
-    title: "Tahadhari ya Stoo Ndogo",
-    message: "Bidhaa 'Garnier Micellar Water' imebaki chupa 6 tu (Chini ya kiwango cha 12).",
-    type: "STOCK",
-    timestamp: "Dakika 15 zilizopita",
-    read: false,
-    actionUrl: "inventory",
-  },
-  {
-    id: "notif-02",
-    title: "Oda Mpya ya Mtandaoni",
-    message: "Oda mpya ORD-99120 ya TZS 65,000 imethibitishwa kutoka kwa Fatma Kassim.",
-    type: "ORDER",
-    timestamp: "Saa 1 lililopita",
-    read: false,
-    actionUrl: "orders",
-  },
-  {
-    id: "notif-03",
-    title: "Malipo ya Madeni Yamepokelewa",
-    message: "Amina Salum amelipa awamu ya TZS 40,000 kupitia M-Pesa.",
-    type: "PAYMENT",
-    timestamp: "Saa 3 zilizopita",
-    read: true,
-    actionUrl: "customers",
-  }
-];
-
-const initialStockMovements: StockMovement[] = [
-  {
-    id: "mov-01",
-    tenantId: "tenant-karibu-001",
-    branchId: "br-01",
-    productId: "prod-001",
-    productName: "Nivea Nourishing Body Milk 400ml",
-    type: "IN",
-    quantity: 50,
-    reason: "PURCHASE",
-    unitCost: 16000,
-    totalValue: 800000,
-    recordedBy: "Peter Joseph",
-    notes: "Mzigo mpya kutoka kwa msambazaji mkuu",
-    createdAt: "2026-10-07T10:30:00Z",
-  },
-  {
-    id: "mov-02",
-    tenantId: "tenant-karibu-001",
-    branchId: "br-01",
-    productId: "prod-001",
-    productName: "Nivea Nourishing Body Milk 400ml",
-    type: "OUT",
-    quantity: 8,
-    reason: "SALE",
-    unitCost: 16000,
-    totalValue: 176000,
-    recordedBy: "Baraka Mushi",
-    notes: "Mauzo ya kawaida ya kaunta",
-    createdAt: "2026-10-08T09:15:00Z",
-  },
-  {
-    id: "mov-03",
-    tenantId: "tenant-karibu-001",
-    branchId: "br-01",
-    productId: "prod-002",
-    productName: "Maybelline Matte Lip Gloss Velvet",
-    type: "IN",
-    quantity: 30,
-    reason: "PURCHASE",
-    unitCost: 12000,
-    totalValue: 360000,
-    recordedBy: "Peter Joseph",
-    notes: "Ununuzi wa jumla Kariakoo",
-    createdAt: "2026-10-07T14:00:00Z",
-  },
-  {
-    id: "mov-04",
-    tenantId: "tenant-karibu-001",
-    branchId: "br-01",
-    productId: "prod-004",
-    productName: "Garnier Micellar Cleansing Water 400ml",
-    type: "OUT",
-    quantity: 6,
-    reason: "SALE",
-    unitCost: 16000,
-    totalValue: 144000,
-    recordedBy: "Baraka Mushi",
-    notes: "Mauzo ya kaunta - Stoo imebaki 6",
-    createdAt: "2026-10-08T11:45:00Z",
-  },
-  {
-    id: "mov-05",
-    tenantId: "tenant-karibu-001",
-    branchId: "br-01",
-    productId: "prod-005",
-    productName: "L'Oreal Paris Elvive Serum 100ml",
-    type: "OUT",
-    quantity: 1,
-    reason: "DAMAGE",
-    unitCost: 22000,
-    totalValue: 22000,
-    recordedBy: "Baraka Mushi",
-    notes: "Chupa ilivunjika wakati wa kupanga rafu",
-    createdAt: "2026-10-08T12:10:00Z",
-  },
-];
-
-const initialEmployees: EmployeeAccount[] = [
-  {
-    id: "emp-01",
-    tenantId: "tenant-karibu-001",
-    name: "Peter Joseph",
-    email: "peter@petercosmetics.co.tz",
-    phone: "+255 712 345 678",
-    pin: "1234",
-    role: "OWNER",
-    branch: "Kariakoo Branch (HQ)",
-    status: "Active",
-    lastActive: "Sasa hivi",
-  },
-  {
-    id: "emp-02",
-    tenantId: "tenant-karibu-001",
-    name: "Baraka Mushi",
-    email: "baraka@petercosmetics.co.tz",
-    phone: "+255 754 991 223",
-    pin: "2222",
-    role: "CASHIER",
-    branch: "Kariakoo Branch (HQ)",
-    status: "Active",
-    lastActive: "Dakika 5 zilizopita",
-  },
-  {
-    id: "emp-03",
-    tenantId: "tenant-karibu-001",
-    name: "Amina Hassan",
-    email: "amina@petercosmetics.co.tz",
-    phone: "+255 788 334 112",
-    pin: "3333",
-    role: "STOREKEEPER",
-    branch: "Kariakoo Branch (HQ)",
-    status: "Active",
-    lastActive: "Saa 1 iliyopita",
-  },
-  {
-    id: "emp-04",
-    tenantId: "tenant-karibu-001",
-    name: "Frank Temba",
-    email: "frank@petercosmetics.co.tz",
-    phone: "+255 713 445 667",
-    pin: "4444",
-    role: "ACCOUNTANT",
-    branch: "Kariakoo Branch (HQ)",
-    status: "Active",
-    lastActive: "Jana",
-  },
-];
-
-const initialDailyReports: DailyShiftReport[] = [
-  {
-    id: "rep-001",
-    tenantId: "tenant-karibu-001",
-    branchName: "Kariakoo Branch (HQ)",
-    submittedBy: "Baraka Mushi",
-    staffRole: "CASHIER",
-    submittedAt: `${getOffsetDateStr(1)} 18:10`,
-    date: getOffsetDateStr(1),
-    totalSales: 226000,
-    cashSales: 160000,
-    mobileSales: 66000,
-    creditSales: 0,
-    totalExpenses: 15000,
-    expectedCash: 395000,
-    actualCashCounted: 395000,
-    variance: 0,
-    totalUnitsSold: 9,
-    soldItems: [
-      { name: "Garnier Micellar Cleansing Water 400ml", quantity: 4, revenue: 96000 },
-      { name: "Nivea Nourishing Body Milk 400ml", quantity: 3, revenue: 66000 },
-      { name: "L'Oreal Paris Elvive Serum 100ml", quantity: 2, revenue: 64000 },
-    ],
-    dailyExpenses: [
-      { category: "Vifungashio & Mifuko", description: "Mifuko ya kufungia bidhaa za wateja", amount: 8000, paymentMethod: "CASH" },
-      { category: "Chakula & Maji Dukani", description: "Chakula cha mchana dukani", amount: 7000, paymentMethod: "CASH" },
-    ],
-    remainingStockSummary: {
-      totalProductsCount: 7,
-      totalUnitsInStore: 192,
-      lowStockCount: 2,
-      stockSnapshot: [
-        { id: "prod-001", name: "Nivea Nourishing Body Milk 400ml", remainingQty: 42, minStock: 15, unit: "Bottle" },
-        { id: "prod-002", name: "Maybelline Matte Lip Gloss Velvet", remainingQty: 18, minStock: 8, unit: "Pcs" },
-        { id: "prod-003", name: "CeraVe Hydrating Facial Cleanser 236ml", remainingQty: 25, minStock: 10, unit: "Bottle" },
-        { id: "prod-004", name: "Garnier Micellar Cleansing Water 400ml", remainingQty: 6, minStock: 12, unit: "Bottle" },
-        { id: "prod-005", name: "L'Oreal Paris Elvive Serum 100ml", remainingQty: 4, minStock: 10, unit: "Bottle" },
-      ],
-    },
-    notes: "Mauzo ya Jana yalifungwa vizuri na kutumwa kwa Mwenye Duka.",
-    status: "APPROVED",
-    approvedBy: "Peter Joseph (Owner)",
-    approvedAt: "18:30",
-  },
-  {
-    id: "rep-002",
-    tenantId: "tenant-karibu-001",
-    branchName: "Kariakoo Branch (HQ)",
-    submittedBy: "Baraka Mushi",
-    staffRole: "CASHIER",
-    submittedAt: `${getOffsetDateStr(5)} 18:00`,
-    date: getOffsetDateStr(5),
-    totalSales: 331000,
-    cashSales: 220000,
-    mobileSales: 111000,
-    creditSales: 0,
-    totalExpenses: 20000,
-    expectedCash: 450000,
-    actualCashCounted: 450000,
-    variance: 0,
-    totalUnitsSold: 15,
-    soldItems: [
-      { name: "CeraVe Hydrating Facial Cleanser 236ml", quantity: 5, revenue: 190000 },
-      { name: "Maybelline Matte Lip Gloss Velvet", quantity: 6, revenue: 111000 },
-      { name: "Vaseline Petroleum Jelly Original 250g", quantity: 4, revenue: 30000 },
-    ],
-    dailyExpenses: [
-      { category: "Umeme (LUKU) & Maji", description: "Tokeni za LUKU dukani Kariakoo", amount: 20000, paymentMethod: "MPESA" },
-    ],
-    remainingStockSummary: {
-      totalProductsCount: 7,
-      totalUnitsInStore: 201,
-      lowStockCount: 1,
-      stockSnapshot: [],
-    },
-    notes: "Ripoti ya Wiki 1 Nyuma imekamilika.",
-    status: "APPROVED",
-    approvedBy: "Peter Joseph (Owner)",
-    approvedAt: "18:45",
-  },
-  {
-    id: "rep-003",
-    tenantId: "tenant-karibu-001",
-    branchName: "Kariakoo Branch (HQ)",
-    submittedBy: "Baraka Mushi",
-    staffRole: "CASHIER",
-    submittedAt: `${getOffsetDateStr(12)} 18:15`,
-    date: getOffsetDateStr(12),
-    totalSales: 534000,
-    cashSales: 340000,
-    mobileSales: 0,
-    creditSales: 194000,
-    totalExpenses: 15000,
-    expectedCash: 575000,
-    actualCashCounted: 575000,
-    variance: 0,
-    totalUnitsSold: 25,
-    soldItems: [
-      { name: "Nivea Nourishing Body Milk 400ml", quantity: 10, revenue: 220000 },
-      { name: "L'Oreal Paris Elvive Serum 100ml", quantity: 4, revenue: 128000 },
-      { name: "Garnier Micellar Cleansing Water 400ml", quantity: 5, revenue: 120000 },
-      { name: "Yardley English Rose Deodorant 150ml", quantity: 6, revenue: 66000 },
-    ],
-    dailyExpenses: [
-      { category: "Usafiri & Bodaboda", description: "Usafiri wa bajaji kuleta katoni stoo", amount: 15000, paymentMethod: "CASH" },
-    ],
-    remainingStockSummary: {
-      totalProductsCount: 7,
-      totalUnitsInStore: 216,
-      lowStockCount: 0,
-      stockSnapshot: [],
-    },
-    notes: "Ripoti ya Wiki 2 Nyuma imekamilika.",
-    status: "APPROVED",
-    approvedBy: "Peter Joseph (Owner)",
-    approvedAt: "19:00",
-  },
-];
+const PROD_STORAGE_KEY = "tradepos_prod_store_v1";
+const PROD_USER_KEY = "tradepos_prod_user_v1";
+const PROD_VIEW_KEY = "tradepos_prod_view_v1";
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
   const [language, setLanguage] = useState<"en" | "sw">("sw");
-  const [user, setUser] = useState<User | null>(defaultUser);
-  const [availableBusinesses, setAvailableBusinesses] = useState<Business[]>(businessProfiles);
-  const [business, setBusiness] = useState<Business | null>(businessProfiles[0]);
-  const [currentBranch, setCurrentBranch] = useState<Branch | null>(businessProfiles[0].branches[0]);
+  const [user, setUser] = useState<User | null>(null);
+  const [availableBusinesses, setAvailableBusinesses] = useState<Business[]>([]);
+  const [business, setBusiness] = useState<Business | null>(null);
+  const [currentBranch, setCurrentBranch] = useState<Branch | null>(null);
 
-  // Restore authenticated session from localStorage
+  const [products, setProducts] = useState<Product[]>([]);
+  const [sales, setSales] = useState<Sale[]>([]);
+  const [customers, setCustomers] = useState<Customer[]>([]);
+  const [expenses, setExpenses] = useState<Expense[]>([]);
+  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
+  const [purchaseOrders, setPurchaseOrders] = useState<PurchaseOrder[]>([]);
+  const [onlineOrders, setOnlineOrders] = useState<OnlineOrder[]>([]);
+  const [deliveries, setDeliveries] = useState<DeliveryItem[]>([]);
+  const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
+  const [cashRegister, setCashRegister] = useState<CashRegister>(emptyCashRegister);
+  const [stockMovements, setStockMovements] = useState<StockMovement[]>([]);
+  const [employees, setEmployees] = useState<EmployeeAccount[]>([]);
+  const [dailyReports, setDailyReports] = useState<DailyShiftReport[]>([]);
+  const [notifications, setNotifications] = useState<AppNotification[]>([]);
+  const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
+  const [isDayClosed, setIsDayClosed] = useState<boolean>(false);
+  const [activeDayLabel, setActiveDayLabel] = useState<string>(getOffsetDateStr(0));
+  const [isHydrated, setIsHydrated] = useState<boolean>(false);
+  const [isOffline, setIsOffline] = useState<boolean>(false);
+  const [isAiModalOpen, setIsAiModalOpen] = useState<boolean>(false);
+
+  // Clean up legacy demo localStorage keys and restore production store state on mount
   useEffect(() => {
     try {
+      // Remove any legacy demo keys from previous development iterations
+      localStorage.removeItem("tradepos_store_data_v1");
+      localStorage.removeItem("tradepos_store_data_v2");
+      localStorage.removeItem("tradepos_store_data_v3");
+      localStorage.removeItem("tradepos_store_data_v4");
+      localStorage.removeItem("tradepos_session_user");
+      localStorage.removeItem("tradepos_view_state");
+      localStorage.removeItem("tradepos_current_biz");
+
       const storedLang = localStorage.getItem("tradepos_lang") as "en" | "sw" | null;
       if (storedLang === "en" || storedLang === "sw") {
         setLanguage(storedLang);
       }
-      const storedUser = localStorage.getItem("tradepos_session_user");
+
+      const savedStore = localStorage.getItem(PROD_STORAGE_KEY);
+      if (savedStore) {
+        const parsed = JSON.parse(savedStore);
+        if (Array.isArray(parsed.availableBusinesses)) setAvailableBusinesses(parsed.availableBusinesses);
+        if (parsed.business) setBusiness(parsed.business);
+        if (parsed.currentBranch) setCurrentBranch(parsed.currentBranch);
+        if (Array.isArray(parsed.products)) setProducts(parsed.products);
+        if (Array.isArray(parsed.sales)) setSales(parsed.sales);
+        if (Array.isArray(parsed.customers)) setCustomers(parsed.customers);
+        if (Array.isArray(parsed.expenses)) setExpenses(parsed.expenses);
+        if (Array.isArray(parsed.suppliers)) setSuppliers(parsed.suppliers);
+        if (Array.isArray(parsed.purchaseOrders)) setPurchaseOrders(parsed.purchaseOrders);
+        if (Array.isArray(parsed.onlineOrders)) setOnlineOrders(parsed.onlineOrders);
+        if (Array.isArray(parsed.deliveries)) setDeliveries(parsed.deliveries);
+        if (Array.isArray(parsed.warehouses)) setWarehouses(parsed.warehouses);
+        if (parsed.cashRegister) setCashRegister(parsed.cashRegister);
+        if (Array.isArray(parsed.stockMovements)) setStockMovements(parsed.stockMovements);
+        if (Array.isArray(parsed.employees)) setEmployees(parsed.employees);
+        if (Array.isArray(parsed.dailyReports)) setDailyReports(parsed.dailyReports);
+        if (Array.isArray(parsed.notifications)) setNotifications(parsed.notifications);
+        if (Array.isArray(parsed.auditLogs)) setAuditLogs(parsed.auditLogs);
+        if (typeof parsed.isDayClosed === "boolean") setIsDayClosed(parsed.isDayClosed);
+        if (typeof parsed.activeDayLabel === "string") setActiveDayLabel(parsed.activeDayLabel);
+      }
+
+      const storedUser = localStorage.getItem(PROD_USER_KEY);
       if (storedUser) {
         setUser(JSON.parse(storedUser));
-      }
-      const storedBizId = localStorage.getItem("tradepos_current_biz");
-      if (storedBizId) {
-        const found = businessProfiles.find((b) => b.id === storedBizId);
-        if (found) {
-          setBusiness(found);
-          setCurrentBranch(found.branches[0]);
-        }
       }
     } catch (e) {
       // safe fallback
     }
-  }, []);
-  
-  const [products, setProducts] = useState<Product[]>(initialProducts);
-  const [sales, setSales] = useState<Sale[]>(initialSales);
-  const [customers, setCustomers] = useState<Customer[]>(initialCustomers);
-  const [expenses, setExpenses] = useState<Expense[]>(initialExpenses);
-  const [suppliers, setSuppliers] = useState<Supplier[]>(initialSuppliers);
-  const [purchaseOrders, setPurchaseOrders] = useState<PurchaseOrder[]>(initialPurchaseOrders);
-  const [onlineOrders, setOnlineOrders] = useState<OnlineOrder[]>(initialOnlineOrders);
-  const [deliveries, setDeliveries] = useState<DeliveryItem[]>(initialDeliveries);
-  const [warehouses, setWarehouses] = useState<Warehouse[]>(initialWarehouses);
-  const [cashRegister, setCashRegister] = useState<CashRegister>(initialCashRegister);
-  const [stockMovements, setStockMovements] = useState<StockMovement[]>(initialStockMovements);
-  const [employees, setEmployees] = useState<EmployeeAccount[]>(initialEmployees);
-  const [dailyReports, setDailyReports] = useState<DailyShiftReport[]>(initialDailyReports);
-  const [notifications, setNotifications] = useState<AppNotification[]>(initialNotifications);
-  const [isDayClosed, setIsDayClosed] = useState<boolean>(false);
-  const [activeDayLabel, setActiveDayLabel] = useState<string>(getOffsetDateStr(0));
-  const [isHydrated, setIsHydrated] = useState<boolean>(false);
-
-  // Restore persisted store data from localStorage on mount
-  useEffect(() => {
-    try {
-      const savedStore = localStorage.getItem("tradepos_store_data_v4");
-      if (savedStore) {
-        const parsed = JSON.parse(savedStore);
-        if (Array.isArray(parsed.products) && parsed.products.length > 0) setProducts(parsed.products);
-        if (Array.isArray(parsed.sales)) setSales(parsed.sales);
-        if (Array.isArray(parsed.customers)) setCustomers(parsed.customers);
-        if (Array.isArray(parsed.expenses)) setExpenses(parsed.expenses);
-        if (Array.isArray(parsed.onlineOrders)) setOnlineOrders(parsed.onlineOrders);
-        if (parsed.cashRegister) setCashRegister(parsed.cashRegister);
-        if (Array.isArray(parsed.stockMovements)) setStockMovements(parsed.stockMovements);
-        if (Array.isArray(parsed.employees) && parsed.employees.length > 0) setEmployees(parsed.employees);
-        if (Array.isArray(parsed.dailyReports)) setDailyReports(parsed.dailyReports);
-        if (typeof parsed.isDayClosed === "boolean") setIsDayClosed(parsed.isDayClosed);
-        if (typeof parsed.activeDayLabel === "string") setActiveDayLabel(parsed.activeDayLabel);
-      }
-    } catch (e) {}
     setIsHydrated(true);
   }, []);
 
-  // Automatically persist store data to localStorage whenever records change
+  // Automatically persist production store data to localStorage whenever records change
   useEffect(() => {
     if (!isHydrated) return;
     try {
       localStorage.setItem(
-        "tradepos_store_data_v4",
+        PROD_STORAGE_KEY,
         JSON.stringify({
+          availableBusinesses,
+          business,
+          currentBranch,
           products,
           sales,
           customers,
           expenses,
+          suppliers,
+          purchaseOrders,
           onlineOrders,
+          deliveries,
+          warehouses,
           cashRegister,
           stockMovements,
           employees,
           dailyReports,
+          notifications,
+          auditLogs,
           isDayClosed,
           activeDayLabel,
         })
       );
     } catch (e) {}
-  }, [isHydrated, products, sales, customers, expenses, onlineOrders, cashRegister, stockMovements, employees, dailyReports, isDayClosed, activeDayLabel]);
-  
-  const [auditLogs, setAuditLogs] = useState<AuditLog[]>([
-    {
-      id: "log-001",
-      tenantId: "tenant-karibu-001",
-      userName: "Peter Joseph",
-      action: "LOGIN_SUCCESS",
-      details: "Staff member Peter Joseph authenticated into Kariakoo Branch",
-      timestamp: "2026-10-08 08:00",
-      ipAddress: "197.250.199.14",
-    }
+  }, [
+    isHydrated,
+    availableBusinesses,
+    business,
+    currentBranch,
+    products,
+    sales,
+    customers,
+    expenses,
+    suppliers,
+    purchaseOrders,
+    onlineOrders,
+    deliveries,
+    warehouses,
+    cashRegister,
+    stockMovements,
+    employees,
+    dailyReports,
+    notifications,
+    auditLogs,
+    isDayClosed,
+    activeDayLabel,
   ]);
-  const [isOffline, setIsOffline] = useState<boolean>(false);
-  const [isAiModalOpen, setIsAiModalOpen] = useState<boolean>(false);
+
+  const appendAuditLog = (action: string, details: string, actorName?: string) => {
+    const newLog: AuditLog = {
+      id: "log-" + Date.now() + "-" + Math.floor(Math.random() * 1000),
+      tenantId: business?.id || "tenant-default",
+      userName: actorName || user?.name || "System",
+      action,
+      details,
+      timestamp: new Date().toISOString().replace("T", " ").slice(0, 16),
+    };
+    setAuditLogs((prev) => [newLog, ...prev]);
+  };
 
   const changeLanguage = (lang: "en" | "sw") => {
     setLanguage(lang);
@@ -1248,125 +277,182 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     const target = availableBusinesses.find((b) => b.id === businessId);
     if (!target) return;
     setBusiness(target);
-    setCurrentBranch(target.branches[0]);
+    setCurrentBranch(target.branches[0] || null);
     if (user) {
-      setUser({
+      const updatedUser = {
         ...user,
         businessId: target.id,
-        branchId: target.branches[0].id,
-      });
-    }
-
-    // Refresh context data cleanly based on switched tenant
-    if (target.id === "tenant-hardware-002") {
-      setProducts([
-        {
-          id: "prod-hw-01",
-          tenantId: "tenant-hardware-002",
-          branchId: target.branches[0].id,
-          name: "Twiga Cement Extra 32.5R 50kg",
-          sku: "CEM-TWI-50",
-          barcode: "6007788990111",
-          category: "Building Supplies",
-          brand: "Twiga",
-          buyingPrice: 17500,
-          sellingPrice: 21500,
-          wholesalePrice: 20000,
-          stockQuantity: 150,
-          minStock: 30,
-          maxStock: 500,
-          unit: "Bag",
-        },
-        {
-          id: "prod-hw-02",
-          tenantId: "tenant-hardware-002",
-          branchId: target.branches[0].id,
-          name: "Iron Sheets Corrugated 28 Gauge (6m)",
-          sku: "IRO-SHE-28G",
-          barcode: "6007788990222",
-          category: "Roofing",
-          brand: "ALAF",
-          buyingPrice: 28000,
-          sellingPrice: 34500,
-          wholesalePrice: 32000,
-          stockQuantity: 8,
-          minStock: 20,
-          maxStock: 100,
-          unit: "Pcs",
-        }
-      ]);
-      setSales([
-        {
-          id: "sale-hw-01",
-          tenantId: "tenant-hardware-002",
-          branchId: target.branches[0].id,
-          saleNumber: "INV-HW-5001",
-          items: [{ productId: "prod-hw-01", productName: "Twiga Cement 50kg", quantity: 20, price: 21500, total: 430000 }],
-          subtotal: 430000,
-          tax: 0,
-          discount: 0,
-          total: 430000,
-          paidAmount: 430000,
-          balance: 0,
-          paymentMethod: "MPESA",
-          customerName: "Kassim Contractor",
-          cashierName: "Peter Joseph",
-          createdAt: `${getOffsetDateStr(0)}T09:00:00Z`,
-          status: "COMPLETED",
-        }
-      ]);
-    } else {
-      setProducts(initialProducts);
-      setSales(initialSales);
+        branchId: target.branches[0]?.id || "",
+      };
+      setUser(updatedUser);
+      try {
+        localStorage.setItem(PROD_USER_KEY, JSON.stringify(updatedUser));
+      } catch (e) {}
     }
   };
 
+  const updateBusinessProfile = (updates: Partial<Business>) => {
+    if (!business) return;
+    const updatedBiz: Business = { ...business, ...updates };
+    setBusiness(updatedBiz);
+    setAvailableBusinesses((prev) =>
+      prev.map((b) => (b.id === updatedBiz.id ? updatedBiz : b))
+    );
+    appendAuditLog("SETTINGS_UPDATED", `Updated business profile for ${updatedBiz.name}`);
+  };
+
+  const addBranch = (branchData: { name: string; location: string; phone?: string }) => {
+    if (!business) return;
+    const newBranch: Branch = {
+      id: "br-" + Date.now(),
+      name: branchData.name.trim(),
+      location: branchData.location.trim(),
+      isMain: business.branches.length === 0,
+      phone: branchData.phone || business.phone || "",
+    };
+    const updatedBiz: Business = {
+      ...business,
+      branches: [...business.branches, newBranch],
+    };
+    setBusiness(updatedBiz);
+    setAvailableBusinesses((prev) =>
+      prev.map((b) => (b.id === updatedBiz.id ? updatedBiz : b))
+    );
+    if (!currentBranch) {
+      setCurrentBranch(newBranch);
+    }
+    appendAuditLog("BRANCH_CREATED", `Added branch ${newBranch.name}`);
+  };
+
+  const addWarehouse = (whData: { name: string; location: string; manager: string }) => {
+    if (!business) return;
+    const newWh: Warehouse = {
+      id: "wh-" + Date.now(),
+      tenantId: business.id,
+      name: whData.name.trim(),
+      location: whData.location.trim(),
+      manager: whData.manager.trim(),
+      stockValue: 0,
+      totalItems: 0,
+    };
+    setWarehouses((prev) => [...prev, newWh]);
+    appendAuditLog("WAREHOUSE_CREATED", `Added warehouse ${newWh.name}`);
+  };
+
   const loginUser = (emailOrPhone: string, role = "OWNER") => {
-    if (emailOrPhone.toLowerCase().includes("admin")) {
-      setUser({
-        id: "usr-admin-999",
+    const cleanInput = emailOrPhone.trim();
+    if (!cleanInput) return false;
+
+    if (cleanInput.toLowerCase() === "admin@tradepos.cloud") {
+      const superAdminUser: User = {
+        id: "usr-admin",
         name: "Platform Super Admin",
-        email: "admin@tradepos.cloud",
-        phone: "+255 700 000 000",
+        email: cleanInput,
+        phone: "",
         role: "SUPER_ADMIN",
         businessId: "system",
         branchId: "global",
-      });
+      };
+      setUser(superAdminUser);
+      try {
+        localStorage.setItem(PROD_USER_KEY, JSON.stringify(superAdminUser));
+        localStorage.setItem(PROD_VIEW_KEY, "app");
+      } catch (e) {}
       return true;
     }
 
-    const cleanInput = emailOrPhone.trim().toLowerCase();
+    const lowerInput = cleanInput.toLowerCase();
     const matchedEmployee = employees.find(
       (e) =>
-        e.email.toLowerCase() === cleanInput ||
-        e.phone.replace(/\s+/g, "") === cleanInput.replace(/\s+/g, "") ||
-        e.name.toLowerCase() === cleanInput
+        e.email.toLowerCase() === lowerInput ||
+        e.phone.replace(/\s+/g, "") === lowerInput.replace(/\s+/g, "") ||
+        e.name.toLowerCase() === lowerInput
     );
 
-    const loggedUser: User = matchedEmployee
-      ? {
-          id: matchedEmployee.id,
-          name: matchedEmployee.name,
-          email: matchedEmployee.email,
-          phone: matchedEmployee.phone,
-          role: matchedEmployee.role,
-          businessId: business?.id || "tenant-karibu-001",
-          branchId: currentBranch?.id || "br-01",
-        }
-      : {
-          id: "usr-001",
-          name: role === "CASHIER" ? "Baraka Mushi" : "Peter Joseph",
-          email: emailOrPhone.includes("@") ? emailOrPhone : "peter@petercosmetics.co.tz",
-          phone: emailOrPhone.includes("@") ? "+255 712 345 678" : emailOrPhone,
-          role: (role as any) || "OWNER",
-          businessId: business?.id || "tenant-karibu-001",
-          branchId: currentBranch?.id || "br-01",
+    // Ensure a business and main branch exist if logging in for the first time
+    let activeBiz = business;
+    let activeBr = currentBranch;
+    if (!activeBiz) {
+      const derivedName = cleanInput.includes("@")
+        ? cleanInput.split("@")[0].replace(/[._-]/g, " ")
+        : "Biashara Yangu";
+      const mainBr: Branch = {
+        id: "br-" + Date.now(),
+        name: "Tawi Kuu (HQ)",
+        location: "Tanzania",
+        isMain: true,
+        phone: cleanInput.includes("@") ? "" : cleanInput,
+      };
+      activeBiz = {
+        id: "tenant-" + Date.now(),
+        name: derivedName.charAt(0).toUpperCase() + derivedName.slice(1),
+        businessType: "Duka la Rejareja",
+        location: "Tanzania",
+        currency: "TZS",
+        taxRate: 18,
+        phone: cleanInput.includes("@") ? "" : cleanInput,
+        email: cleanInput.includes("@") ? cleanInput : "",
+        subscriptionPlan: "PROFESSIONAL",
+        subscriptionStatus: "ACTIVE",
+        subscriptionExpiry: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
+          .toISOString()
+          .split("T")[0],
+        branches: [mainBr],
+      };
+      activeBr = mainBr;
+      setBusiness(activeBiz);
+      setAvailableBusinesses([activeBiz]);
+      setCurrentBranch(mainBr);
+    }
+
+    let loggedUser: User;
+    if (matchedEmployee) {
+      loggedUser = {
+        id: matchedEmployee.id,
+        name: matchedEmployee.name,
+        email: matchedEmployee.email,
+        phone: matchedEmployee.phone,
+        role: matchedEmployee.role,
+        businessId: activeBiz.id,
+        branchId: activeBr?.id || activeBiz.branches[0]?.id || "",
+      };
+    } else {
+      const displayName = cleanInput.includes("@")
+        ? cleanInput.split("@")[0]
+        : cleanInput;
+      loggedUser = {
+        id: "usr-" + Date.now(),
+        name: displayName,
+        email: cleanInput.includes("@") ? cleanInput : "",
+        phone: cleanInput.includes("@") ? "" : cleanInput,
+        role: (role as any) || "OWNER",
+        businessId: activeBiz.id,
+        branchId: activeBr?.id || activeBiz.branches[0]?.id || "",
+      };
+
+      // Also register this owner in the employees list if employees is empty
+      if (employees.length === 0) {
+        const ownerEmp: EmployeeAccount = {
+          id: loggedUser.id,
+          tenantId: activeBiz.id,
+          name: loggedUser.name,
+          email: loggedUser.email,
+          phone: loggedUser.phone,
+          pin: "1234",
+          role: "OWNER",
+          branch: activeBr?.name || "Tawi Kuu (HQ)",
+          status: "Active",
+          lastActive: "Sasa hivi",
         };
+        setEmployees([ownerEmp]);
+      }
+    }
 
     setUser(loggedUser);
+    appendAuditLog("LOGIN_SUCCESS", `User ${loggedUser.name} signed in`, loggedUser.name);
     try {
-      localStorage.setItem("tradepos_session_user", JSON.stringify(loggedUser));
-      localStorage.setItem("tradepos_view_state", "app");
+      localStorage.setItem(PROD_USER_KEY, JSON.stringify(loggedUser));
+      localStorage.setItem(PROD_VIEW_KEY, "app");
     } catch (e) {}
 
     return true;
@@ -1382,6 +468,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       lastActive: "Sasa hivi",
     };
     setEmployees((prev) => [...prev, newEmp]);
+    appendAuditLog("EMPLOYEE_ADDED", `Added staff account: ${newEmp.name} (${newEmp.role})`);
   };
 
   const switchEmployeeAccount = (employeeId: string) => {
@@ -1393,18 +480,17 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       email: targetEmp.email,
       phone: targetEmp.phone,
       role: targetEmp.role,
-      businessId: business?.id || "tenant-karibu-001",
-      branchId: currentBranch?.id || "br-01",
+      businessId: business?.id || "",
+      branchId: currentBranch?.id || "",
     };
     setUser(switchedUser);
     try {
-      localStorage.setItem("tradepos_session_user", JSON.stringify(switchedUser));
+      localStorage.setItem(PROD_USER_KEY, JSON.stringify(switchedUser));
     } catch (e) {}
   };
 
   const submitDailyReport = (notes?: string, actualCashCounted?: number) => {
     if (!business) return undefined;
-    // Compile ONLY today's active day sales and expenses when closing the day
     const validSales = sales.filter(
       (s) => s.status !== "REFUNDED" && s.createdAt.startsWith(activeDayLabel)
     );
@@ -1431,7 +517,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     const countedCash = actualCashCounted !== undefined ? actualCashCounted : cashRegister.actualCash;
     const varianceVal = countedCash - expectedCashVal;
 
-    // Aggregate sold products
     const soldMap: { [name: string]: { name: string; quantity: number; revenue: number } } = {};
     validSales.forEach((s) => {
       s.items.forEach((item) => {
@@ -1445,7 +530,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     const soldItemsList = Object.values(soldMap).sort((a, b) => b.quantity - a.quantity);
     const totalUnits = soldItemsList.reduce((a, b) => a + b.quantity, 0);
 
-    // Remaining stock snapshot
     const totalUnitsInStore = products.reduce((a, b) => a + b.stockQuantity, 0);
     const lowStockCount = products.filter((p) => p.stockQuantity <= p.minStock).length;
 
@@ -1453,8 +537,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     const newReport: DailyShiftReport = {
       id: "rep-" + Date.now(),
       tenantId: business.id,
-      branchName: currentBranch?.name || "Kariakoo Branch (HQ)",
-      submittedBy: user?.name || "Baraka Mushi",
+      branchName: currentBranch?.name || business.branches[0]?.name || "Tawi Kuu",
+      submittedBy: user?.name || "Mhudumu",
       staffRole: user?.role || "CASHIER",
       submittedAt: `${activeDayLabel} ${now.toTimeString().slice(0, 5)}`,
       date: activeDayLabel,
@@ -1495,7 +579,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setDailyReports((prev) => [newReport, ...prev]);
     setIsDayClosed(true);
 
-    // Notify Owner immediately
     const newNotif: AppNotification = {
       id: "notif-" + Date.now(),
       title: `Siku Imefungwa (${activeDayLabel}) - ${newReport.submittedBy}`,
@@ -1506,6 +589,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       actionUrl: "cash-register",
     };
     setNotifications((prev) => [newNotif, ...prev]);
+    appendAuditLog("DAY_CLOSED", `Closed daily sales for ${activeDayLabel}`);
 
     return newReport;
   };
@@ -1515,7 +599,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   };
 
   const startNewDay = () => {
-    // Preserve all historical sales & expenses! Move any closed items from today's shift to Yesterday ("Jana") so Leo starts fresh at 0 while Jana & Wiki 2 Nyuma keep all history!
     const yesterdayStr = getOffsetDateStr(1);
     const todayStr = getOffsetDateStr(0);
     setSales((prev) =>
@@ -1535,7 +618,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       cashSales: 0,
       cashExpenses: 0,
       isOpen: true,
-      openedAt: `${todayStr} 08:00 AM`,
+      openedAt: `${todayStr} 08:00`,
     }));
   };
 
@@ -1546,7 +629,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           ? {
               ...r,
               status: "APPROVED",
-              approvedBy: user?.name || "Peter Joseph (Owner)",
+              approvedBy: user?.name || "Owner",
               approvedAt: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
             }
           : r
@@ -1557,26 +640,26 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const logoutUser = () => {
     setUser(null);
     try {
-      localStorage.removeItem("tradepos_session_user");
-      localStorage.setItem("tradepos_view_state", "landing");
+      localStorage.removeItem(PROD_USER_KEY);
+      localStorage.setItem(PROD_VIEW_KEY, "landing");
     } catch (e) {}
   };
 
   const registerBusiness = (accountData: any, businessData: any, plan: any) => {
-    const newTenantId = "tenant-" + Math.random().toString(36).substring(2, 8);
+    const newTenantId = "tenant-" + Date.now();
     const mainBranch: Branch = {
-      id: "br-" + Math.random().toString(36).substring(2, 6),
-      name: businessData.branchName || "Main Branch",
-      location: businessData.location || "Dar es Salaam",
+      id: "br-" + Date.now(),
+      name: businessData.branchName || `${businessData.location || "Main"} Branch (HQ)`,
+      location: businessData.location || "Tanzania",
       isMain: true,
-      phone: accountData.phone || "+255 700 000 000",
+      phone: accountData.phone || "",
     };
 
     const newBusiness: Business = {
       id: newTenantId,
-      name: businessData.name || "My Business",
+      name: businessData.name || "Biashara Yangu",
       businessType: businessData.type || "Retail Shop",
-      location: businessData.location || "Dar es Salaam",
+      location: businessData.location || "Tanzania",
       currency: "TZS",
       taxRate: 18,
       phone: accountData.phone || "",
@@ -1587,9 +670,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       branches: [mainBranch],
     };
 
+    const ownerId = "emp-" + Date.now();
     const newUser: User = {
-      id: "usr-" + Math.random().toString(36).substring(2, 8),
-      name: accountData.name || "Peter Joseph",
+      id: ownerId,
+      name: accountData.name || "Mmiliki wa Duka",
       email: accountData.email || "",
       phone: accountData.phone || "",
       role: "OWNER",
@@ -1597,39 +681,82 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       branchId: mainBranch.id,
     };
 
+    const ownerEmployee: EmployeeAccount = {
+      id: ownerId,
+      tenantId: newTenantId,
+      name: newUser.name,
+      email: newUser.email,
+      phone: newUser.phone,
+      pin: accountData.pin || "1234",
+      role: "OWNER",
+      branch: mainBranch.name,
+      status: "Active",
+      lastActive: "Sasa hivi",
+    };
+
+    // Start with clean empty data for the newly registered business
     setBusiness(newBusiness);
     setAvailableBusinesses((prev) => [newBusiness, ...prev]);
-    setUser(newUser);
     setCurrentBranch(mainBranch);
+    setUser(newUser);
+    setEmployees([ownerEmployee]);
+    setProducts([]);
+    setSales([]);
+    setCustomers([]);
+    setExpenses([]);
+    setSuppliers([]);
+    setPurchaseOrders([]);
+    setOnlineOrders([]);
+    setDeliveries([]);
+    setWarehouses([]);
+    setStockMovements([]);
+    setDailyReports([]);
+    setNotifications([]);
+    setCashRegister(emptyCashRegister);
+    setIsDayClosed(false);
+    setActiveDayLabel(getOffsetDateStr(0));
+
+    appendAuditLog("BUSINESS_REGISTERED", `Registered business ${newBusiness.name}`, newUser.name);
+
+    try {
+      localStorage.setItem(PROD_USER_KEY, JSON.stringify(newUser));
+      localStorage.setItem(PROD_VIEW_KEY, "app");
+    } catch (e) {}
   };
 
   const addProduct = (prodData: Omit<Product, "id" | "tenantId">) => {
-    if (!business) return undefined;
+    const tenantId = business?.id || "tenant-default";
     const newProduct: Product = {
       ...prodData,
-      id: "prod-" + Date.now(),
-      tenantId: business.id,
+      id: "prod-" + Date.now() + "-" + Math.floor(Math.random() * 1000),
+      tenantId,
     };
     setProducts((prev) => [newProduct, ...prev]);
+    appendAuditLog("PRODUCT_ADDED", `Added product ${newProduct.name} (${newProduct.stockQuantity} ${newProduct.unit})`);
     return newProduct;
   };
 
   const updateProduct = (updated: Product) => {
     setProducts((prev) => prev.map((p) => (p.id === updated.id ? updated : p)));
+    appendAuditLog("PRODUCT_UPDATED", `Updated product ${updated.name}`);
   };
 
   const deleteProduct = (id: string) => {
+    const target = products.find((p) => p.id === id);
     setProducts((prev) => prev.filter((p) => p.id !== id));
+    if (target) {
+      appendAuditLog("PRODUCT_DELETED", `Removed product ${target.name}`);
+    }
   };
 
   const processSale = (saleData: Omit<Sale, "id" | "tenantId" | "createdAt" | "saleNumber">) => {
-    if (!business) throw new Error("No business");
-    const saleNum = "INV-" + (1025 + sales.length);
+    const tenantId = business?.id || "tenant-default";
+    const saleNum = "INV-" + (1001 + sales.length);
     const nowTime = new Date().toTimeString().slice(0, 8);
     const newSale: Sale = {
       ...saleData,
       id: "sale-" + Date.now(),
-      tenantId: business.id,
+      tenantId,
       saleNumber: saleNum,
       createdAt: `${activeDayLabel}T${nowTime}Z`,
     };
@@ -1649,7 +776,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     // Record Stock Movement (OUT) for each sold item
     const newMovements: StockMovement[] = saleData.items.map((it) => ({
       id: "mov-" + Date.now() + "-" + Math.floor(Math.random() * 1000),
-      tenantId: business.id,
+      tenantId,
       branchId: saleData.branchId,
       productId: it.productId,
       productName: it.productName,
@@ -1658,7 +785,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       reason: saleData.paymentMethod === "CASH" ? "QUICK_CASH_SALE" : "SALE",
       unitCost: it.price,
       totalValue: it.total,
-      recordedBy: saleData.cashierName || "Cashier",
+      recordedBy: saleData.cashierName || user?.name || "Mhudumu",
       notes: `Mauzo ${saleNum} (${saleData.paymentMethod})`,
       createdAt: new Date().toISOString(),
     }));
@@ -1681,40 +808,43 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           ? Math.max(0, saleData.total - (saleData.paidAmount || 0))
           : 0;
 
-      setCustomers((prev) => {
-        const exists = prev.some(
-          (c) => c.name.toLowerCase() === custNameClean.toLowerCase()
-        );
-        if (exists) {
-          return prev.map((c) => {
-            if (c.name.toLowerCase() === custNameClean.toLowerCase()) {
-              return {
-                ...c,
-                totalSpent: c.totalSpent + saleData.total,
-                debtBalance: c.debtBalance + debtAdded,
-                loyaltyPoints: c.loyaltyPoints + Math.max(1, Math.floor(saleData.total / 10000)),
-                lastPurchaseDate: new Date().toISOString().split("T")[0],
-              };
-            }
-            return c;
-          });
-        } else {
-          const autoCust: Customer = {
-            id: "cust-" + Date.now(),
-            tenantId: business.id,
-            name: custNameClean,
-            phone: "+255 700 000 000",
-            totalSpent: saleData.total,
-            debtBalance: debtAdded,
-            loyaltyPoints: Math.max(1, Math.floor(saleData.total / 10000)),
-            lastPurchaseDate: new Date().toISOString().split("T")[0],
-          };
-          return [autoCust, ...prev];
-        }
-      });
+      if (custNameClean !== "Mteja wa Dukani" || debtAdded > 0) {
+        setCustomers((prev) => {
+          const exists = prev.some(
+            (c) => c.name.toLowerCase() === custNameClean.toLowerCase()
+          );
+          if (exists) {
+            return prev.map((c) => {
+              if (c.name.toLowerCase() === custNameClean.toLowerCase()) {
+                return {
+                  ...c,
+                  totalSpent: c.totalSpent + saleData.total,
+                  debtBalance: c.debtBalance + debtAdded,
+                  loyaltyPoints: c.loyaltyPoints + Math.max(1, Math.floor(saleData.total / 10000)),
+                  lastPurchaseDate: activeDayLabel,
+                };
+              }
+              return c;
+            });
+          } else {
+            const autoCust: Customer = {
+              id: "cust-" + Date.now(),
+              tenantId,
+              name: custNameClean,
+              phone: "",
+              totalSpent: saleData.total,
+              debtBalance: debtAdded,
+              loyaltyPoints: Math.max(1, Math.floor(saleData.total / 10000)),
+              lastPurchaseDate: activeDayLabel,
+            };
+            return [autoCust, ...prev];
+          }
+        });
+      }
     }
 
     setSales((prev) => [newSale, ...prev]);
+    appendAuditLog("SALE_RECORDED", `Recorded sale ${saleNum} for TZS ${newSale.total.toLocaleString()}`);
     return newSale;
   };
 
@@ -1722,37 +852,42 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setSales((prev) =>
       prev.map((s) => (s.id === saleId ? { ...s, status: "REFUNDED" } : s))
     );
+    appendAuditLog("SALE_REFUNDED", `Refunded sale ${saleId}`);
   };
 
   const recordStockMovement = (movData: Omit<StockMovement, "id" | "tenantId" | "createdAt">) => {
-    if (!business) return;
+    const tenantId = business?.id || "tenant-default";
     const newMov: StockMovement = {
       ...movData,
       id: "mov-" + Date.now() + "-" + Math.floor(Math.random() * 1000),
-      tenantId: business.id,
+      tenantId,
       createdAt: new Date().toISOString(),
     };
-    // Adjust stock in products catalog
     setProducts((prev) =>
       prev.map((p) => {
         if (p.id === movData.productId) {
-          const updatedQty = movData.type === "IN"
-            ? p.stockQuantity + movData.quantity
-            : Math.max(0, p.stockQuantity - movData.quantity);
+          const updatedQty =
+            movData.type === "IN"
+              ? p.stockQuantity + movData.quantity
+              : Math.max(0, p.stockQuantity - movData.quantity);
           return { ...p, stockQuantity: updatedQty };
         }
         return p;
       })
     );
     setStockMovements((prev) => [newMov, ...prev]);
+    appendAuditLog(
+      `STOCK_${movData.type}`,
+      `${movData.type === "IN" ? "Added" : "Removed"} ${movData.quantity} units of ${movData.productName}`
+    );
   };
 
   const addExpense = (expenseData: Omit<Expense, "id" | "tenantId">) => {
-    if (!business) return;
+    const tenantId = business?.id || "tenant-default";
     const newExp: Expense = {
       ...expenseData,
       id: "exp-" + Date.now(),
-      tenantId: business.id,
+      tenantId,
     };
     setExpenses((prev) => [newExp, ...prev]);
     if (expenseData.paymentMethod === "CASH") {
@@ -1762,6 +897,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         actualCash: Math.max(0, prev.actualCash - expenseData.amount),
       }));
     }
+    appendAuditLog("EXPENSE_RECORDED", `Recorded expense: ${expenseData.title} (TZS ${expenseData.amount.toLocaleString()})`);
   };
 
   const addCustomer = (
@@ -1769,7 +905,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       initialDebt?: number;
     }
   ) => {
-    if (!business) return;
+    const tenantId = business?.id || "tenant-default";
     const debt = custData.initialDebt || 0;
     const existing = customers.find(
       (c) => c.name.trim().toLowerCase() === custData.name.trim().toLowerCase()
@@ -1786,13 +922,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       email: custData.email,
       address: custData.address,
       id: "cust-" + Date.now(),
-      tenantId: business.id,
+      tenantId,
       totalSpent: debt,
       debtBalance: debt,
-      loyaltyPoints: 10,
-      lastPurchaseDate: new Date().toISOString().split("T")[0],
+      loyaltyPoints: 0,
+      lastPurchaseDate: activeDayLabel,
     };
     setCustomers((prev) => [newCust, ...prev]);
+    appendAuditLog("CUSTOMER_ADDED", `Added customer ${newCust.name} (Debt: TZS ${debt.toLocaleString()})`);
   };
 
   const payCustomerDebt = (customerId: string, amount: number, method = "CASH") => {
@@ -1803,7 +940,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           return {
             ...c,
             debtBalance: Math.max(0, c.debtBalance - amount),
-            lastPurchaseDate: new Date().toISOString().split("T")[0],
+            lastPurchaseDate: activeDayLabel,
           };
         }
         return c;
@@ -1816,6 +953,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         actualCash: prev.actualCash + amount,
       }));
     }
+    appendAuditLog("DEBT_PAYMENT", `Customer ${customerId} paid TZS ${amount.toLocaleString()} via ${method}`);
   };
 
   const addCustomerDebt = (customerId: string, amount: number) => {
@@ -1827,46 +965,47 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
             ...c,
             debtBalance: c.debtBalance + amount,
             totalSpent: c.totalSpent + amount,
-            lastPurchaseDate: new Date().toISOString().split("T")[0],
+            lastPurchaseDate: activeDayLabel,
           };
         }
         return c;
       })
     );
+    appendAuditLog("DEBT_ADDED", `Added TZS ${amount.toLocaleString()} debt to customer ${customerId}`);
   };
 
   const addSupplier = (supplierData: Omit<Supplier, "id" | "tenantId" | "totalPurchased" | "amountOwed">) => {
-    if (!business) return;
+    const tenantId = business?.id || "tenant-default";
     const newSup: Supplier = {
       ...supplierData,
       id: "sup-" + Date.now(),
-      tenantId: business.id,
+      tenantId,
       totalPurchased: 0,
       amountOwed: 0,
-      lastPurchaseDate: new Date().toISOString().split("T")[0],
+      lastPurchaseDate: activeDayLabel,
     };
     setSuppliers((prev) => [newSup, ...prev]);
   };
 
   const createPurchaseOrder = (poData: Omit<PurchaseOrder, "id" | "tenantId" | "createdAt" | "orderNumber">) => {
-    if (!business) return;
+    const tenantId = business?.id || "tenant-default";
     const newPO: PurchaseOrder = {
       ...poData,
       id: "po-" + Date.now(),
-      tenantId: business.id,
-      orderNumber: "PO-" + new Date().getFullYear() + "-" + Math.floor(100 + Math.random() * 900),
-      createdAt: new Date().toISOString().split("T")[0],
+      tenantId,
+      orderNumber: "PO-" + new Date().getFullYear() + "-" + (101 + purchaseOrders.length),
+      createdAt: activeDayLabel,
     };
     setPurchaseOrders((prev) => [newPO, ...prev]);
   };
 
   const createOnlineOrder = (orderData: Omit<OnlineOrder, "id" | "tenantId" | "createdAt" | "orderNumber">) => {
-    if (!business) return null as any;
-    const orderNum = "DEL-" + Math.floor(1000 + Math.random() * 9000);
+    const tenantId = business?.id || "tenant-default";
+    const orderNum = "DEL-" + (1001 + onlineOrders.length);
     const newOrder: OnlineOrder = {
       ...orderData,
       id: "ord-" + Date.now(),
-      tenantId: business.id,
+      tenantId,
       orderNumber: orderNum,
       createdAt: new Date().toISOString(),
     };
@@ -1874,7 +1013,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     return newOrder;
   };
 
-  const updateOrderStatus = (orderId: string, status: OnlineOrder['status']) => {
+  const updateOrderStatus = (orderId: string, status: OnlineOrder["status"]) => {
     setOnlineOrders((prev) =>
       prev.map((o) => (o.id === orderId ? { ...o, status } : o))
     );
@@ -1886,7 +1025,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     );
   };
 
-  const updateDeliveryStatus = (deliveryId: string, status: DeliveryItem['status']) => {
+  const updateDeliveryStatus = (deliveryId: string, status: DeliveryItem["status"]) => {
     setDeliveries((prev) =>
       prev.map((d) => (d.id === deliveryId ? { ...d, status } : d))
     );
@@ -1911,11 +1050,15 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const renewSubscription = () => {
     if (!business) return;
     const nextDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
-    setBusiness({
+    const updatedBiz: Business = {
       ...business,
       subscriptionStatus: "ACTIVE",
       subscriptionExpiry: nextDate,
-    });
+    };
+    setBusiness(updatedBiz);
+    setAvailableBusinesses((prev) =>
+      prev.map((b) => (b.id === updatedBiz.id ? updatedBiz : b))
+    );
   };
 
   const t = language === "en" ? en : sw;
@@ -1930,6 +1073,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         business,
         availableBusinesses,
         switchBusiness,
+        updateBusinessProfile,
+        addBranch,
+        addWarehouse,
         currentBranch,
         setCurrentBranch,
         products,

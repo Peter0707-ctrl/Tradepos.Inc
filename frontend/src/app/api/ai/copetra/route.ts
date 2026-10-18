@@ -32,7 +32,11 @@ Jibu kwa weledi, lugha fasaha (Kiswahili au Kiingereza kulingana na swali lilivy
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 20000); // 20s timeout
 
-    const copetraRes = await fetch("https://miraculous-forgiveness-production-10d4.up.railway.app/api/chat", {
+    const copetraEndpoint =
+      process.env.COPETRA_API_URL ||
+      "https://miraculous-forgiveness-production-10d4.up.railway.app/api/chat";
+
+    const copetraRes = await fetch(copetraEndpoint, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
