@@ -10,8 +10,11 @@ import {
   Calculator,
   Send,
   CheckCircle2,
-  Calendar
+  Calendar,
+  History
 } from "lucide-react";
+
+type PeriodFilter = "TODAY" | "YESTERDAY" | "WEEK_1" | "WEEK_2" | "ALL" | "CUSTOM";
 
 export const SalesLedgerModule: React.FC = () => {
   const {
@@ -32,6 +35,8 @@ export const SalesLedgerModule: React.FC = () => {
 
   const [search, setSearch] = useState("");
   const [paymentFilter, setPaymentFilter] = useState("ALL");
+  const [periodFilter, setPeriodFilter] = useState<PeriodFilter>("TODAY");
+  const [customDate, setCustomDate] = useState<string>(activeDayLabel);
 
   // Direct Sale Entry Form State (Employee or Owner types today's sale directly)
   const [prodName, setProdName] = useState("");
@@ -43,6 +48,38 @@ export const SalesLedgerModule: React.FC = () => {
 
   const isOwner = !user || user.role === "OWNER" || user.role === "SUPER_ADMIN";
 
+  // Helper to get YYYY-MM-DD for N days ago relative to activeDayLabel
+  const getDateDaysAgo = (daysAgo: number) => {
+    const base = new Date(activeDayLabel || new Date().toISOString().split("T")[0]);
+    base.setDate(base.getDate() - daysAgo);
+    return base.toISOString().split("T")[0];
+  };
+
+  const todayStr = activeDayLabel;
+  const yesterdayStr = getDateDaysAgo(1);
+  const week1CutoffStr = getDateDaysAgo(7);
+  const week2CutoffStr = getDateDaysAgo(14);
+
+  // Filter sales by the selected Period (Leo, Jana, Wiki 1 Nyuma, Wiki 2 Nyuma, Zote, au Tarehe Maalum)
+  const matchesSelectedPeriod = (saleCreatedAt: string) => {
+    const saleDate = (saleCreatedAt || "").split("T")[0];
+    if (periodFilter === "TODAY") return saleDate === todayStr;
+    if (periodFilter === "YESTERDAY") return saleDate === yesterdayStr;
+    if (periodFilter === "WEEK_1") return saleDate >= week1CutoffStr && saleDate <= todayStr;
+    if (periodFilter === "WEEK_2") return saleDate >= week2CutoffStr && saleDate <= todayStr;
+    if (periodFilter === "CUSTOM") return saleDate === customDate;
+    return true; // "ALL"
+  };
+
+  const getPeriodLabel = () => {
+    if (periodFilter === "TODAY") return `Leo (${todayStr})`;
+    if (periodFilter === "YESTERDAY") return `Jana (${yesterdayStr})`;
+    if (periodFilter === "WEEK_1") return `Wiki 1 Nyuma (Siku 7: ${week1CutoffStr} → ${todayStr})`;
+    if (periodFilter === "WEEK_2") return `Wiki 2 Nyuma (Siku 14: ${week2CutoffStr} → ${todayStr})`;
+    if (periodFilter === "CUSTOM") return `Tarehe: ${customDate}`;
+    return "Historia Yote ya Mauzo";
+  };
+
   // Automatic calculation preview for current form input
   const parsedQty = parseInt(qty) || 0;
   const matchedProduct = products.find(
@@ -52,28 +89,36 @@ export const SalesLedgerModule: React.FC = () => {
     parseFloat(unitPrice) || (matchedProduct ? matchedProduct.sellingPrice : 0);
   const autoLineTotal = parsedQty * parsedUnitPrice;
 
-  // Automatic System Calculations across all valid sales of the active day
-  const validSales = sales.filter((s) => s.status !== "REFUNDED");
-  const totalSalesAmount = validSales.reduce((acc, s) => acc + s.total, 0);
-  const totalCashSales = validSales
+  // Automatic System Calculations across valid sales in the selected period
+  const periodValidSales = sales.filter(
+    (s) => s.status !== "REFUNDED" && matchesSelectedPeriod(s.createdAt)
+  );
+  const totalSalesAmount = periodValidSales.reduce((acc, s) => acc + s.total, 0);
+  const totalCashSales = periodValidSales
     .filter((s) => s.paymentMethod === "CASH")
     .reduce((acc, s) => acc + s.total, 0);
-  const totalMobileSales = validSales
+  const totalMobileSales = periodValidSales
     .filter((s) => ["MPESA", "AIRTEL_MONEY", "MIXX", "HALOPESA"].includes(s.paymentMethod))
     .reduce((acc, s) => acc + s.total, 0);
-  const totalCreditSales = validSales
+  const totalCreditSales = periodValidSales
     .filter((s) => s.paymentMethod === "CREDIT")
     .reduce((acc, s) => acc + s.total, 0);
 
-  const totalUnitsSold = validSales.reduce(
+  const totalUnitsSold = periodValidSales.reduce(
     (acc, s) => acc + s.items.reduce((sum, i) => sum + i.quantity, 0),
     0
   );
 
-  const totalExpensesToday = expenses.reduce((acc, e) => acc + e.amount, 0);
+  // Today's totals for the End-of-Day banner
+  const todaySalesTotal = sales
+    .filter((s) => s.status !== "REFUNDED" && s.createdAt.startsWith(todayStr))
+    .reduce((acc, s) => acc + s.total, 0);
+  const todayExpensesTotal = expenses
+    .filter((e) => e.date === todayStr)
+    .reduce((acc, e) => acc + e.amount, 0);
   const totalStoreStockRemaining = products.reduce((acc, p) => acc + p.stockQuantity, 0);
 
-  const filteredSales = validSales.filter((s) => {
+  const filteredSales = periodValidSales.filter((s) => {
     const itemsText = s.items.map((i) => i.productName).join(" ").toLowerCase();
     const matchesSearch =
       itemsText.includes(search.toLowerCase()) ||
@@ -143,6 +188,7 @@ export const SalesLedgerModule: React.FC = () => {
     setQty("1");
     setUnitPrice("");
     setCustomerName("");
+    setPeriodFilter("TODAY");
     setJustClosedReport(false);
   };
 
@@ -169,19 +215,19 @@ export const SalesLedgerModule: React.FC = () => {
             <h2 className="text-xl font-black text-[#162709] tracking-tight">
               {language === "sw"
                 ? isOwner
-                  ? "2. Mauzo ya Siku (Owner Anaona Mauzo & Hesabu Auto)"
-                  : "1. Mauzo ya Leo (Andika Mauzo Manually & Hesabu Auto)"
-                : "Daily Sales (Manual Entry & Automatic Calculation)"}
+                  ? "2. Mauzo ya Siku & Historia (Leo, Jana & Wiki 2 Nyuma)"
+                  : "1. Mauzo ya Leo & Historia (Angalia Leo, Jana au Wiki 2 Nyuma)"
+                : "Daily Sales & History (Today, Yesterday & 2 Weeks Ago)"}
             </h2>
             <span className="px-2.5 py-0.5 rounded-full text-[11px] font-black bg-[#E1FFAC] text-[#172B08] border border-[#9CE034] flex items-center gap-1">
               <Calendar className="w-3 h-3" />
-              <span>Siku: {activeDayLabel}</span>
+              <span>{getPeriodLabel()}</span>
             </span>
           </div>
           <p className="text-xs text-[#526848] mt-0.5">
             {language === "sw"
-              ? "Andika bidhaa iliyouzwa na idadi yake hapa chini; mfumo unapiga jumla ya pesa na kupunguza stoo automatically. Ukibonyeza 'Funga Mauzo ya Siku', siku inaisha na hesabu zote zinakwenda kwa Boss automatically."
-              : "Type the item sold and quantity; the system calculates totals automatically. Click 'Close Day Sales' to end the day and send the report to the Boss."}
+              ? "Mwenye Duka na Mfanyakazi wanaweza kuona mauzo ya Leo, Jana, Wiki 1 Nyuma au Wiki 2 Nyuma kwa kubonyeza vitufe vya muda hapa chini."
+              : "Both Shop Owner and Employee can view sales from Today, Yesterday, 1 Week Ago, or 2 Weeks Ago using the filter buttons below."}
           </p>
         </div>
 
@@ -199,6 +245,7 @@ export const SalesLedgerModule: React.FC = () => {
             <button
               onClick={() => {
                 startNewDay();
+                setPeriodFilter("TODAY");
                 setJustClosedReport(false);
               }}
               className="px-4 py-2.5 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-black flex items-center gap-2 shadow-md transition cursor-pointer"
@@ -210,6 +257,52 @@ export const SalesLedgerModule: React.FC = () => {
         </div>
       </div>
 
+      {/* PERIOD / HISTORY SELECTOR BAR (LEO, JANA, WIKI 1 NYUMA, WIKI 2 NYUMA, TAREHE MAALUM) */}
+      <div className="p-3 rounded-2xl bg-white border-2 border-[#C2E880] shadow-xs flex flex-wrap items-center justify-between gap-2 text-xs">
+        <div className="flex flex-wrap items-center gap-1.5">
+          <span className="font-black text-[#162709] flex items-center gap-1 mr-1">
+            <History className="w-4 h-4 text-[#3A6112]" />
+            <span>Chagua Muda wa Mauzo:</span>
+          </span>
+
+          {(
+            [
+              { id: "TODAY", label: "Mauzo ya Leo" },
+              { id: "YESTERDAY", label: "Mauzo ya Jana" },
+              { id: "WEEK_1", label: "Wiki 1 Nyuma (Siku 7)" },
+              { id: "WEEK_2", label: "Wiki 2 Nyuma (Siku 14)" },
+              { id: "ALL", label: "Historia Yote" },
+            ] as { id: PeriodFilter; label: string }[]
+          ).map((btn) => (
+            <button
+              key={btn.id}
+              onClick={() => setPeriodFilter(btn.id)}
+              className={`px-3 py-1.5 rounded-xl font-black text-xs transition cursor-pointer ${
+                periodFilter === btn.id
+                  ? "bg-[#1B2F09] text-[#E1FFAC] border border-[#8ECE28] shadow-xs"
+                  : "bg-[#F4F7EE] hover:bg-[#E1FFAC]/60 text-[#2C421C] border border-[#D8E6CC]"
+              }`}
+            >
+              {btn.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Specific Date Picker */}
+        <div className="flex items-center gap-1.5">
+          <span className="font-bold text-[#4D6340] text-[11px]">Au Chagua Tarehe:</span>
+          <input
+            type="date"
+            value={customDate}
+            onChange={(e) => {
+              setCustomDate(e.target.value);
+              setPeriodFilter("CUSTOM");
+            }}
+            className="py-1 px-2.5 rounded-xl neu-input font-bold text-xs cursor-pointer"
+          />
+        </div>
+      </div>
+
       {/* BANNER WHEN "FUNGA MAUZO YA SIKU" IS CLICKED (DAY ENDED & SENT TO BOSS AUTOMATICALLY) */}
       {(isDayClosed || justClosedReport) && (
         <div className="p-4 rounded-2xl bg-emerald-950 text-[#E1FFAC] border-2 border-[#A6DF52] flex flex-col lg:flex-row lg:items-center justify-between gap-3 text-xs shadow-md">
@@ -217,38 +310,39 @@ export const SalesLedgerModule: React.FC = () => {
             <div className="font-black text-sm flex items-center gap-2">
               <CheckCircle2 className="w-4 h-4 text-[#A6DF52]" />
               <span>
-                SIKU IMEFUNGWA ({activeDayLabel}) — HESABU IMETUMWA KWA BOSS AUTOMATICALLY!
+                SIKU IMEFUNGWA ({todayStr}) — HESABU IMETUMWA KWA BOSS AUTOMATICALLY!
               </span>
             </div>
             <p className="text-emerald-100/90">
-              Muhtasari uliotumwa kwa Mwenye Duka: <strong>Mauzo ya Leo: TZS {totalSalesAmount.toLocaleString()}</strong> ({totalUnitsSold} pcs) |{" "}
-              <strong>Matumizi ya Leo: TZS {totalExpensesToday.toLocaleString()}</strong> |{" "}
-              <strong>Stoo Iliyobaki: {totalStoreStockRemaining} pcs</strong>.
+              Muhtasari uliotumwa kwa Mwenye Duka: <strong>Mauzo ya Leo: TZS {todaySalesTotal.toLocaleString()}</strong> |{" "}
+              <strong>Matumizi ya Leo: TZS {todayExpensesTotal.toLocaleString()}</strong> |{" "}
+              <strong>Stoo Iliyobaki: {totalStoreStockRemaining} pcs</strong>. Ukianzisha siku mpya, mauzo haya yatahifadhiwa kwenye <strong>Mauzo ya Jana</strong>.
             </p>
           </div>
           <button
             onClick={() => {
               startNewDay();
+              setPeriodFilter("TODAY");
               setJustClosedReport(false);
             }}
             className="px-4 py-2 rounded-xl bg-[#E1FFAC] text-[#162708] font-black text-xs shrink-0 hover:bg-white transition cursor-pointer"
           >
-            Anza Siku Mpya (Weka Mauzo & Matumizi 0)
+            Anza Siku Mpya (Leo Ianze 0, Haya Yaende Jana)
           </button>
         </div>
       )}
 
-      {/* 4 AUTOMATIC CALCULATION SUMMARY CARDS */}
+      {/* 4 AUTOMATIC CALCULATION SUMMARY CARDS (UPDATES FOR LEO, JANA, OR 2 WEEKS AGO) */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
         <div className="p-3.5 rounded-2xl bg-white border-2 border-[#b2e269] shadow-xs">
           <span className="text-xs font-bold text-[#566E49] block">
-            Jumla ya Mauzo ya Leo (Auto)
+            Jumla ya Mauzo ({periodFilter === "TODAY" ? "Leo" : periodFilter === "YESTERDAY" ? "Jana" : periodFilter === "WEEK_1" ? "Wiki 1" : periodFilter === "WEEK_2" ? "Wiki 2" : "Muda Huu"})
           </span>
           <p className="text-xl font-black text-emerald-800 mt-0.5">
             TZS {totalSalesAmount.toLocaleString()}
           </p>
           <span className="text-[11px] text-emerald-700 font-bold">
-            Vipande {totalUnitsSold} vimeuzwa ({validSales.length} mauzo)
+            Vipande {totalUnitsSold} vimeuzwa ({periodValidSales.length} mauzo)
           </span>
         </div>
 
@@ -260,7 +354,7 @@ export const SalesLedgerModule: React.FC = () => {
             TZS {totalCashSales.toLocaleString()}
           </p>
           <span className="text-[11px] text-[#69825B] font-bold">
-            Pesa taslimu iliyoingia drooni leo
+            Pesa taslimu kwa kipindi kilichochaguliwa
           </span>
         </div>
 
@@ -272,13 +366,13 @@ export const SalesLedgerModule: React.FC = () => {
             TZS {totalMobileSales.toLocaleString()}
           </p>
           <span className="text-[11px] text-[#69825B] font-bold">
-            Malipo ya Lipa Namba / Simu leo
+            Malipo ya Lipa Namba / Simu
           </span>
         </div>
 
         <div className="p-3.5 rounded-2xl bg-white border border-[#D8E6CC] shadow-xs">
           <span className="text-xs font-bold text-[#566E49] block">
-            Mauzo ya Mkopo (Madeni ya Leo)
+            Mauzo ya Mkopo (Madeni)
           </span>
           <p className="text-xl font-black text-amber-700 mt-0.5">
             TZS {totalCreditSales.toLocaleString()}
@@ -289,7 +383,7 @@ export const SalesLedgerModule: React.FC = () => {
         </div>
       </div>
 
-      {/* MAIN WORKSPACE: LEFT = ENTER TODAY'S SALES | RIGHT = LIVE SALES TABLE */}
+      {/* MAIN WORKSPACE: LEFT = ENTER TODAY'S SALES | RIGHT = LIVE & HISTORICAL SALES TABLE */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 flex-1">
         {/* Left: Enter Today's Sales Form */}
         <div className="bg-white rounded-2xl border-2 border-[#BFE973] p-4 shadow-xs h-fit">
@@ -415,16 +509,16 @@ export const SalesLedgerModule: React.FC = () => {
           </form>
         </div>
 
-        {/* Right: Live Sales Table */}
+        {/* Right: Live & Historical Sales Table */}
         <div className="lg:col-span-2 bg-white rounded-2xl border border-[#D8E6CC] p-4 shadow-xs flex flex-col">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-[#EBF2E2]">
             <div>
               <h3 className="font-black text-sm text-[#162709] flex items-center gap-1.5">
                 <ShoppingBag className="w-4 h-4 text-[#233F0D]" />
-                <span>Orodha ya Mauzo ya Siku ({activeDayLabel})</span>
+                <span>Orodha ya Mauzo — {getPeriodLabel()}</span>
               </h3>
               <p className="text-[11px] text-[#546949]">
-                Kila bidhaa iliyouzwa leo, idadi, malipo na jumla iliyopigwa na mfumo.
+                Inaonyesha mauzo yote ya muda uliouchagua pamoja na tarehe, aliyeuza na jumla.
               </p>
             </div>
 
@@ -456,6 +550,7 @@ export const SalesLedgerModule: React.FC = () => {
             <table className="w-full text-left text-xs divide-y divide-[#EBF2E2]">
               <thead className="bg-[#F8FAF4] font-bold text-[#4D6340]">
                 <tr>
+                  <th className="py-2.5 px-3">Tarehe</th>
                   <th className="py-2.5 px-3">Bidhaa Iliyouzwa</th>
                   <th className="py-2.5 px-3 text-center">Idadi</th>
                   <th className="py-2.5 px-3">Mteja</th>
@@ -468,15 +563,26 @@ export const SalesLedgerModule: React.FC = () => {
               <tbody className="divide-y divide-[#F1F6EB] text-[#1A2E0A]">
                 {filteredSales.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="py-8 text-center text-gray-400">
-                      Siku hii haina mauzo bado (TZS 0). Tumia fomu ya kushoto kuandika mauzo ya leo.
+                    <td colSpan={8} className="py-8 text-center text-gray-400">
+                      Hakuna mauzo yaliyoandikwa kwa muda huu ({getPeriodLabel()}). Bonyeza &apos;Mauzo ya Jana&apos; au &apos;Wiki 2 Nyuma&apos; kuona historia au andika mauzo ya leo kushoto.
                     </td>
                   </tr>
                 ) : (
                   filteredSales.map((s) => {
                     const totalQty = s.items.reduce((sum, i) => sum + i.quantity, 0);
+                    const saleDate = (s.createdAt || "").split("T")[0];
+                    const isSaleToday = saleDate === todayStr;
+                    const isSaleYesterday = saleDate === yesterdayStr;
                     return (
                       <tr key={s.id} className="hover:bg-[#F9FBF6] transition">
+                        <td className="py-3 px-3 whitespace-nowrap">
+                          <span className="font-mono font-bold text-[11px] text-[#2B4218] block">
+                            {saleDate}
+                          </span>
+                          <span className="text-[10px] font-bold text-[#617A54]">
+                            {isSaleToday ? "Leo" : isSaleYesterday ? "Jana" : "Historia"}
+                          </span>
+                        </td>
                         <td className="py-3 px-3 font-extrabold text-[#162709]">
                           {s.items.map((i) => `${i.productName} (×${i.quantity})`).join(", ")}
                         </td>
@@ -500,7 +606,7 @@ export const SalesLedgerModule: React.FC = () => {
                             {s.paymentMethod === "CREDIT" ? "MKOPO (DENI)" : s.paymentMethod}
                           </span>
                         </td>
-                        <td className="py-3 px-3 text-right font-black text-emerald-800">
+                        <td className="py-3 px-3 text-right font-black text-emerald-800 whitespace-nowrap">
                           TZS {s.total.toLocaleString()}
                         </td>
                         <td className="py-3 px-3 text-right">

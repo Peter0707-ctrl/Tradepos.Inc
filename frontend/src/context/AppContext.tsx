@@ -280,7 +280,14 @@ const initialProducts: Product[] = [
   }
 ];
 
+const getOffsetDateStr = (daysAgo: number) => {
+  const d = new Date();
+  d.setDate(d.getDate() - daysAgo);
+  return d.toISOString().split("T")[0];
+};
+
 const initialSales: Sale[] = [
+  // ===================== MAUZO YA LEO (TODAY) =====================
   {
     id: "sale-1024",
     tenantId: "tenant-karibu-001",
@@ -299,8 +306,8 @@ const initialSales: Sale[] = [
     balance: 0,
     paymentMethod: "MPESA",
     customerName: "Amina Salum",
-    cashierName: "John Mushi",
-    createdAt: "2026-10-08T11:42:00Z",
+    cashierName: "Baraka Mushi",
+    createdAt: `${getOffsetDateStr(0)}T11:42:00Z`,
     status: "COMPLETED",
   },
   {
@@ -319,8 +326,8 @@ const initialSales: Sale[] = [
     balance: 0,
     paymentMethod: "CASH",
     customerName: "David Kimaro",
-    cashierName: "Peter Joseph",
-    createdAt: "2026-10-08T10:15:00Z",
+    cashierName: "Baraka Mushi",
+    createdAt: `${getOffsetDateStr(0)}T10:15:00Z`,
     status: "COMPLETED",
   },
   {
@@ -330,7 +337,7 @@ const initialSales: Sale[] = [
     saleNumber: "INV-1022",
     items: [
       { productId: "prod-007", productName: "Yardley English Rose Deodorant", quantity: 2, price: 11000, total: 22000 },
-      { productId: "prod-001", productName: "Nivea Nourishing Body Milk", quantity: 1, price: 22000, total: 22000 },
+      { productId: "prod-001", productName: "Nivea Nourishing Body Milk 400ml", quantity: 1, price: 22000, total: 22000 },
     ],
     subtotal: 44000,
     tax: 0,
@@ -340,10 +347,137 @@ const initialSales: Sale[] = [
     balance: 24000,
     paymentMethod: "CREDIT",
     customerName: "Zuhura Rashid",
-    cashierName: "John Mushi",
-    createdAt: "2026-10-08T09:30:00Z",
+    cashierName: "Baraka Mushi",
+    createdAt: `${getOffsetDateStr(0)}T09:30:00Z`,
     status: "COMPLETED",
-  }
+  },
+  // ===================== MAUZO YA JANA (YESTERDAY - 1 DAY AGO) =====================
+  {
+    id: "sale-1021",
+    tenantId: "tenant-karibu-001",
+    branchId: "br-01",
+    saleNumber: "INV-1021",
+    items: [
+      { productId: "prod-004", productName: "Garnier Micellar Cleansing Water 400ml", quantity: 4, price: 24000, total: 96000 },
+      { productId: "prod-005", productName: "L'Oreal Paris Elvive Serum 100ml", quantity: 2, price: 32000, total: 64000 },
+    ],
+    subtotal: 160000,
+    tax: 0,
+    discount: 0,
+    total: 160000,
+    paidAmount: 160000,
+    balance: 0,
+    paymentMethod: "CASH",
+    customerName: "Neema Mwakasege",
+    cashierName: "Baraka Mushi",
+    createdAt: `${getOffsetDateStr(1)}T16:20:00Z`,
+    status: "COMPLETED",
+  },
+  {
+    id: "sale-1020",
+    tenantId: "tenant-karibu-001",
+    branchId: "br-01",
+    saleNumber: "INV-1020",
+    items: [
+      { productId: "prod-001", productName: "Nivea Nourishing Body Milk 400ml", quantity: 3, price: 22000, total: 66000 },
+    ],
+    subtotal: 66000,
+    tax: 0,
+    discount: 0,
+    total: 66000,
+    paidAmount: 66000,
+    balance: 0,
+    paymentMethod: "MPESA",
+    customerName: "Fatma Kassim",
+    cashierName: "Baraka Mushi",
+    createdAt: `${getOffsetDateStr(1)}T13:10:00Z`,
+    status: "COMPLETED",
+  },
+  // ===================== MAUZO YA WIKI 1 NYUMA (5-6 DAYS AGO) =====================
+  {
+    id: "sale-1019",
+    tenantId: "tenant-karibu-001",
+    branchId: "br-01",
+    saleNumber: "INV-1019",
+    items: [
+      { productId: "prod-003", productName: "CeraVe Hydrating Facial Cleanser 236ml", quantity: 5, price: 38000, total: 190000 },
+      { productId: "prod-006", productName: "Vaseline Petroleum Jelly Original 250g", quantity: 4, price: 7500, total: 30000 },
+    ],
+    subtotal: 220000,
+    tax: 0,
+    discount: 0,
+    total: 220000,
+    paidAmount: 220000,
+    balance: 0,
+    paymentMethod: "CASH",
+    customerName: "Halima Bakari",
+    cashierName: "Baraka Mushi",
+    createdAt: `${getOffsetDateStr(5)}T15:05:00Z`,
+    status: "COMPLETED",
+  },
+  {
+    id: "sale-1018",
+    tenantId: "tenant-karibu-001",
+    branchId: "br-01",
+    saleNumber: "INV-1018",
+    items: [
+      { productId: "prod-002", productName: "Maybelline Matte Lip Gloss Velvet", quantity: 6, price: 18500, total: 111000 },
+    ],
+    subtotal: 111000,
+    tax: 0,
+    discount: 0,
+    total: 111000,
+    paidAmount: 111000,
+    balance: 0,
+    paymentMethod: "MPESA",
+    customerName: "Rehema Juma",
+    cashierName: "Peter Joseph",
+    createdAt: `${getOffsetDateStr(6)}T11:40:00Z`,
+    status: "COMPLETED",
+  },
+  // ===================== MAUZO YA WIKI 2 NYUMA (12-14 DAYS AGO) =====================
+  {
+    id: "sale-1017",
+    tenantId: "tenant-karibu-001",
+    branchId: "br-01",
+    saleNumber: "INV-1017",
+    items: [
+      { productId: "prod-001", productName: "Nivea Nourishing Body Milk 400ml", quantity: 10, price: 22000, total: 220000 },
+      { productId: "prod-004", productName: "Garnier Micellar Cleansing Water 400ml", quantity: 5, price: 24000, total: 120000 },
+    ],
+    subtotal: 340000,
+    tax: 0,
+    discount: 0,
+    total: 340000,
+    paidAmount: 340000,
+    balance: 0,
+    paymentMethod: "CASH",
+    customerName: "Mussa Salon Kariakoo",
+    cashierName: "Baraka Mushi",
+    createdAt: `${getOffsetDateStr(12)}T14:50:00Z`,
+    status: "COMPLETED",
+  },
+  {
+    id: "sale-1016",
+    tenantId: "tenant-karibu-001",
+    branchId: "br-01",
+    saleNumber: "INV-1016",
+    items: [
+      { productId: "prod-005", productName: "L'Oreal Paris Elvive Serum 100ml", quantity: 4, price: 32000, total: 128000 },
+      { productId: "prod-007", productName: "Yardley English Rose Deodorant 150ml", quantity: 6, price: 11000, total: 66000 },
+    ],
+    subtotal: 194000,
+    tax: 0,
+    discount: 0,
+    total: 194000,
+    paidAmount: 150000,
+    balance: 44000,
+    paymentMethod: "CREDIT",
+    customerName: "Amina Salum",
+    cashierName: "Baraka Mushi",
+    createdAt: `${getOffsetDateStr(14)}T17:15:00Z`,
+    status: "COMPLETED",
+  },
 ];
 
 const initialCustomers: Customer[] = [
@@ -357,7 +491,7 @@ const initialCustomers: Customer[] = [
     totalSpent: 1850000,
     debtBalance: 45000,
     loyaltyPoints: 340,
-    lastPurchaseDate: "2026-10-08",
+    lastPurchaseDate: getOffsetDateStr(0),
   },
   {
     id: "cust-02",
@@ -369,7 +503,7 @@ const initialCustomers: Customer[] = [
     totalSpent: 920000,
     debtBalance: 0,
     loyaltyPoints: 190,
-    lastPurchaseDate: "2026-10-08",
+    lastPurchaseDate: getOffsetDateStr(0),
   },
   {
     id: "cust-03",
@@ -381,11 +515,12 @@ const initialCustomers: Customer[] = [
     totalSpent: 2640000,
     debtBalance: 120000,
     loyaltyPoints: 520,
-    lastPurchaseDate: "2026-10-08",
+    lastPurchaseDate: getOffsetDateStr(0),
   }
 ];
 
 const initialExpenses: Expense[] = [
+  // MATUMIZI YA LEO
   {
     id: "exp-01",
     tenantId: "tenant-karibu-001",
@@ -394,7 +529,7 @@ const initialExpenses: Expense[] = [
     title: "Nauli ya Bodaboda kupeleka mzigo Posta",
     description: "Nauli ya Bodaboda kupeleka mzigo Posta",
     amount: 5000,
-    date: "2026-10-19",
+    date: getOffsetDateStr(0),
     recordedBy: "Baraka Mushi",
     paymentMethod: "CASH",
   },
@@ -406,7 +541,58 @@ const initialExpenses: Expense[] = [
     title: "Maji ya kunywa na chakula cha mchana dukani",
     description: "Maji ya kunywa na chakula cha mchana dukani",
     amount: 6000,
-    date: "2026-10-19",
+    date: getOffsetDateStr(0),
+    recordedBy: "Baraka Mushi",
+    paymentMethod: "CASH",
+  },
+  // MATUMIZI YA JANA
+  {
+    id: "exp-03",
+    tenantId: "tenant-karibu-001",
+    branchId: "br-01",
+    category: "Vifungashio & Mifuko",
+    title: "Mifuko ya kufungia bidhaa za wateja",
+    description: "Mifuko ya kufungia bidhaa za wateja",
+    amount: 8000,
+    date: getOffsetDateStr(1),
+    recordedBy: "Baraka Mushi",
+    paymentMethod: "CASH",
+  },
+  {
+    id: "exp-04",
+    tenantId: "tenant-karibu-001",
+    branchId: "br-01",
+    category: "Chakula & Maji Dukani",
+    title: "Chakula cha mchana dukani",
+    description: "Chakula cha mchana dukani",
+    amount: 7000,
+    date: getOffsetDateStr(1),
+    recordedBy: "Baraka Mushi",
+    paymentMethod: "CASH",
+  },
+  // MATUMIZI YA WIKI 1 NYUMA
+  {
+    id: "exp-05",
+    tenantId: "tenant-karibu-001",
+    branchId: "br-01",
+    category: "Umeme (LUKU) & Maji",
+    title: "Tokeni za LUKU dukani Kariakoo",
+    description: "Tokeni za LUKU dukani Kariakoo",
+    amount: 20000,
+    date: getOffsetDateStr(5),
+    recordedBy: "Baraka Mushi",
+    paymentMethod: "MPESA",
+  },
+  // MATUMIZI YA WIKI 2 NYUMA
+  {
+    id: "exp-06",
+    tenantId: "tenant-karibu-001",
+    branchId: "br-01",
+    category: "Usafiri & Bodaboda",
+    title: "Usafiri wa bajaji kuleta katoni stoo",
+    description: "Usafiri wa bajaji kuleta katoni stoo",
+    amount: 15000,
+    date: getOffsetDateStr(12),
     recordedBy: "Baraka Mushi",
     paymentMethod: "CASH",
   },
@@ -700,42 +886,115 @@ const initialDailyReports: DailyShiftReport[] = [
     branchName: "Kariakoo Branch (HQ)",
     submittedBy: "Baraka Mushi",
     staffRole: "CASHIER",
-    submittedAt: "2026-10-08 17:45",
-    date: "2026-10-08",
-    totalSales: 141000,
-    cashSales: 24000,
-    mobileSales: 82500,
-    creditSales: 34500,
-    totalExpenses: 50000,
-    expectedCash: 259000,
-    actualCashCounted: 259000,
+    submittedAt: `${getOffsetDateStr(1)} 18:10`,
+    date: getOffsetDateStr(1),
+    totalSales: 226000,
+    cashSales: 160000,
+    mobileSales: 66000,
+    creditSales: 0,
+    totalExpenses: 15000,
+    expectedCash: 395000,
+    actualCashCounted: 395000,
     variance: 0,
-    totalUnitsSold: 6,
+    totalUnitsSold: 9,
     soldItems: [
-      { name: "Nivea Nourishing Body Milk 400ml", quantity: 2, revenue: 44000 },
-      { name: "CeraVe Hydrating Facial Cleanser 236ml", quantity: 1, revenue: 38000 },
-      { name: "Garnier Micellar Cleansing Water 400ml", quantity: 1, revenue: 24000 },
-      { name: "L'Oreal Paris Elvive Serum 100ml", quantity: 1, revenue: 35000 },
+      { name: "Garnier Micellar Cleansing Water 400ml", quantity: 4, revenue: 96000 },
+      { name: "Nivea Nourishing Body Milk 400ml", quantity: 3, revenue: 66000 },
+      { name: "L'Oreal Paris Elvive Serum 100ml", quantity: 2, revenue: 64000 },
     ],
     dailyExpenses: [
-      { category: "Usafiri & Bodaboda", description: "Bodaboda kupeleka mzigo Posta na kurudisha risiti", amount: 15000, paymentMethod: "CASH" },
-      { category: "Chakula & Maji ya Wafanyakazi", description: "Chakula cha mchana na maji dukani", amount: 10000, paymentMethod: "CASH" },
-      { category: "Umeme (LUKU)", description: "Tokeni za LUKU tawi la Kariakoo", amount: 25000, paymentMethod: "MPESA" },
+      { category: "Vifungashio & Mifuko", description: "Mifuko ya kufungia bidhaa za wateja", amount: 8000, paymentMethod: "CASH" },
+      { category: "Chakula & Maji Dukani", description: "Chakula cha mchana dukani", amount: 7000, paymentMethod: "CASH" },
     ],
     remainingStockSummary: {
-      totalProductsCount: 8,
-      totalUnitsInStore: 234,
+      totalProductsCount: 7,
+      totalUnitsInStore: 192,
       lowStockCount: 2,
       stockSnapshot: [
         { id: "prod-001", name: "Nivea Nourishing Body Milk 400ml", remainingQty: 42, minStock: 15, unit: "Bottle" },
         { id: "prod-002", name: "Maybelline Matte Lip Gloss Velvet", remainingQty: 18, minStock: 8, unit: "Pcs" },
         { id: "prod-003", name: "CeraVe Hydrating Facial Cleanser 236ml", remainingQty: 25, minStock: 10, unit: "Bottle" },
         { id: "prod-004", name: "Garnier Micellar Cleansing Water 400ml", remainingQty: 6, minStock: 12, unit: "Bottle" },
-        { id: "prod-005", name: "L'Oreal Paris Elvive Serum 100ml", remainingQty: 7, minStock: 10, unit: "Bottle" },
+        { id: "prod-005", name: "L'Oreal Paris Elvive Serum 100ml", remainingQty: 4, minStock: 10, unit: "Bottle" },
       ],
     },
-    notes: "Mauzo yameenda vizuri leo. Garnier Micellar na L'Oreal Elvive zimebaki chache stoo (chini ya 10), tafadhali agiza mzigo mpya.",
-    status: "PENDING_REVIEW",
+    notes: "Mauzo ya Jana yalifungwa vizuri na kutumwa kwa Mwenye Duka.",
+    status: "APPROVED",
+    approvedBy: "Peter Joseph (Owner)",
+    approvedAt: "18:30",
+  },
+  {
+    id: "rep-002",
+    tenantId: "tenant-karibu-001",
+    branchName: "Kariakoo Branch (HQ)",
+    submittedBy: "Baraka Mushi",
+    staffRole: "CASHIER",
+    submittedAt: `${getOffsetDateStr(5)} 18:00`,
+    date: getOffsetDateStr(5),
+    totalSales: 331000,
+    cashSales: 220000,
+    mobileSales: 111000,
+    creditSales: 0,
+    totalExpenses: 20000,
+    expectedCash: 450000,
+    actualCashCounted: 450000,
+    variance: 0,
+    totalUnitsSold: 15,
+    soldItems: [
+      { name: "CeraVe Hydrating Facial Cleanser 236ml", quantity: 5, revenue: 190000 },
+      { name: "Maybelline Matte Lip Gloss Velvet", quantity: 6, revenue: 111000 },
+      { name: "Vaseline Petroleum Jelly Original 250g", quantity: 4, revenue: 30000 },
+    ],
+    dailyExpenses: [
+      { category: "Umeme (LUKU) & Maji", description: "Tokeni za LUKU dukani Kariakoo", amount: 20000, paymentMethod: "MPESA" },
+    ],
+    remainingStockSummary: {
+      totalProductsCount: 7,
+      totalUnitsInStore: 201,
+      lowStockCount: 1,
+      stockSnapshot: [],
+    },
+    notes: "Ripoti ya Wiki 1 Nyuma imekamilika.",
+    status: "APPROVED",
+    approvedBy: "Peter Joseph (Owner)",
+    approvedAt: "18:45",
+  },
+  {
+    id: "rep-003",
+    tenantId: "tenant-karibu-001",
+    branchName: "Kariakoo Branch (HQ)",
+    submittedBy: "Baraka Mushi",
+    staffRole: "CASHIER",
+    submittedAt: `${getOffsetDateStr(12)} 18:15`,
+    date: getOffsetDateStr(12),
+    totalSales: 534000,
+    cashSales: 340000,
+    mobileSales: 0,
+    creditSales: 194000,
+    totalExpenses: 15000,
+    expectedCash: 575000,
+    actualCashCounted: 575000,
+    variance: 0,
+    totalUnitsSold: 25,
+    soldItems: [
+      { name: "Nivea Nourishing Body Milk 400ml", quantity: 10, revenue: 220000 },
+      { name: "L'Oreal Paris Elvive Serum 100ml", quantity: 4, revenue: 128000 },
+      { name: "Garnier Micellar Cleansing Water 400ml", quantity: 5, revenue: 120000 },
+      { name: "Yardley English Rose Deodorant 150ml", quantity: 6, revenue: 66000 },
+    ],
+    dailyExpenses: [
+      { category: "Usafiri & Bodaboda", description: "Usafiri wa bajaji kuleta katoni stoo", amount: 15000, paymentMethod: "CASH" },
+    ],
+    remainingStockSummary: {
+      totalProductsCount: 7,
+      totalUnitsInStore: 216,
+      lowStockCount: 0,
+      stockSnapshot: [],
+    },
+    notes: "Ripoti ya Wiki 2 Nyuma imekamilika.",
+    status: "APPROVED",
+    approvedBy: "Peter Joseph (Owner)",
+    approvedAt: "19:00",
   },
 ];
 
@@ -785,13 +1044,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [dailyReports, setDailyReports] = useState<DailyShiftReport[]>(initialDailyReports);
   const [notifications, setNotifications] = useState<AppNotification[]>(initialNotifications);
   const [isDayClosed, setIsDayClosed] = useState<boolean>(false);
-  const [activeDayLabel, setActiveDayLabel] = useState<string>(new Date().toISOString().split("T")[0]);
+  const [activeDayLabel, setActiveDayLabel] = useState<string>(getOffsetDateStr(0));
   const [isHydrated, setIsHydrated] = useState<boolean>(false);
 
   // Restore persisted store data from localStorage on mount
   useEffect(() => {
     try {
-      const savedStore = localStorage.getItem("tradepos_store_data_v2");
+      const savedStore = localStorage.getItem("tradepos_store_data_v3");
       if (savedStore) {
         const parsed = JSON.parse(savedStore);
         if (Array.isArray(parsed.products) && parsed.products.length > 0) setProducts(parsed.products);
@@ -815,7 +1074,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     if (!isHydrated) return;
     try {
       localStorage.setItem(
-        "tradepos_store_data_v2",
+        "tradepos_store_data_v3",
         JSON.stringify({
           products,
           sales,
@@ -921,7 +1180,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           paymentMethod: "MPESA",
           customerName: "Kassim Contractor",
           cashierName: "Peter Joseph",
-          createdAt: "2026-10-08T09:00:00Z",
+          createdAt: `${getOffsetDateStr(0)}T09:00:00Z`,
           status: "COMPLETED",
         }
       ]);
@@ -1014,7 +1273,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const submitDailyReport = (notes?: string, actualCashCounted?: number) => {
     if (!business) return undefined;
-    const validSales = sales.filter((s) => s.status !== "REFUNDED");
+    // Compile ONLY today's active day sales and expenses when closing the day
+    const validSales = sales.filter(
+      (s) => s.status !== "REFUNDED" && s.createdAt.startsWith(activeDayLabel)
+    );
+    const todayExpenses = expenses.filter((e) => e.date === activeDayLabel);
+
     const totalSalesVal = validSales.reduce((a, b) => a + b.total, 0);
     const cashSalesVal = validSales
       .filter((s) => s.paymentMethod === "CASH")
@@ -1026,7 +1290,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       .filter((s) => s.paymentMethod === "CREDIT")
       .reduce((a, b) => a + b.total, 0);
 
-    const totalExpensesVal = expenses.reduce((a, b) => a + b.amount, 0);
+    const totalExpensesVal = todayExpenses.reduce((a, b) => a + b.amount, 0);
     const expectedCashVal =
       cashRegister.openingBalance +
       (cashSalesVal > 0 ? cashSalesVal : cashRegister.cashSales) +
@@ -1073,7 +1337,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       variance: varianceVal,
       totalUnitsSold: totalUnits,
       soldItems: soldItemsList,
-      dailyExpenses: expenses.slice(0, 20).map((e) => ({
+      dailyExpenses: todayExpenses.slice(0, 20).map((e) => ({
         category: e.category,
         description: e.title || e.description || e.category,
         amount: e.amount,
@@ -1120,18 +1384,27 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   };
 
   const startNewDay = () => {
-    // Advance activeDayLabel by 1 day or set to today and reset active shift's sales & expenses to 0
-    const nextDate = new Date();
-    setActiveDayLabel(nextDate.toISOString().split("T")[0]);
-    setSales([]);
-    setExpenses([]);
+    // Preserve all historical sales & expenses! Move any closed items from today's shift to Yesterday ("Jana") so Leo starts fresh at 0 while Jana & Wiki 2 Nyuma keep all history!
+    const yesterdayStr = getOffsetDateStr(1);
+    const todayStr = getOffsetDateStr(0);
+    setSales((prev) =>
+      prev.map((s) =>
+        s.createdAt.startsWith(activeDayLabel)
+          ? { ...s, createdAt: `${yesterdayStr}T${s.createdAt.split("T")[1] || "17:30:00Z"}` }
+          : s
+      )
+    );
+    setExpenses((prev) =>
+      prev.map((e) => (e.date === activeDayLabel ? { ...e, date: yesterdayStr } : e))
+    );
+    setActiveDayLabel(todayStr);
     setIsDayClosed(false);
     setCashRegister((prev) => ({
       ...prev,
       cashSales: 0,
       cashExpenses: 0,
       isOpen: true,
-      openedAt: `${nextDate.toISOString().split("T")[0]} 08:00 AM`,
+      openedAt: `${todayStr} 08:00 AM`,
     }));
   };
 
@@ -1221,12 +1494,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const processSale = (saleData: Omit<Sale, "id" | "tenantId" | "createdAt" | "saleNumber">) => {
     if (!business) throw new Error("No business");
     const saleNum = "INV-" + (1025 + sales.length);
+    const nowTime = new Date().toTimeString().slice(0, 8);
     const newSale: Sale = {
       ...saleData,
       id: "sale-" + Date.now(),
       tenantId: business.id,
       saleNumber: saleNum,
-      createdAt: new Date().toISOString(),
+      createdAt: `${activeDayLabel}T${nowTime}Z`,
     };
 
     // Decrease stock
