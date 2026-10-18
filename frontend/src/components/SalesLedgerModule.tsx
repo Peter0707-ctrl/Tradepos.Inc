@@ -11,10 +11,51 @@ import {
   Send,
   CheckCircle2,
   Calendar,
-  History
+  ChevronLeft,
+  ChevronRight,
+  ChevronsLeft,
+  ChevronsRight,
 } from "lucide-react";
 
-type PeriodFilter = "TODAY" | "YESTERDAY" | "WEEK_1" | "WEEK_2" | "ALL" | "CUSTOM";
+const SWAHILI_DAYS_SHORT = ["Jumapili", "Jumatatu", "Jumanne", "Jumatano", "Alhamisi", "Ijumaa", "Jumamosi"];
+const SWAHILI_MONTHS_SHORT = ["Jan", "Feb", "Mac", "Apr", "Mei", "Jun", "Jul", "Ago", "Sep", "Okt", "Nov", "Des"];
+const SWAHILI_MONTHS_FULL = [
+  "Januari",
+  "Februari",
+  "Machi",
+  "Aprili",
+  "Mei",
+  "Juni",
+  "Julai",
+  "Agosti",
+  "Septemba",
+  "Oktoba",
+  "Novemba",
+  "Desemba",
+];
+
+// Helper: parse YYYY-MM-DD safely in local time without timezone shift
+const parseDateParts = (dateStr: string): Date => {
+  const parts = (dateStr || "").split("-").map(Number);
+  if (parts.length === 3 && !isNaN(parts[0]) && !isNaN(parts[1]) && !isNaN(parts[2])) {
+    return new Date(parts[0], parts[1] - 1, parts[2], 12, 0, 0);
+  }
+  const now = new Date();
+  return new Date(now.getFullYear(), now.getMonth(), now.getDate(), 12, 0, 0);
+};
+
+const toDateString = (d: Date): string => {
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  return `${yyyy}-${mm}-${dd}`;
+};
+
+const addDaysToDateStr = (dateStr: string, deltaDays: number): string => {
+  const d = parseDateParts(dateStr);
+  d.setDate(d.getDate() + deltaDays);
+  return toDateString(d);
+};
 
 export const SalesLedgerModule: React.FC = () => {
   const {
@@ -33,12 +74,22 @@ export const SalesLedgerModule: React.FC = () => {
     activeDayLabel,
   } = useApp();
 
+  const todayStr = activeDayLabel || toDateString(new Date());
+  const yesterdayStr = addDaysToDateStr(todayStr, -1);
+
+  // Selected single calendar date (default: Today)
+  const [selectedDate, setSelectedDate] = useState<string>(todayStr);
+  // End date of the 7-day horizontal calendar strip (shifts with < and >)
+  const [stripEndDate, setStripEndDate] = useState<string>(todayStr);
+  // Toggle full month calendar grid view
+  const [showMonthGrid, setShowMonthGrid] = useState<boolean>(false);
+  // Currently viewed month in the full month grid (YYYY-MM-01)
+  const [viewMonthDate, setViewMonthDate] = useState<string>(todayStr);
+
   const [search, setSearch] = useState("");
   const [paymentFilter, setPaymentFilter] = useState("ALL");
-  const [periodFilter, setPeriodFilter] = useState<PeriodFilter>("TODAY");
-  const [customDate, setCustomDate] = useState<string>(activeDayLabel);
 
-  // Direct Sale Entry Form State (Employee or Owner types today's sale directly)
+  // Direct Sale Entry Form State
   const [prodName, setProdName] = useState("");
   const [qty, setQty] = useState("1");
   const [unitPrice, setUnitPrice] = useState("");
@@ -48,36 +99,102 @@ export const SalesLedgerModule: React.FC = () => {
 
   const isOwner = !user || user.role === "OWNER" || user.role === "SUPER_ADMIN";
 
-  // Helper to get YYYY-MM-DD for N days ago relative to activeDayLabel
-  const getDateDaysAgo = (daysAgo: number) => {
-    const base = new Date(activeDayLabel || new Date().toISOString().split("T")[0]);
-    base.setDate(base.getDate() - daysAgo);
-    return base.toISOString().split("T")[0];
+  // Helper to get total sales for any specific YYYY-MM-DD date
+  const getSalesTotalForDate = (dateStr: string) => {
+    return sales
+      .filter((s) => s.status !== "REFUNDED" && (s.createdAt || "").split("T")[0] === dateStr)
+      .reduce((acc, s) => acc + s.total, 0);
   };
 
-  const todayStr = activeDayLabel;
-  const yesterdayStr = getDateDaysAgo(1);
-  const week1CutoffStr = getDateDaysAgo(7);
-  const week2CutoffStr = getDateDaysAgo(14);
-
-  // Filter sales by the selected Period (Leo, Jana, Wiki 1 Nyuma, Wiki 2 Nyuma, Zote, au Tarehe Maalum)
-  const matchesSelectedPeriod = (saleCreatedAt: string) => {
-    const saleDate = (saleCreatedAt || "").split("T")[0];
-    if (periodFilter === "TODAY") return saleDate === todayStr;
-    if (periodFilter === "YESTERDAY") return saleDate === yesterdayStr;
-    if (periodFilter === "WEEK_1") return saleDate >= week1CutoffStr && saleDate <= todayStr;
-    if (periodFilter === "WEEK_2") return saleDate >= week2CutoffStr && saleDate <= todayStr;
-    if (periodFilter === "CUSTOM") return saleDate === customDate;
-    return true; // "ALL"
+  const getSalesCountForDate = (dateStr: string) => {
+    return sales.filter((s) => s.status !== "REFUNDED" && (s.createdAt || "").split("T")[0] === dateStr).length;
   };
 
-  const getPeriodLabel = () => {
-    if (periodFilter === "TODAY") return `Leo (${todayStr})`;
-    if (periodFilter === "YESTERDAY") return `Jana (${yesterdayStr})`;
-    if (periodFilter === "WEEK_1") return `Wiki 1 Nyuma (Siku 7: ${week1CutoffStr} → ${todayStr})`;
-    if (periodFilter === "WEEK_2") return `Wiki 2 Nyuma (Siku 14: ${week2CutoffStr} → ${todayStr})`;
-    if (periodFilter === "CUSTOM") return `Tarehe: ${customDate}`;
-    return "Historia Yote ya Mauzo";
+  // Shift selected date by N days and keep strip window containing the selected date
+  const handleShiftSelectedDate = (deltaDays: number) => {
+    const nextDate = addDaysToDateStr(selectedDate, deltaDays);
+    setSelectedDate(nextDate);
+    setViewMonthDate(nextDate);
+
+    // Ensure the 7-day strip includes nextDate
+    const stripStart = addDaysToDateStr(stripEndDate, -6);
+    if (nextDate < stripStart) {
+      setStripEndDate(addDaysToDateStr(nextDate, 6));
+    } else if (nextDate > stripEndDate) {
+      setStripEndDate(nextDate);
+    }
+  };
+
+  // Shift the 7-day calendar strip window left/right (e.g., -7 or +7 days)
+  const handleShiftCalendarStrip = (deltaDays: number) => {
+    const newStripEnd = addDaysToDateStr(stripEndDate, deltaDays);
+    setStripEndDate(newStripEnd);
+    const newSelected = addDaysToDateStr(selectedDate, deltaDays);
+    setSelectedDate(newSelected);
+    setViewMonthDate(newSelected);
+  };
+
+  const handleSelectCalendarDate = (dateStr: string) => {
+    setSelectedDate(dateStr);
+    setViewMonthDate(dateStr);
+    const stripStart = addDaysToDateStr(stripEndDate, -6);
+    if (dateStr < stripStart) {
+      setStripEndDate(addDaysToDateStr(dateStr, 6));
+    } else if (dateStr > stripEndDate) {
+      setStripEndDate(dateStr);
+    }
+  };
+
+  // Build the 7 days for the horizontal shifting calendar strip (oldest on left -> newest on right)
+  const calendarStripDays = Array.from({ length: 7 }, (_, idx) => {
+    const offset = 6 - idx;
+    const dStr = addDaysToDateStr(stripEndDate, -offset);
+    const dObj = parseDateParts(dStr);
+    return {
+      dateStr: dStr,
+      dayName: SWAHILI_DAYS_SHORT[dObj.getDay()],
+      dayNumber: dObj.getDate(),
+      monthShort: SWAHILI_MONTHS_SHORT[dObj.getMonth()],
+      isToday: dStr === todayStr,
+      isYesterday: dStr === yesterdayStr,
+      isSelected: dStr === selectedDate,
+      totalSales: getSalesTotalForDate(dStr),
+      salesCount: getSalesCountForDate(dStr),
+    };
+  });
+
+  // Build Full Month Calendar Grid for viewMonthDate
+  const monthDateObj = parseDateParts(viewMonthDate);
+  const viewYear = monthDateObj.getFullYear();
+  const viewMonth = monthDateObj.getMonth();
+  const firstDayOfMonth = new Date(viewYear, viewMonth, 1).getDay(); // 0 = Sun ... 6 = Sat
+  const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
+
+  const handleShiftMonth = (deltaMonths: number) => {
+    const d = new Date(viewYear, viewMonth + deltaMonths, 1, 12, 0, 0);
+    setViewMonthDate(toDateString(d));
+  };
+
+  // Format human-readable label for the selected date
+  const formatSelectedDateTitle = (dateStr: string) => {
+    const dObj = parseDateParts(dateStr);
+    const dayName = SWAHILI_DAYS_SHORT[dObj.getDay()];
+    const dayNum = dObj.getDate();
+    const monthName = SWAHILI_MONTHS_FULL[dObj.getMonth()];
+    const yearNum = dObj.getFullYear();
+
+    if (dateStr === todayStr) {
+      return `Leo — ${dayName}, ${dayNum} ${monthName} ${yearNum}`;
+    }
+    if (dateStr === yesterdayStr) {
+      return `Jana — ${dayName}, ${dayNum} ${monthName} ${yearNum}`;
+    }
+    const diffDays = Math.round(
+      (parseDateParts(todayStr).getTime() - dObj.getTime()) / (1000 * 60 * 60 * 24)
+    );
+    const relText =
+      diffDays > 0 ? `(Siku ${diffDays} zilizopita)` : diffDays < 0 ? `(Siku ${Math.abs(diffDays)} mbele)` : "";
+    return `${dayName}, ${dayNum} ${monthName} ${yearNum} ${relText}`;
   };
 
   // Automatic calculation preview for current form input
@@ -89,36 +206,35 @@ export const SalesLedgerModule: React.FC = () => {
     parseFloat(unitPrice) || (matchedProduct ? matchedProduct.sellingPrice : 0);
   const autoLineTotal = parsedQty * parsedUnitPrice;
 
-  // Automatic System Calculations across valid sales in the selected period
-  const periodValidSales = sales.filter(
-    (s) => s.status !== "REFUNDED" && matchesSelectedPeriod(s.createdAt)
+  // Filter sales for the exact selected calendar date
+  const selectedDateSales = sales.filter(
+    (s) => s.status !== "REFUNDED" && (s.createdAt || "").split("T")[0] === selectedDate
   );
-  const totalSalesAmount = periodValidSales.reduce((acc, s) => acc + s.total, 0);
-  const totalCashSales = periodValidSales
+
+  const totalSalesAmount = selectedDateSales.reduce((acc, s) => acc + s.total, 0);
+  const totalCashSales = selectedDateSales
     .filter((s) => s.paymentMethod === "CASH")
     .reduce((acc, s) => acc + s.total, 0);
-  const totalMobileSales = periodValidSales
+  const totalMobileSales = selectedDateSales
     .filter((s) => ["MPESA", "AIRTEL_MONEY", "MIXX", "HALOPESA"].includes(s.paymentMethod))
     .reduce((acc, s) => acc + s.total, 0);
-  const totalCreditSales = periodValidSales
+  const totalCreditSales = selectedDateSales
     .filter((s) => s.paymentMethod === "CREDIT")
     .reduce((acc, s) => acc + s.total, 0);
 
-  const totalUnitsSold = periodValidSales.reduce(
+  const totalUnitsSold = selectedDateSales.reduce(
     (acc, s) => acc + s.items.reduce((sum, i) => sum + i.quantity, 0),
     0
   );
 
   // Today's totals for the End-of-Day banner
-  const todaySalesTotal = sales
-    .filter((s) => s.status !== "REFUNDED" && s.createdAt.startsWith(todayStr))
-    .reduce((acc, s) => acc + s.total, 0);
+  const todaySalesTotal = getSalesTotalForDate(todayStr);
   const todayExpensesTotal = expenses
     .filter((e) => e.date === todayStr)
     .reduce((acc, e) => acc + e.amount, 0);
   const totalStoreStockRemaining = products.reduce((acc, p) => acc + p.stockQuantity, 0);
 
-  const filteredSales = periodValidSales.filter((s) => {
+  const filteredSales = selectedDateSales.filter((s) => {
     const itemsText = s.items.map((i) => i.productName).join(" ").toLowerCase();
     const matchesSearch =
       itemsText.includes(search.toLowerCase()) ||
@@ -188,7 +304,7 @@ export const SalesLedgerModule: React.FC = () => {
     setQty("1");
     setUnitPrice("");
     setCustomerName("");
-    setPeriodFilter("TODAY");
+    handleSelectCalendarDate(todayStr);
     setJustClosedReport(false);
   };
 
@@ -215,19 +331,19 @@ export const SalesLedgerModule: React.FC = () => {
             <h2 className="text-xl font-black text-[#162709] tracking-tight">
               {language === "sw"
                 ? isOwner
-                  ? "2. Mauzo ya Siku & Historia (Leo, Jana & Wiki 2 Nyuma)"
-                  : "1. Mauzo ya Leo & Historia (Angalia Leo, Jana au Wiki 2 Nyuma)"
-                : "Daily Sales & History (Today, Yesterday & 2 Weeks Ago)"}
+                  ? "2. Mauzo ya Siku & Kalenda ya Mauzo"
+                  : "1. Mauzo ya Leo & Kalenda ya Mauzo"
+                : "Daily Sales & Sales Calendar"}
             </h2>
             <span className="px-2.5 py-0.5 rounded-full text-[11px] font-black bg-[#E1FFAC] text-[#172B08] border border-[#9CE034] flex items-center gap-1">
               <Calendar className="w-3 h-3" />
-              <span>{getPeriodLabel()}</span>
+              <span>{selectedDate}</span>
             </span>
           </div>
           <p className="text-xs text-[#526848] mt-0.5">
             {language === "sw"
-              ? "Mwenye Duka na Mfanyakazi wanaweza kuona mauzo ya Leo, Jana, Wiki 1 Nyuma au Wiki 2 Nyuma kwa kubonyeza vitufe vya muda hapa chini."
-              : "Both Shop Owner and Employee can view sales from Today, Yesterday, 1 Week Ago, or 2 Weeks Ago using the filter buttons below."}
+              ? "Sogeza kalenda kushoto au kulia (< / >) na bonyeza tarehe yoyote kuona mauzo ya siku hiyo."
+              : "Shift the calendar left or right (< / >) and click any date to view that day's sales."}
           </p>
         </div>
 
@@ -245,7 +361,7 @@ export const SalesLedgerModule: React.FC = () => {
             <button
               onClick={() => {
                 startNewDay();
-                setPeriodFilter("TODAY");
+                handleSelectCalendarDate(todayStr);
                 setJustClosedReport(false);
               }}
               className="px-4 py-2.5 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-black flex items-center gap-2 shadow-md transition cursor-pointer"
@@ -257,50 +373,237 @@ export const SalesLedgerModule: React.FC = () => {
         </div>
       </div>
 
-      {/* PERIOD / HISTORY SELECTOR BAR (LEO, JANA, WIKI 1 NYUMA, WIKI 2 NYUMA, TAREHE MAALUM) */}
-      <div className="p-3 rounded-2xl bg-white border-2 border-[#C2E880] shadow-xs flex flex-wrap items-center justify-between gap-2 text-xs">
-        <div className="flex flex-wrap items-center gap-1.5">
-          <span className="font-black text-[#162709] flex items-center gap-1 mr-1">
-            <History className="w-4 h-4 text-[#3A6112]" />
-            <span>Chagua Muda wa Mauzo:</span>
-          </span>
-
-          {(
-            [
-              { id: "TODAY", label: "Mauzo ya Leo" },
-              { id: "YESTERDAY", label: "Mauzo ya Jana" },
-              { id: "WEEK_1", label: "Wiki 1 Nyuma (Siku 7)" },
-              { id: "WEEK_2", label: "Wiki 2 Nyuma (Siku 14)" },
-              { id: "ALL", label: "Historia Yote" },
-            ] as { id: PeriodFilter; label: string }[]
-          ).map((btn) => (
+      {/* INTERACTIVE CALENDAR DATE SHIFTER & SELECTOR */}
+      <div className="p-3.5 rounded-2xl bg-white border-2 border-[#C2E880] shadow-xs space-y-3">
+        {/* Top Row: Day-by-Day Shift (< Siku Iliyopita | Tarehe Iliyochaguliwa | Siku Inayofuata >) + Calendar Picker */}
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="flex items-center gap-1.5">
             <button
-              key={btn.id}
-              onClick={() => setPeriodFilter(btn.id)}
-              className={`px-3 py-1.5 rounded-xl font-black text-xs transition cursor-pointer ${
-                periodFilter === btn.id
-                  ? "bg-[#1B2F09] text-[#E1FFAC] border border-[#8ECE28] shadow-xs"
-                  : "bg-[#F4F7EE] hover:bg-[#E1FFAC]/60 text-[#2C421C] border border-[#D8E6CC]"
+              onClick={() => handleShiftSelectedDate(-1)}
+              className="px-3 py-1.5 rounded-xl bg-[#F4F7EE] hover:bg-[#E1FFAC] text-[#1B2F09] border border-[#C6DDA8] font-black text-xs flex items-center gap-1 transition cursor-pointer"
+              title="Rudi nyuma siku 1"
+            >
+              <ChevronLeft className="w-4 h-4" />
+              <span>Siku Iliyopita</span>
+            </button>
+
+            <div className="px-3.5 py-1.5 rounded-xl bg-[#1B2F09] text-[#E1FFAC] border border-[#8ECE28] font-black text-xs flex items-center gap-2">
+              <Calendar className="w-3.5 h-3.5 text-[#A6DF52]" />
+              <span>{formatSelectedDateTitle(selectedDate)}</span>
+            </div>
+
+            <button
+              onClick={() => handleShiftSelectedDate(1)}
+              className="px-3 py-1.5 rounded-xl bg-[#F4F7EE] hover:bg-[#E1FFAC] text-[#1B2F09] border border-[#C6DDA8] font-black text-xs flex items-center gap-1 transition cursor-pointer"
+              title="Sogeza mbele siku 1"
+            >
+              <span>Siku Inayofuata</span>
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2">
+            {selectedDate !== todayStr && (
+              <button
+                onClick={() => {
+                  setSelectedDate(todayStr);
+                  setStripEndDate(todayStr);
+                  setViewMonthDate(todayStr);
+                }}
+                className="px-3 py-1.5 rounded-xl bg-[#E1FFAC] hover:bg-[#d2f88c] text-[#162709] border border-[#9CE034] font-black text-xs transition cursor-pointer"
+              >
+                Rudi Leo ({todayStr})
+              </button>
+            )}
+
+            <button
+              onClick={() => setShowMonthGrid((prev) => !prev)}
+              className={`px-3 py-1.5 rounded-xl font-black text-xs border flex items-center gap-1.5 transition cursor-pointer ${
+                showMonthGrid
+                  ? "bg-[#1B2F09] text-[#E1FFAC] border-[#8ECE28]"
+                  : "bg-[#F4F7EE] hover:bg-[#E1FFAC]/60 text-[#1B2F09] border-[#C6DDA8]"
               }`}
             >
-              {btn.label}
+              <Calendar className="w-3.5 h-3.5" />
+              <span>{showMonthGrid ? "Ficha Kalenda ya Mwezi" : "Fungua Kalenda ya Mwezi"}</span>
             </button>
-          ))}
+
+            <div className="flex items-center gap-1.5">
+              <input
+                type="date"
+                value={selectedDate}
+                onChange={(e) => {
+                  if (e.target.value) {
+                    handleSelectCalendarDate(e.target.value);
+                  }
+                }}
+                className="py-1.5 px-2.5 rounded-xl neu-input font-bold text-xs cursor-pointer"
+              />
+            </div>
+          </div>
         </div>
 
-        {/* Specific Date Picker */}
+        {/* 7-Day Horizontal Shifting Calendar Strip */}
         <div className="flex items-center gap-1.5">
-          <span className="font-bold text-[#4D6340] text-[11px]">Au Chagua Tarehe:</span>
-          <input
-            type="date"
-            value={customDate}
-            onChange={(e) => {
-              setCustomDate(e.target.value);
-              setPeriodFilter("CUSTOM");
-            }}
-            className="py-1 px-2.5 rounded-xl neu-input font-bold text-xs cursor-pointer"
-          />
+          <button
+            onClick={() => handleShiftCalendarStrip(-7)}
+            className="p-2 rounded-xl bg-[#F4F7EE] hover:bg-[#E1FFAC] text-[#1B2F09] border border-[#D8E6CC] font-black text-xs flex flex-col items-center justify-center shrink-0 transition cursor-pointer"
+            title="Sogeza kalenda wiki 1 nyuma"
+          >
+            <ChevronsLeft className="w-4 h-4" />
+            <span className="text-[9px] font-extrabold mt-0.5">-7 Siku</span>
+          </button>
+
+          <div className="grid grid-cols-7 gap-1.5 flex-1">
+            {calendarStripDays.map((day) => (
+              <button
+                key={day.dateStr}
+                onClick={() => handleSelectCalendarDate(day.dateStr)}
+                className={`p-2 rounded-xl border text-left transition flex flex-col justify-between cursor-pointer ${
+                  day.isSelected
+                    ? "bg-[#1B2F09] text-[#E1FFAC] border-2 border-[#8ECE28] shadow-sm"
+                    : day.totalSales > 0
+                    ? "bg-[#F8FBF4] hover:bg-[#E1FFAC]/50 text-[#162709] border-[#C6DDA8]"
+                    : "bg-[#F4F6F1] hover:bg-[#EBF1E4] text-[#5B704E] border-[#E2EBDA]"
+                }`}
+              >
+                <div className="flex items-center justify-between gap-1 w-full">
+                  <span
+                    className={`text-[10px] font-bold truncate ${
+                      day.isSelected ? "text-[#A6DF52]" : "text-[#58704A]"
+                    }`}
+                  >
+                    {day.dayName}
+                  </span>
+                  {(day.isToday || day.isYesterday) && (
+                    <span
+                      className={`px-1.5 py-0.2 rounded text-[9px] font-black ${
+                        day.isSelected
+                          ? "bg-[#A6DF52] text-[#162709]"
+                          : "bg-[#E1FFAC] text-[#162709]"
+                      }`}
+                    >
+                      {day.isToday ? "LEO" : "JANA"}
+                    </span>
+                  )}
+                </div>
+
+                <div className="my-1">
+                  <span className="text-sm sm:text-base font-black leading-none">
+                    {day.dayNumber}
+                  </span>{" "}
+                  <span className="text-[10px] font-bold opacity-80">{day.monthShort}</span>
+                </div>
+
+                <div
+                  className={`text-[10px] font-extrabold truncate ${
+                    day.isSelected
+                      ? "text-white"
+                      : day.totalSales > 0
+                      ? "text-emerald-800"
+                      : "text-gray-400"
+                  }`}
+                >
+                  {day.totalSales > 0
+                    ? `TZS ${day.totalSales.toLocaleString()}`
+                    : "TZS 0"}
+                </div>
+              </button>
+            ))}
+          </div>
+
+          <button
+            onClick={() => handleShiftCalendarStrip(7)}
+            className="p-2 rounded-xl bg-[#F4F7EE] hover:bg-[#E1FFAC] text-[#1B2F09] border border-[#D8E6CC] font-black text-xs flex flex-col items-center justify-center shrink-0 transition cursor-pointer"
+            title="Sogeza kalenda wiki 1 mbele"
+          >
+            <ChevronsRight className="w-4 h-4" />
+            <span className="text-[9px] font-extrabold mt-0.5">+7 Siku</span>
+          </button>
         </div>
+
+        {/* Optional Expandable Full Month Calendar Grid */}
+        {showMonthGrid && (
+          <div className="pt-3 border-t border-[#E6F0DA]">
+            <div className="flex items-center justify-between mb-2">
+              <button
+                onClick={() => handleShiftMonth(-1)}
+                className="px-3 py-1 rounded-lg bg-[#F4F7EE] hover:bg-[#E1FFAC] text-[#162709] border border-[#C6DDA8] text-xs font-black flex items-center gap-1 cursor-pointer"
+              >
+                <ChevronLeft className="w-3.5 h-3.5" />
+                <span>Mwezi Uliopita</span>
+              </button>
+
+              <span className="font-black text-sm text-[#162709]">
+                Kalenda ya {SWAHILI_MONTHS_FULL[viewMonth]} {viewYear}
+              </span>
+
+              <button
+                onClick={() => handleShiftMonth(1)}
+                className="px-3 py-1 rounded-lg bg-[#F4F7EE] hover:bg-[#E1FFAC] text-[#162709] border border-[#C6DDA8] text-xs font-black flex items-center gap-1 cursor-pointer"
+              >
+                <span>Mwezi Unaofuata</span>
+                <ChevronRight className="w-3.5 h-3.5" />
+              </button>
+            </div>
+
+            <div className="grid grid-cols-7 gap-1 text-center text-[10px] font-black text-[#4E6440] mb-1">
+              <div>Jumapili</div>
+              <div>Jumatatu</div>
+              <div>Jumanne</div>
+              <div>Jumatano</div>
+              <div>Alhamisi</div>
+              <div>Ijumaa</div>
+              <div>Jumamosi</div>
+            </div>
+
+            <div className="grid grid-cols-7 gap-1">
+              {Array.from({ length: firstDayOfMonth }).map((_, emptyIdx) => (
+                <div key={`empty-${emptyIdx}`} className="p-2 rounded-lg bg-gray-50/50" />
+              ))}
+              {Array.from({ length: daysInMonth }, (_, dIdx) => {
+                const dayNum = dIdx + 1;
+                const dStr = `${viewYear}-${String(viewMonth + 1).padStart(2, "0")}-${String(dayNum).padStart(2, "0")}`;
+                const daySales = getSalesTotalForDate(dStr);
+                const isSel = dStr === selectedDate;
+                const isTod = dStr === todayStr;
+                return (
+                  <button
+                    key={dStr}
+                    onClick={() => handleSelectCalendarDate(dStr)}
+                    className={`p-1.5 rounded-lg border text-left transition cursor-pointer ${
+                      isSel
+                        ? "bg-[#1B2F09] text-[#E1FFAC] border-[#8ECE28] font-black"
+                        : daySales > 0
+                        ? "bg-[#F4FAEC] hover:bg-[#E1FFAC]/60 text-[#162709] border-[#BFE973]"
+                        : "bg-white hover:bg-gray-50 text-[#58704A] border-gray-200"
+                    }`}
+                  >
+                    <div className="flex items-center justify-between text-xs font-black">
+                      <span>{dayNum}</span>
+                      {isTod && (
+                        <span className="text-[8px] px-1 rounded bg-[#A6DF52] text-[#162709]">
+                          LEO
+                        </span>
+                      )}
+                    </div>
+                    <div
+                      className={`text-[9px] font-bold truncate mt-0.5 ${
+                        isSel
+                          ? "text-[#E1FFAC]"
+                          : daySales > 0
+                          ? "text-emerald-700"
+                          : "text-gray-400"
+                      }`}
+                    >
+                      {daySales > 0 ? `TZS ${daySales.toLocaleString()}` : "-"}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* BANNER WHEN "FUNGA MAUZO YA SIKU" IS CLICKED (DAY ENDED & SENT TO BOSS AUTOMATICALLY) */}
@@ -316,13 +619,13 @@ export const SalesLedgerModule: React.FC = () => {
             <p className="text-emerald-100/90">
               Muhtasari uliotumwa kwa Mwenye Duka: <strong>Mauzo ya Leo: TZS {todaySalesTotal.toLocaleString()}</strong> |{" "}
               <strong>Matumizi ya Leo: TZS {todayExpensesTotal.toLocaleString()}</strong> |{" "}
-              <strong>Stoo Iliyobaki: {totalStoreStockRemaining} pcs</strong>. Ukianzisha siku mpya, mauzo haya yatahifadhiwa kwenye <strong>Mauzo ya Jana</strong>.
+              <strong>Stoo Iliyobaki: {totalStoreStockRemaining} pcs</strong>. Ukianzisha siku mpya, mauzo haya yatahifadhiwa kwenye tarehe ya Jana kwenye kalenda.
             </p>
           </div>
           <button
             onClick={() => {
               startNewDay();
-              setPeriodFilter("TODAY");
+              handleSelectCalendarDate(todayStr);
               setJustClosedReport(false);
             }}
             className="px-4 py-2 rounded-xl bg-[#E1FFAC] text-[#162708] font-black text-xs shrink-0 hover:bg-white transition cursor-pointer"
@@ -332,17 +635,17 @@ export const SalesLedgerModule: React.FC = () => {
         </div>
       )}
 
-      {/* 4 AUTOMATIC CALCULATION SUMMARY CARDS (UPDATES FOR LEO, JANA, OR 2 WEEKS AGO) */}
+      {/* 4 AUTOMATIC CALCULATION SUMMARY CARDS FOR THE SELECTED CALENDAR DATE */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
         <div className="p-3.5 rounded-2xl bg-white border-2 border-[#b2e269] shadow-xs">
           <span className="text-xs font-bold text-[#566E49] block">
-            Jumla ya Mauzo ({periodFilter === "TODAY" ? "Leo" : periodFilter === "YESTERDAY" ? "Jana" : periodFilter === "WEEK_1" ? "Wiki 1" : periodFilter === "WEEK_2" ? "Wiki 2" : "Muda Huu"})
+            Jumla ya Mauzo ({selectedDate === todayStr ? "Leo" : selectedDate === yesterdayStr ? "Jana" : selectedDate})
           </span>
           <p className="text-xl font-black text-emerald-800 mt-0.5">
             TZS {totalSalesAmount.toLocaleString()}
           </p>
           <span className="text-[11px] text-emerald-700 font-bold">
-            Vipande {totalUnitsSold} vimeuzwa ({periodValidSales.length} mauzo)
+            Vipande {totalUnitsSold} vimeuzwa ({selectedDateSales.length} mauzo)
           </span>
         </div>
 
@@ -354,7 +657,7 @@ export const SalesLedgerModule: React.FC = () => {
             TZS {totalCashSales.toLocaleString()}
           </p>
           <span className="text-[11px] text-[#69825B] font-bold">
-            Pesa taslimu kwa kipindi kilichochaguliwa
+            Pesa taslimu kwa tarehe {selectedDate}
           </span>
         </div>
 
@@ -383,7 +686,7 @@ export const SalesLedgerModule: React.FC = () => {
         </div>
       </div>
 
-      {/* MAIN WORKSPACE: LEFT = ENTER TODAY'S SALES | RIGHT = LIVE & HISTORICAL SALES TABLE */}
+      {/* MAIN WORKSPACE: LEFT = ENTER TODAY'S SALES | RIGHT = SELECTED DATE SALES TABLE */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 flex-1">
         {/* Left: Enter Today's Sales Form */}
         <div className="bg-white rounded-2xl border-2 border-[#BFE973] p-4 shadow-xs h-fit">
@@ -420,7 +723,7 @@ export const SalesLedgerModule: React.FC = () => {
               />
               {matchedProduct && (
                 <span className="text-[10px] font-bold text-emerald-700 mt-1 block">
-                  ✓ Ipo stoo: {matchedProduct.stockQuantity} {matchedProduct.unit} | Bei: TZS{" "}
+                  Ipo stoo: {matchedProduct.stockQuantity} {matchedProduct.unit} | Bei: TZS{" "}
                   {matchedProduct.sellingPrice.toLocaleString()}
                 </span>
               )}
@@ -509,16 +812,16 @@ export const SalesLedgerModule: React.FC = () => {
           </form>
         </div>
 
-        {/* Right: Live & Historical Sales Table */}
+        {/* Right: Selected Calendar Date Sales Table */}
         <div className="lg:col-span-2 bg-white rounded-2xl border border-[#D8E6CC] p-4 shadow-xs flex flex-col">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-[#EBF2E2]">
             <div>
               <h3 className="font-black text-sm text-[#162709] flex items-center gap-1.5">
                 <ShoppingBag className="w-4 h-4 text-[#233F0D]" />
-                <span>Orodha ya Mauzo — {getPeriodLabel()}</span>
+                <span>Mauzo ya Tarehe: {formatSelectedDateTitle(selectedDate)}</span>
               </h3>
               <p className="text-[11px] text-[#546949]">
-                Inaonyesha mauzo yote ya muda uliouchagua pamoja na tarehe, aliyeuza na jumla.
+                Inaonyesha mauzo yote ya tarehe uliyoichagua kwenye kalenda ({selectedDate}).
               </p>
             </div>
 
@@ -564,7 +867,7 @@ export const SalesLedgerModule: React.FC = () => {
                 {filteredSales.length === 0 ? (
                   <tr>
                     <td colSpan={8} className="py-8 text-center text-gray-400">
-                      Hakuna mauzo yaliyoandikwa kwa muda huu ({getPeriodLabel()}). Bonyeza &apos;Mauzo ya Jana&apos; au &apos;Wiki 2 Nyuma&apos; kuona historia au andika mauzo ya leo kushoto.
+                      Hakuna mauzo yaliyoandikwa kwenye tarehe hii ({selectedDate}). Sogeza kalenda (&lt; / &gt;) na bonyeza tarehe nyingine kuona mauzo yake.
                     </td>
                   </tr>
                 ) : (
@@ -580,11 +883,11 @@ export const SalesLedgerModule: React.FC = () => {
                             {saleDate}
                           </span>
                           <span className="text-[10px] font-bold text-[#617A54]">
-                            {isSaleToday ? "Leo" : isSaleYesterday ? "Jana" : "Historia"}
+                            {isSaleToday ? "Leo" : isSaleYesterday ? "Jana" : "Kalenda"}
                           </span>
                         </td>
                         <td className="py-3 px-3 font-extrabold text-[#162709]">
-                          {s.items.map((i) => `${i.productName} (×${i.quantity})`).join(", ")}
+                          {s.items.map((i) => `${i.productName} (x${i.quantity})`).join(", ")}
                         </td>
                         <td className="py-3 px-3 text-center">
                           <span className="px-2 py-0.5 rounded-full bg-[#E1FFAC] text-[#182D09] font-black border border-[#aae056]">
