@@ -321,56 +321,28 @@ export const InventoryModule: React.FC = () => {
       </datalist>
 
       {/* Top Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div>
-          <h2 className="text-xl font-black text-[#172709] tracking-tight">
-            {language === "sw"
-              ? "4. Stoo & Bidhaa: Kuweka/Kutoa Stock & Hesabu ya Bando za Stoo"
-              : "4. Store Stock: In/Out & Automatic Bundle Reconciliation"}
-          </h2>
-          <p className="text-xs text-[#52654c]">
-            {language === "sw"
-              ? "Mfumo unahesabu stock kwa Vipande na kwa Bando/Katoni. Kama bando imefunguliwa stoo bila kuandikwa, mfumo unagundua moja kwa moja kupitia mauzo!"
-              : "Tracks both units and bundles. Automatically detects when a store bundle is opened via sales even if not manually recorded."}
-          </p>
-        </div>
+      <div className="flex flex-wrap items-center justify-between gap-2.5">
+        <h2 className="text-lg sm:text-xl font-black text-[#172709] tracking-tight">
+          {language === "sw" ? "Stoo & Bidhaa" : "Store Stock"}
+        </h2>
 
         <div className="flex flex-wrap items-center gap-2">
           <button
             onClick={() => openQuickModal("IN")}
-            className="px-4 py-2.5 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-black flex items-center gap-1.5 shadow-xs transition cursor-pointer"
+            className="px-3.5 py-2 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-black flex items-center gap-1.5 shadow-xs transition cursor-pointer"
           >
             <Plus className="w-4 h-4" />
-            <span>+ Weka Stock Stoo (Bando / Pcs)</span>
+            <span>+ Weka Stock</span>
           </button>
 
           <button
             onClick={() => openQuickModal("OUT")}
-            className="px-4 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-black flex items-center gap-1.5 shadow-xs transition cursor-pointer"
+            className="px-3.5 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-black flex items-center gap-1.5 shadow-xs transition cursor-pointer"
           >
             <ArrowUpRight className="w-4 h-4" />
-            <span>- Toa Stock Stoo Mwenyewe</span>
+            <span>- Toa Stock</span>
           </button>
         </div>
-      </div>
-
-      {/* SMART BUNDLE / CARTON RECONCILIATION BANNER (Explains & Alerts when Sales Open a Store Bundle Automatically) */}
-      <div className="p-3.5 rounded-2xl bg-[#F6FAF0] border-2 border-[#BFE973] flex flex-col lg:flex-row lg:items-center justify-between gap-3 text-xs">
-        <div className="space-y-1">
-          <span className="font-black text-[#162709] uppercase flex items-center gap-1.5">
-            <Boxes className="w-4 h-4 text-[#3A6112]" />
-            <span>Ukaguzi wa Bando za Stoo vs Mauzo ya Dukani (Auto-Detection):</span>
-          </span>
-          <p className="text-[#4B613F]">
-            Mfano Bando 1 ina vipande/viatu <strong>10</strong>. Kama dukani kulikuwa na bando zikaisha na mfanyakazi akafungua bando nyingine kutoka stoo bila kuandika (mfano akauza kipande cha <strong>11</strong>), mfumo unapiga hesabu moja kwa moja na kuonyesha kuwa <strong>Bando imetoka Stoo</strong> na kupunguza stoo!
-          </p>
-        </div>
-
-        {totalUnrecordedBundlesAlert.length > 0 && (
-          <div className="px-3 py-2 rounded-xl bg-amber-50 border border-amber-300 text-amber-950 shrink-0 font-bold">
-            ! Bidhaa {totalUnrecordedBundlesAlert.length} zimefunguliwa Bando kutoka Stoo kupitia Mauzo (imekaguliwa auto)
-          </div>
-        )}
       </div>
 
       {/* 3 UNIFIED SUMMARY CARDS */}
@@ -378,48 +350,47 @@ export const InventoryModule: React.FC = () => {
         <div className="neu-card-flat p-3.5 rounded-2xl border border-emerald-200 bg-emerald-50/40">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-black text-emerald-900 uppercase">
-              1. Stock Iliyoingizwa Stoo (+ IN)
+              Stock Iliyoingizwa (+ IN)
             </span>
             <TrendingUp className="w-4 h-4 text-emerald-700" />
           </div>
           <p className="text-xl font-black text-emerald-950 mt-1">
-            +{totalStockInQty} <span className="text-xs font-bold">Vipande</span>
+            +{totalStockInQty} <span className="text-xs font-bold">Pcs</span>
           </p>
           <span className="text-[11px] font-semibold text-emerald-800">
             {!user || user.role === "OWNER" || user.role === "SUPER_ADMIN"
-              ? `Thamani ya Mtaji (Boss): TZS ${totalStockInValue.toLocaleString()}`
-              : `Aina ${products.length} za bidhaa zilizopo stoo`}
+              ? `Mtaji: TZS ${totalStockInValue.toLocaleString()}`
+              : `Bidhaa: ${products.length}`}
           </span>
         </div>
 
         <div className="neu-card-flat p-3.5 rounded-2xl border border-rose-200 bg-rose-50/40">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-black text-rose-900 uppercase">
-              2. Stock Iliyotoka (- OUT: Mauzo & Manual)
+              Stock Iliyotoka (- OUT)
             </span>
             <TrendingDown className="w-4 h-4 text-rose-700" />
           </div>
           <p className="text-xl font-black text-rose-950 mt-1">
-            -{totalStockOutQty} <span className="text-xs font-bold">Vipande</span>
+            -{totalStockOutQty} <span className="text-xs font-bold">Pcs</span>
           </p>
           <span className="text-[11px] font-bold text-rose-800">
-            Mauzo: {totalSoldOutQty} pcs | Iliyotolewa Mkononi: {totalManualOutQty} pcs
+            Mauzo: {totalSoldOutQty} | Manual: {totalManualOutQty}
           </span>
         </div>
 
         <div className="neu-card-flat p-3.5 rounded-2xl border-2 border-[#b2e269] bg-white">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-black text-[#172709] uppercase">
-              3. Stock Iliyobaki Sasa (Bando & Pcs)
+              Stock Iliyobaki Sasa
             </span>
             <Boxes className="w-4 h-4 text-[#253f0e]" />
           </div>
           <p className="text-xl font-black text-[#152508] mt-1">
-            {totalCurrentStockUnits} <span className="text-xs font-bold text-[#52654c]">Vipande</span>
+            {totalCurrentStockUnits} <span className="text-xs font-bold text-[#52654c]">Pcs</span>
           </p>
           <span className="text-[11px] font-semibold text-[#42553a]">
-            Iliyoingizwa ({totalStockInQty}) - Iliyotoka ({totalStockOutQty}) ={" "}
-            <strong>{totalCurrentStockUnits} pcs</strong>
+            Salio halisi lililopo stoo
           </span>
         </div>
       </div>
@@ -432,163 +403,145 @@ export const InventoryModule: React.FC = () => {
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Tafuta jina la bidhaa au kundi..."
+            placeholder="Tafuta bidhaa..."
             className="w-full py-2.5 pl-10 pr-4 rounded-xl neu-input text-xs font-medium text-[#18260d]"
           />
         </div>
       </div>
 
-      {/* UNIFIED STORE TABLE WITH SMART BUNDLE / CARTON RECONCILIATION */}
+      {/* STORE TABLE */}
       <div className="flex-1 overflow-x-auto bg-white rounded-2xl border border-[#dce8cd] shadow-neu-card">
         <table className="w-full text-left text-xs divide-y divide-[#e8f0df]">
           <thead className="bg-[#F8FAF4] font-bold text-[#44573d]">
             <tr>
-              <th className="py-3 px-4">Bidhaa & Kipimo cha Bando</th>
-              <th className="py-3 px-4">
-                {!user || user.role === "OWNER" || user.role === "SUPER_ADMIN"
-                  ? "Bei (Kununua / Kuuza)"
-                  : "Bei ya Kuuza"}
-              </th>
-              <th className="py-3 px-4 text-center">Iliyoingizwa (+ IN)</th>
-              <th className="py-3 px-4 text-center">Iliyotoka (Mauzo & Manual)</th>
-              <th className="py-3 px-4">Ukaguzi wa Bando (Stoo vs Mauzo)</th>
-              <th className="py-3 px-4 text-center">Stock Iliyobaki Sasa</th>
-              <th className="py-3 px-4 text-right">Weka / Toa</th>
+              <th className="py-3 px-4">Bidhaa</th>
+              <th className="py-3 px-4">Bei</th>
+              <th className="py-3 px-4 text-center">Iliyoingizwa</th>
+              <th className="py-3 px-4 text-center">Iliyotoka</th>
+              <th className="py-3 px-4 text-center">Stock Iliyobaki</th>
+              <th className="py-3 px-4 text-right">Hatua</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-[#eff5e9] text-[#1c2c0e]">
-            {filteredBreakdowns.map(
-              ({
-                product: p,
-                unitsPerBundle,
-                totalEnteredIn,
-                totalBundlesEntered,
-                totalSoldOut,
-                manualOut,
-                totalOut,
-                currentStock,
-                bundlesOpenedBySales,
-                unrecordedBundlesFromStore,
-                fullBundlesRemainingInStore,
-                loosePiecesInOpenedBundle,
-              }) => {
-                const isLow = currentStock <= p.minStock;
-                const isOwnerView = !user || user.role === "OWNER" || user.role === "SUPER_ADMIN";
-                return (
-                  <tr key={p.id} className="hover:bg-[#FAFCF7] transition">
-                    {/* 1. Product Name & Bundle Size */}
-                    <td className="py-3 px-4">
-                      <span className="font-extrabold text-[#162709] block">{p.name}</span>
-                      <span className="inline-block mt-0.5 px-2 py-0.5 rounded-md bg-[#EDF3E6] text-[#263E12] font-bold text-[10px]">
-                        Bando 1 = {unitsPerBundle} {p.unit}
-                      </span>
-                    </td>
-
-                    {/* 2. Prices (Buying Price hidden from Sellers for Boss Privacy) */}
-                    <td className="py-3 px-4">
-                      <div className="font-bold text-[#162709]">
-                        Kuuza: TZS {p.sellingPrice.toLocaleString()}
-                      </div>
-                      {isOwnerView && (
-                        <div className="text-[11px] text-[#5B714F]">
-                          Kununua (Boss): TZS {p.buyingPrice.toLocaleString()}
-                        </div>
-                      )}
-                    </td>
-
-                    {/* 3. Stock IN (Pcs & Bundles) */}
-                    <td className="py-3 px-4 text-center">
-                      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-900 border border-emerald-200 font-black">
-                        +{totalEnteredIn} {p.unit}
-                      </span>
-                      <span className="block text-[10px] text-emerald-800 font-bold mt-0.5">
-                        (Bando {totalBundlesEntered})
-                      </span>
-                    </td>
-
-                    {/* 4. Stock OUT (Sales + Manual) */}
-                    <td className="py-3 px-4 text-center">
-                      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-rose-50 text-rose-900 border border-rose-200 font-black">
-                        -{totalOut} {p.unit}
-                      </span>
-                      <span className="block text-[10px] text-[#5C7250] font-semibold mt-0.5">
-                        Mauzo: {totalSoldOut} | Manual: {manualOut}
-                      </span>
-                    </td>
-
-                    {/* 5. Smart Bundle Auto-Reconciliation */}
-                    <td className="py-3 px-4 max-w-[250px]">
-                      {unrecordedBundlesFromStore > 0 && totalSoldOut > 0 ? (
-                        <div className="p-2 rounded-xl bg-amber-50 border border-amber-300 text-[11px] text-amber-950">
-                          <span className="font-black block">
-                            ! Bando {unrecordedBundlesFromStore} imefunguliwa Stoo (Auto)
-                          </span>
-                          <span className="text-[10px] block text-amber-900">
-                            Mauzo ({totalSoldOut} {p.unit}) yamefungua Bando {bundlesOpenedBySales} bila kuandikwa manual. Stoo imepunguzwa auto!
-                          </span>
-                        </div>
-                      ) : (
-                        <div className="text-[11px] text-[#4A613E] font-semibold">
-                          <span className="text-emerald-800 font-bold flex items-center gap-1">
-                            <CheckCircle2 className="w-3.5 h-3.5" /> Hesabu ya Bando iko sawa
-                          </span>
-                          <span className="text-[10px] text-[#637B56] block">
-                            Bando zilizofunguliwa kwa mauzo: {bundlesOpenedBySales}
-                          </span>
-                        </div>
-                      )}
-                    </td>
-
-                    {/* 6. Remaining Stock (Full Bundles in Store + Loose in Shop) */}
-                    <td className="py-3 px-4 text-center">
-                      <span
-                        className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-black ${
-                          isLow
-                            ? "bg-amber-100 text-amber-900 border border-amber-300"
-                            : "bg-[#E1FFAC] text-[#172B08] border border-[#9CE034]"
-                        }`}
-                      >
-                        {isLow && <AlertTriangle className="w-3 h-3 text-amber-700" />}
-                        <span>
-                          {currentStock} {p.unit}
+            {filteredBreakdowns.length === 0 ? (
+              <tr>
+                <td colSpan={6} className="py-8 text-center text-gray-400">
+                  Hakuna bidhaa stoo. Bonyeza &quot;+ Weka Stock&quot; kuongeza.
+                </td>
+              </tr>
+            ) : (
+              filteredBreakdowns.map(
+                ({
+                  product: p,
+                  unitsPerBundle,
+                  totalEnteredIn,
+                  totalBundlesEntered,
+                  totalSoldOut,
+                  manualOut,
+                  totalOut,
+                  currentStock,
+                  unrecordedBundlesFromStore,
+                  fullBundlesRemainingInStore,
+                  loosePiecesInOpenedBundle,
+                }) => {
+                  const isLow = currentStock <= p.minStock;
+                  const isOwnerView = !user || user.role === "OWNER" || user.role === "SUPER_ADMIN";
+                  return (
+                    <tr key={p.id} className="hover:bg-[#FAFCF7] transition">
+                      {/* 1. Product Name & Bundle Size */}
+                      <td className="py-3 px-4">
+                        <span className="font-extrabold text-[#162709] block">{p.name}</span>
+                        <span className="inline-block mt-0.5 px-2 py-0.5 rounded-md bg-[#EDF3E6] text-[#263E12] font-bold text-[10px]">
+                          Bando 1 = {unitsPerBundle} {p.unit}
                         </span>
-                      </span>
-                      <span className="block text-[10px] font-bold text-[#3D542E] mt-1">
-                        Stoo: <strong>Bando {fullBundlesRemainingInStore}</strong>
-                        {loosePiecesInOpenedBundle > 0
-                          ? ` + Dukani: ${loosePiecesInOpenedBundle} ${p.unit}`
-                          : ""}
-                      </span>
-                    </td>
+                      </td>
 
-                    {/* 7. Quick Actions */}
-                    <td className="py-3 px-4 text-right whitespace-nowrap">
-                      <div className="inline-flex items-center gap-1.5">
-                        <button
-                          onClick={() => openQuickModal("IN", p)}
-                          className="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-black text-[11px] transition cursor-pointer"
-                        >
-                          + Weka
-                        </button>
-                        <button
-                          onClick={() => openQuickModal("OUT", p)}
-                          className="px-2.5 py-1 rounded-lg bg-rose-600 hover:bg-rose-700 text-white font-black text-[11px] transition cursor-pointer"
-                        >
-                          - Toa
-                        </button>
+                      {/* 2. Prices */}
+                      <td className="py-3 px-4">
+                        <div className="font-bold text-[#162709]">
+                          TZS {p.sellingPrice.toLocaleString()}
+                        </div>
                         {isOwnerView && (
-                          <button
-                            onClick={() => deleteProduct(p.id)}
-                            className="p-1.5 rounded-lg text-red-600 hover:bg-red-50 transition cursor-pointer"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
+                          <div className="text-[11px] text-[#5B714F]">
+                            Mtaji: TZS {p.buyingPrice.toLocaleString()}
+                          </div>
                         )}
-                      </div>
-                    </td>
-                  </tr>
-                );
-              }
+                      </td>
+
+                      {/* 3. Stock IN */}
+                      <td className="py-3 px-4 text-center">
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-900 border border-emerald-200 font-black">
+                          +{totalEnteredIn} {p.unit}
+                        </span>
+                        <span className="block text-[10px] text-emerald-800 font-bold mt-0.5">
+                          Bando {totalBundlesEntered}
+                        </span>
+                      </td>
+
+                      {/* 4. Stock OUT */}
+                      <td className="py-3 px-4 text-center">
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-rose-50 text-rose-900 border border-rose-200 font-black">
+                          -{totalOut} {p.unit}
+                        </span>
+                        <span className="block text-[10px] text-[#5C7250] font-semibold mt-0.5">
+                          Mauzo: {totalSoldOut} | Manual: {manualOut}
+                        </span>
+                      </td>
+
+                      {/* 5. Remaining Stock */}
+                      <td className="py-3 px-4 text-center">
+                        <span
+                          className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-black ${
+                            isLow
+                              ? "bg-amber-100 text-amber-900 border border-amber-300"
+                              : "bg-[#E1FFAC] text-[#172B08] border border-[#9CE034]"
+                          }`}
+                        >
+                          {isLow && <AlertTriangle className="w-3 h-3 text-amber-700" />}
+                          <span>
+                            {currentStock} {p.unit}
+                          </span>
+                        </span>
+                        <span className="block text-[10px] font-bold text-[#3D542E] mt-1">
+                          Bando {fullBundlesRemainingInStore}
+                          {loosePiecesInOpenedBundle > 0 ? ` + ${loosePiecesInOpenedBundle} ${p.unit}` : ""}
+                        </span>
+                        {unrecordedBundlesFromStore > 0 && totalSoldOut > 0 && (
+                          <span className="inline-block mt-0.5 px-1.5 py-0.5 rounded bg-amber-100 text-amber-900 text-[9px] font-black">
+                            Bando {unrecordedBundlesFromStore} imetoka auto
+                          </span>
+                        )}
+                      </td>
+
+                      {/* 6. Quick Actions */}
+                      <td className="py-3 px-4 text-right whitespace-nowrap">
+                        <div className="inline-flex items-center gap-1.5">
+                          <button
+                            onClick={() => openQuickModal("IN", p)}
+                            className="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-black text-[11px] transition cursor-pointer"
+                          >
+                            + Weka
+                          </button>
+                          <button
+                            onClick={() => openQuickModal("OUT", p)}
+                            className="px-2.5 py-1 rounded-lg bg-rose-600 hover:bg-rose-700 text-white font-black text-[11px] transition cursor-pointer"
+                          >
+                            - Toa
+                          </button>
+                          {isOwnerView && (
+                            <button
+                              onClick={() => deleteProduct(p.id)}
+                              className="p-1.5 rounded-lg text-red-600 hover:bg-red-50 transition cursor-pointer"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                }
+              )
             )}
           </tbody>
         </table>

@@ -586,18 +586,15 @@ export const SalesLedgerModule: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 flex-1">
         {/* Left: Enter Today's Sales Form */}
         <div className="bg-white rounded-2xl border-2 border-[#BFE973] p-4 shadow-xs h-fit">
-          <h3 className="font-black text-sm text-[#162709] mb-1 flex items-center gap-1.5">
+          <h3 className="font-black text-sm text-[#162709] mb-3 flex items-center gap-1.5">
             <PlusCircle className="w-4 h-4 text-[#3A6112]" />
-            <span>Andika Mauzo ya Leo (Manual)</span>
+            <span>Andika Mauzo</span>
           </h3>
-          <p className="text-[11px] text-[#5B714F] mb-3">
-            Andika jina la bidhaa uliyouza na idadi yake. Mfumo unakupigia hesabu ya jumla na kupunguza stoo moja kwa moja.
-          </p>
 
           <form onSubmit={handleRecordSale} className="space-y-3 text-xs">
             <div>
               <label className="block font-bold text-[#334A26] mb-1">
-                Andika Jina la Bidhaa Iliyouzwa:
+                Bidhaa Iliyouzwa:
               </label>
               <input
                 type="text"
@@ -614,12 +611,12 @@ export const SalesLedgerModule: React.FC = () => {
                     setUnitPrice(String(found.sellingPrice));
                   }
                 }}
-                placeholder="Mfano: Nivea Body Milk au Viatu..."
+                placeholder="Jina la bidhaa..."
                 className="w-full py-2.5 px-3 rounded-xl neu-input font-bold"
               />
               {matchedProduct && (
                 <span className="text-[10px] font-bold text-emerald-700 mt-1 block">
-                  Ipo stoo: {matchedProduct.stockQuantity} {matchedProduct.unit} | Bei: TZS{" "}
+                  Stoo: {matchedProduct.stockQuantity} {matchedProduct.unit} | Bei: TZS{" "}
                   {matchedProduct.sellingPrice.toLocaleString()}
                 </span>
               )}
@@ -628,7 +625,7 @@ export const SalesLedgerModule: React.FC = () => {
             <div className="grid grid-cols-2 gap-2.5">
               <div>
                 <label className="block font-bold text-[#334A26] mb-1">
-                  Idadi Iliyouzwa
+                  Idadi
                 </label>
                 <input
                   type="number"
@@ -643,7 +640,7 @@ export const SalesLedgerModule: React.FC = () => {
 
               <div>
                 <label className="block font-bold text-[#334A26] mb-1">
-                  Bei ya Kila Moja (TZS)
+                  Bei (TZS)
                 </label>
                 <input
                   type="number"
@@ -661,7 +658,7 @@ export const SalesLedgerModule: React.FC = () => {
             <div className="p-3 rounded-xl bg-[#F4F8EC] border border-[#C6DDA8] flex items-center justify-between">
               <div className="flex items-center gap-1.5 text-[#273E14] font-bold">
                 <Calculator className="w-4 h-4 text-[#3F6315]" />
-                <span>Jumla (Auto Hesabu):</span>
+                <span>Jumla:</span>
               </div>
               <span className="text-base font-black text-emerald-800">
                 TZS {autoLineTotal.toLocaleString()}
@@ -670,7 +667,7 @@ export const SalesLedgerModule: React.FC = () => {
 
             <div className="grid grid-cols-2 gap-2.5">
               <div>
-                <label className="block font-bold text-[#334A26] mb-1">Njia ya Malipo</label>
+                <label className="block font-bold text-[#334A26] mb-1">Malipo</label>
                 <select
                   value={paymentMethod}
                   onChange={(e) =>
@@ -678,15 +675,15 @@ export const SalesLedgerModule: React.FC = () => {
                   }
                   className="w-full py-2 px-3 rounded-xl neu-input font-bold"
                 >
-                  <option value="CASH">Cash (Taslimu)</option>
+                  <option value="CASH">Cash</option>
                   <option value="MPESA">M-Pesa / Simu</option>
-                  <option value="CREDIT">Mkopo (Deni la Mteja)</option>
+                  <option value="CREDIT">Mkopo (Deni)</option>
                 </select>
               </div>
 
               <div>
                 <label className="block font-bold text-[#334A26] mb-1">
-                  Jina la Mteja {paymentMethod === "CREDIT" ? "(Muhimu)" : "(Hiari)"}
+                  Mteja {paymentMethod === "CREDIT" ? "*" : "(Hiari)"}
                 </label>
                 <input
                   type="text"
@@ -703,7 +700,7 @@ export const SalesLedgerModule: React.FC = () => {
               type="submit"
               className="w-full py-3 rounded-xl neu-btn font-black text-xs uppercase tracking-wider cursor-pointer"
             >
-              + Hifadhi Mauzo ya Leo
+              + Hifadhi Mauzo
             </button>
           </form>
         </div>
@@ -711,15 +708,10 @@ export const SalesLedgerModule: React.FC = () => {
         {/* Right: Selected Calendar Date Sales Table */}
         <div className="lg:col-span-2 bg-white rounded-2xl border border-[#D8E6CC] p-4 shadow-xs flex flex-col">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-[#EBF2E2]">
-            <div>
-              <h3 className="font-black text-sm text-[#162709] flex items-center gap-1.5">
-                <ShoppingBag className="w-4 h-4 text-[#233F0D]" />
-                <span>Mauzo ya Tarehe: {formatSelectedDateTitle(selectedDate)}</span>
-              </h3>
-              <p className="text-[11px] text-[#546949]">
-                Inaonyesha mauzo yote ya tarehe uliyoichagua kwenye kalenda ({selectedDate}).
-              </p>
-            </div>
+            <h3 className="font-black text-sm text-[#162709] flex items-center gap-1.5">
+              <ShoppingBag className="w-4 h-4 text-[#233F0D]" />
+              <span>Mauzo ({selectedDate})</span>
+            </h3>
 
             <div className="flex items-center gap-2">
               <div className="relative">

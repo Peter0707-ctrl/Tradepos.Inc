@@ -151,18 +151,18 @@ function MainApp() {
   // Human readable title lookup
   const getModuleTitle = (mod: string) => {
     switch (mod) {
-      case "dashboard": return language === "sw" ? "1. Dashibodi Kuu ya Biashara (Boss)" : t.titles.dashboard;
-      case "sales": return language === "sw" ? (isOwner ? "2. Mauzo ya Siku (Owner & Wafanyakazi)" : "1. Mauzo ya Leo (Andika Mauzo & Hesabu Auto)") : "Daily Sales & Auto Calculation";
+      case "dashboard": return language === "sw" ? "Dashibodi" : t.titles.dashboard;
+      case "sales": return language === "sw" ? "Mauzo ya Siku" : "Daily Sales";
       case "expenses":
-      case "accounting": return language === "sw" ? (isOwner ? "3. Matumizi ya Siku Hiyo" : "2. Matumizi ya Leo Dukani") : "Daily Shop Expenses";
+      case "accounting": return language === "sw" ? "Matumizi ya Siku" : "Daily Expenses";
       case "products":
-      case "inventory": return language === "sw" ? (isOwner ? "4. Stoo & Bidhaa (Bando za Stoo vs Mauzo)" : "3. Stoo & Bidhaa (Weka & Toa Stock)") : "Store Stock & Bundle Reconciliation";
+      case "inventory": return language === "sw" ? "Stoo & Bidhaa" : "Store Stock";
       case "deliveries":
       case "orders":
-      case "online-store": return language === "sw" ? (isOwner ? "5. Ufuatiliaji wa Delivery za Wateja" : "4. Kutrack Delivery za Wateja") : "Customer Delivery Tracking";
-      case "customers": return language === "sw" ? (isOwner ? "6. Wateja & Daftari la Madeni" : "5. Wateja & Daftari la Madeni") : "Customers & Debt Ledger";
+      case "online-store": return language === "sw" ? "Kutrack Delivery" : "Deliveries";
+      case "customers": return language === "sw" ? "Wateja & Madeni" : "Customers & Debts";
       case "cash-register":
-      case "reports": return language === "sw" ? "7. Ripoti za Siku: Faida na Hasara ya Kila Siku (Boss)" : "7. Daily Reports: Profit & Loss";
+      case "reports": return language === "sw" ? "Ripoti za Siku" : "Daily Reports";
       case "purchases": return t.titles.purchases;
       case "suppliers": return t.titles.suppliers;
       case "employees": return t.titles.employees;

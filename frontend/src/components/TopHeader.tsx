@@ -12,7 +12,8 @@ import {
   CreditCard,
   LogOut,
   Settings,
-  Lock
+  Lock,
+  Download
 } from "lucide-react";
 
 interface TopHeaderProps {
@@ -41,11 +42,46 @@ export const TopHeader: React.FC<TopHeaderProps> = ({ pageTitle, onNavigate, onL
   const [pendingBossEmpId, setPendingBossEmpId] = useState<string | null>(null);
   const [pinInput, setPinInput] = useState("");
   const [pinError, setPinError] = useState("");
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const [isStandalone, setIsStandalone] = useState(false);
 
   const notifRef = useRef<HTMLDivElement>(null);
   const profileRef = useRef<HTMLDivElement>(null);
 
   const isOwner = !user || user.role === "OWNER" || user.role === "SUPER_ADMIN";
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const standalone =
+        window.matchMedia("(display-mode: standalone)").matches ||
+        (window.navigator as any).standalone === true;
+      setIsStandalone(standalone);
+
+      const handleBeforeInstallPrompt = (e: Event) => {
+        e.preventDefault();
+        setDeferredPrompt(e);
+      };
+      window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
+      return () => window.removeEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
+    }
+  }, []);
+
+  const handleInstallPwa = async () => {
+    if (deferredPrompt) {
+      deferredPrompt.prompt();
+      const choice = await deferredPrompt.userChoice;
+      if (choice?.outcome === "accepted") {
+        notifyCenter("App Imewekwa", "TradePOS imewekwa kwenye kifaa chako.", "SUCCESS");
+      }
+      setDeferredPrompt(null);
+    } else {
+      notifyCenter(
+        "Install TradePOS App (PWA)",
+        "Bonyeza alama ya Install kwenye browser yako (au 'Add to Home Screen' kwenye simu) kuweka TradePOS kama App.",
+        "INFO"
+      );
+    }
+  };
 
   // Close dropdowns on outside click
   useEffect(() => {
@@ -88,8 +124,19 @@ export const TopHeader: React.FC<TopHeaderProps> = ({ pageTitle, onNavigate, onL
           </h1>
         </div>
 
-        {/* Right Controls: Notifications, Help, Language, Profile */}
+        {/* Right Controls: Install App (PWA), Notifications, Help, Language, Profile */}
         <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
+          {!isStandalone && (
+            <button
+              onClick={handleInstallPwa}
+              className="px-2.5 py-1.5 rounded-xl bg-[#E1FFAC] hover:bg-[#d2f88c] border border-[#9CE034] text-[#162709] text-xs font-black flex items-center gap-1.5 shadow-xs transition cursor-pointer"
+              title="Install TradePOS App (PWA)"
+            >
+              <Download className="w-3.5 h-3.5 text-[#1B2F09]" />
+              <span className="hidden md:inline">Install App</span>
+            </button>
+          )}
+
           {/* 1. Notification Center (Owner & Staff see centered little box) */}
           <div className="relative" ref={notifRef}>
             <button

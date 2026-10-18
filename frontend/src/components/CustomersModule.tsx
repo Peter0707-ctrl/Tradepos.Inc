@@ -77,53 +77,44 @@ export const CustomersModule: React.FC = () => {
     <div className="flex-1 flex flex-col h-full p-4 lg:p-6 overflow-y-auto gap-4">
       {/* Top Banner */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div>
-          <h2 className="text-xl font-black text-[#172709] tracking-tight">
-            {language === "sw"
-              ? "6. Wateja & Madeni (Rekodi Jina la Mteja na Deni Lake)"
-              : "6. Customers & Debt Ledger"}
-          </h2>
-          <p className="text-xs text-[#52654c]">
-            {language === "sw"
-              ? "Andika jina la mteja na kiasi cha deni analodaiwa. Mfumo unatunza kumbukumbu na kupunguza deni akilipa."
-              : "Record customer names and their debt balances directly, and track debt repayments."}
-          </p>
-        </div>
+        <h2 className="text-lg sm:text-xl font-black text-[#172709] tracking-tight">
+          {language === "sw" ? "Wateja & Madeni" : "Customers & Debts"}
+        </h2>
       </div>
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
         <div className="p-3.5 rounded-2xl bg-white border-2 border-amber-300 shadow-xs">
           <span className="text-xs font-bold text-[#5c7054] block">
-            Jumla ya Madeni Yote Yanayodaiwa
+            Jumla ya Madeni
           </span>
           <p className="text-xl font-black text-amber-800 mt-0.5">
             TZS {totalOutstandingDebt.toLocaleString()}
           </p>
           <span className="text-[11px] text-amber-900 font-bold">
-            Wateja {customersWithDebtCount} wanadaiwa sasa hivi
+            Wateja {customersWithDebtCount} wanadaiwa
           </span>
         </div>
 
         <div className="p-3.5 rounded-2xl bg-white border border-[#d6e5c5] shadow-xs">
           <span className="text-xs font-bold text-[#5c7054] block">
-            Idadi ya Wateja Kwenye Daftari
+            Idadi ya Wateja
           </span>
           <p className="text-xl font-black text-[#192b0c] mt-0.5">{customers.length}</p>
           <span className="text-[11px] text-[#6d8065] font-bold">
-            Wateja waliosajiliwa dukani
+            Waliosajiliwa
           </span>
         </div>
 
         <div className="p-3.5 rounded-2xl bg-white border border-[#d6e5c5] shadow-xs">
           <span className="text-xs font-bold text-[#5c7054] block">
-            Thamani ya Manunuzi ya Wateja
+            Jumla ya Manunuzi
           </span>
           <p className="text-xl font-black text-emerald-800 mt-0.5">
             TZS {customers.reduce((a, b) => a + b.totalSpent, 0).toLocaleString()}
           </p>
           <span className="text-[11px] text-[#6d8065] font-bold">
-            Jumla ya biashara na wateja hawa
+            Thamani ya mauzo
           </span>
         </div>
       </div>
@@ -132,13 +123,10 @@ export const CustomersModule: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 flex-1">
         {/* Left: Direct Form to Record Customer Name & Debt */}
         <div className="bg-white rounded-2xl border-2 border-[#BFE973] p-4 shadow-xs h-fit">
-          <h3 className="font-black text-sm text-[#162709] mb-1 flex items-center gap-1.5">
+          <h3 className="font-black text-sm text-[#162709] mb-3 flex items-center gap-1.5">
             <PlusCircle className="w-4 h-4 text-[#3A6112]" />
-            <span>Andika Deni la Mteja & Jina</span>
+            <span>Andika Deni la Mteja</span>
           </h3>
-          <p className="text-[11px] text-[#5B714F] mb-3">
-            Andika jina la mteja na kiasi anachodaiwa. Kama jina lake lipo tayari, deni litaongezeka kwenye akaunti yake.
-          </p>
 
           <form onSubmit={handleDirectRecordDebt} className="space-y-3 text-xs">
             <div>

@@ -428,31 +428,28 @@ export const ExpensesAccountingModule: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 flex-1">
         {/* Left: Direct Expense Entry Form */}
         <div className="bg-white rounded-2xl border-2 border-[#BFE973] p-4 shadow-xs h-fit">
-          <h3 className="font-black text-sm text-[#162709] mb-1 flex items-center gap-1.5">
+          <h3 className="font-black text-sm text-[#162709] mb-3 flex items-center gap-1.5">
             <PlusCircle className="w-4 h-4 text-[#3A6112]" />
-            <span>Andika Matumizi ya Leo (Manual)</span>
+            <span>Andika Matumizi</span>
           </h3>
-          <p className="text-[11px] text-[#5B714F] mb-3">
-            Andika umetumia nini leo na kiasi gani. Mfumo unapiga jumla moja kwa moja.
-          </p>
 
           <form onSubmit={handleSaveExpense} className="space-y-3 text-xs">
             <div>
               <label className="block font-bold text-[#334A26] mb-1">
-                Ametumia Nini Leo? (Maelezo ya Matumizi)
+                Maelezo ya Matumizi:
               </label>
               <input
                 type="text"
                 required
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                placeholder="Mfano: Nauli ya bodaboda, Chakula, LUKU, Mifuko..."
+                placeholder="Mfano: Nauli, Chakula, LUKU..."
                 className="w-full py-2.5 px-3 rounded-xl neu-input font-bold"
               />
             </div>
 
             <div>
-              <label className="block font-bold text-[#334A26] mb-1">Kundi la Matumizi</label>
+              <label className="block font-bold text-[#334A26] mb-1">Kundi</label>
               <select
                 value={category}
                 onChange={(e) => setCategory(e.target.value)}
@@ -483,34 +480,23 @@ export const ExpensesAccountingModule: React.FC = () => {
               </div>
 
               <div>
-                <label className="block font-bold text-[#334A26] mb-1">Imelipwa kwa</label>
+                <label className="block font-bold text-[#334A26] mb-1">Malipo</label>
                 <select
                   value={paymentMethod}
                   onChange={(e) => setPaymentMethod(e.target.value as "CASH" | "MPESA")}
                   className="w-full py-2 px-3 rounded-xl neu-input font-bold"
                 >
-                  <option value="CASH">Cash ya Drooni</option>
+                  <option value="CASH">Cash</option>
                   <option value="MPESA">M-Pesa / Simu</option>
                 </select>
               </div>
-            </div>
-
-            <div>
-              <label className="block font-bold text-[#334A26] mb-1">Maelezo ya Ziada (Hiari)</label>
-              <input
-                type="text"
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                placeholder="Hiari..."
-                className="w-full py-2 px-3 rounded-xl neu-input"
-              />
             </div>
 
             <button
               type="submit"
               className="w-full py-3 rounded-xl neu-btn font-black text-xs uppercase tracking-wider cursor-pointer"
             >
-              + Hifadhi Matumizi ya Leo
+              + Hifadhi Matumizi
             </button>
           </form>
         </div>
@@ -518,15 +504,10 @@ export const ExpensesAccountingModule: React.FC = () => {
         {/* Right: Expenses Table for Selected Calendar Date */}
         <div className="lg:col-span-2 bg-white rounded-2xl border border-[#dce8cd] p-4 shadow-xs flex flex-col">
           <div className="flex items-center justify-between pb-3 border-b border-[#EBF2E2]">
-            <div>
-              <h3 className="font-black text-sm text-[#162709] flex items-center gap-1.5">
-                <Wallet className="w-4 h-4 text-[#233F0D]" />
-                <span>Matumizi ya Tarehe: {formatSelectedDateTitle(selectedDate)}</span>
-              </h3>
-              <p className="text-[11px] text-[#5B714F]">
-                Matumizi yote yaliyoandikwa kwenye tarehe uliyoichagua ({selectedDate})
-              </p>
-            </div>
+            <h3 className="font-black text-sm text-[#162709] flex items-center gap-1.5">
+              <Wallet className="w-4 h-4 text-[#233F0D]" />
+              <span>Matumizi ({selectedDate})</span>
+            </h3>
             <span className="px-3 py-1 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs font-black">
               Jumla: TZS {totalExpenses.toLocaleString()}
             </span>

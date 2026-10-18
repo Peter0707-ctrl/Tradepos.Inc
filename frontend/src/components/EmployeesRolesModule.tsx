@@ -49,55 +49,29 @@ export const EmployeesRolesModule: React.FC<EmployeesRolesModuleProps> = ({ onNa
   const getRolePermissionsLabel = (r: string) => {
     if (r === "OWNER") {
       return language === "sw"
-        ? "Mamlaka Yote (Boss): Anaona Dashibodi Kuu, Bei za Kununua, Faida & Hasara ya Siku, Ripoti Zote & Mipangilio"
-        : "Full Access (Boss): Main Dashboard, Buying Prices, Daily Profit & Loss, All Reports & Settings";
+        ? "Mamlaka Yote (Dashibodi, Faida & Ripoti Zote)"
+        : "Full Access (Dashboard, Profit & All Reports)";
     }
     return language === "sw"
-      ? "Siri ya Boss Imelindwa: Anaona tu (1) Mauzo ya Leo, (2) Matumizi ya Leo, (3) Stoo & Bidhaa, (4) Delivery & (5) Madeni. Haoni Faida wala Bei ya Kununua!"
-      : "Protected Seller View: Sees only (1) Today's Sales, (2) Today's Expenses, (3) Store Stock, (4) Delivery & (5) Debts. Cannot see Boss Profit or Buying Prices!";
+      ? "Mauzo, Matumizi, Stoo, Delivery & Madeni pekee"
+      : "Sales, Expenses, Store, Delivery & Debts only";
   };
 
   return (
-    <div className="flex-1 flex flex-col h-full p-4 lg:p-6 overflow-y-auto gap-5">
+    <div className="flex-1 flex flex-col h-full p-4 lg:p-6 overflow-y-auto gap-4">
       {/* Top Banner */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h2 className="text-xl font-black text-[#162709] tracking-tight">
-            {language === "sw"
-              ? "Akaunti za Wafanyakazi wa Duka & Ulinzi wa Siri za Boss"
-              : "Shop Employee Accounts & Boss Privacy Protection"}
-          </h2>
-          <p className="text-xs text-[#526848]">
-            {language === "sw"
-              ? "Mwenye Duka (Owner) anaona kila kitu. Wauzaji wanaona vitufe vyao tu (Mauzo ya Leo, Matumizi ya Leo, Stoo) na hawawezi kuona Faida ya Boss wala kuingia kwenye akaunti ya Boss bila PIN."
-              : "The Shop Owner sees everything. Sellers only see their daily buttons and cannot view Boss profits or switch to the Boss account without the Boss PIN."}
-          </p>
-        </div>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h2 className="text-lg sm:text-xl font-black text-[#162709] tracking-tight">
+          {language === "sw" ? "Wafanyakazi & Ruhusa" : "Employees & Roles"}
+        </h2>
 
         <button
           onClick={() => setIsModalOpen(true)}
-          className="px-4 py-2.5 rounded-xl neu-btn text-xs font-black flex items-center gap-2 shadow-xs cursor-pointer"
+          className="px-3.5 py-2 rounded-xl neu-btn text-xs font-black flex items-center gap-1.5 shadow-xs cursor-pointer"
         >
           <Plus className="w-4 h-4" />
-          <span>{language === "sw" ? "+ Fungua Akaunti ya Mfanyakazi" : "+ Add Employee Account"}</span>
+          <span>{language === "sw" ? "+ Ongeza Mfanyakazi" : "+ Add Employee"}</span>
         </button>
-      </div>
-
-      {/* Explainer Card for Owner-Employee Privacy & Daily Sync */}
-      <div className="p-4 rounded-2xl bg-[#F6FAF0] border-2 border-[#BFE973] flex flex-col md:flex-row items-start md:items-center justify-between gap-4 text-xs">
-        <div className="space-y-1">
-          <span className="font-black text-[#162709] uppercase flex items-center gap-1.5">
-            <Shield className="w-4 h-4 text-[#395F11]" />
-            {language === "sw"
-              ? "Jinsi Privacy (Usiri) Kati ya Mwenye Duka na Wauzaji Inavyofanya Kazi:"
-              : "How Privacy Between Shop Owner and Sellers Works:"}
-          </span>
-          <p className="text-[#4B613F]">
-            {language === "sw"
-              ? "1. Muuzaji akiingia anaona vitufe vyake tofauti: (1) Mauzo ya Leo, (2) Matumizi ya Leo, na (3) Stoo & Bidhaa. 2. Muuzaji haoni Dashibodi ya Boss, haoni Ripoti ya Faida na Hasara, na haoni Bei ya Kununua mzigo. 3. Akibonyeza 'Funga Mauzo ya Siku', siku inaisha na hesabu zote zinakwenda kwa Boss automatically. 4. Kurudi kwenye akaunti ya Boss kunahitaji PIN ya Siri ya Boss (1234)."
-              : "1. Sellers only see their separate daily buttons (Sales, Expenses, Store Stock). 2. Sellers never see Boss Dashboard, Profit & Loss, or Buying Prices. 3. Closing daily sales automatically sends the full report to the Boss."}
-          </p>
-        </div>
       </div>
 
       {/* Staff Table */}
@@ -105,12 +79,12 @@ export const EmployeesRolesModule: React.FC<EmployeesRolesModuleProps> = ({ onNa
         <table className="w-full text-left text-xs divide-y divide-[#EBF2E2]">
           <thead className="bg-[#F8FAF4] font-bold text-[#4D6340]">
             <tr>
-              <th className="py-3 px-4">{language === "sw" ? "Jina & Barua Pepe" : "Employee"}</th>
-              <th className="py-3 px-4">{language === "sw" ? "Cheo (Role)" : "Role"}</th>
-              <th className="py-3 px-4">{language === "sw" ? "Ulinzi wa Siri & Sehemu Anazoziona" : "Privacy & Assigned Workspace"}</th>
+              <th className="py-3 px-4">{language === "sw" ? "Jina" : "Employee"}</th>
+              <th className="py-3 px-4">{language === "sw" ? "Cheo" : "Role"}</th>
+              <th className="py-3 px-4">{language === "sw" ? "Ruhusa" : "Permissions"}</th>
               <th className="py-3 px-4">{language === "sw" ? "Simu & PIN" : "Phone & PIN"}</th>
               <th className="py-3 px-4">{language === "sw" ? "Hali" : "Status"}</th>
-              <th className="py-3 px-4 text-right">{language === "sw" ? "Hatua (Jaribu Akaunti)" : "Action"}</th>
+              <th className="py-3 px-4 text-right">{language === "sw" ? "Hatua" : "Action"}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-[#F1F6EB] text-[#1A2E0A]">
