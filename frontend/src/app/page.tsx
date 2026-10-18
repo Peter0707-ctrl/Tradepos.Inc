@@ -196,7 +196,7 @@ function MainApp() {
               {activeModule === "customers" && <CustomersModule />}
               {(activeModule === "expenses" || activeModule === "accounting") && <ExpensesAccountingModule />}
               {activeModule === "cash-register" && <CashRegisterModule />}
-              {activeModule === "employees" && <EmployeesRolesModule />}
+              {activeModule === "employees" && <EmployeesRolesModule onNavigate={(m) => setActiveModule(m)} />}
               {(activeModule === "branches" || activeModule === "warehouses") && <MultiBranchWarehouseModule />}
               {(activeModule === "online-store" || activeModule === "orders" || activeModule === "deliveries") && (
                 <OnlineStoreDeliveriesModule />

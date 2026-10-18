@@ -101,8 +101,10 @@ export interface Expense {
   id: string;
   tenantId: string;
   branchId: string;
-  category: 'Rent' | 'Electricity' | 'Water' | 'Salary' | 'Transport' | 'Internet' | 'Repairs' | 'Marketing' | 'Delivery' | 'Other';
+  category: string;
   title: string;
+  description?: string;
+  paymentMethod?: string;
   amount: number;
   date: string;
   recordedBy: string;
@@ -231,4 +233,49 @@ export interface StockMovement {
   notes?: string;
   createdAt: string;
 }
+
+export interface EmployeeAccount {
+  id: string;
+  tenantId: string;
+  name: string;
+  email: string;
+  phone: string;
+  pin?: string;
+  role: 'OWNER' | 'MANAGER' | 'ACCOUNTANT' | 'CASHIER' | 'STOREKEEPER';
+  branch: string;
+  status: 'Active' | 'Suspended';
+  lastActive: string;
+}
+
+export interface DailyShiftReport {
+  id: string;
+  tenantId: string;
+  branchName: string;
+  submittedBy: string;
+  staffRole: string;
+  submittedAt: string;
+  date: string;
+  totalSales: number;
+  cashSales: number;
+  mobileSales: number;
+  creditSales: number;
+  totalExpenses: number;
+  expectedCash: number;
+  actualCashCounted: number;
+  variance: number;
+  totalUnitsSold: number;
+  soldItems: { name: string; quantity: number; revenue: number }[];
+  dailyExpenses: { category: string; description: string; amount: number; paymentMethod: string }[];
+  remainingStockSummary: {
+    totalProductsCount: number;
+    totalUnitsInStore: number;
+    lowStockCount: number;
+    stockSnapshot: { id: string; name: string; remainingQty: number; minStock: number; unit: string }[];
+  };
+  notes?: string;
+  status: 'PENDING_REVIEW' | 'APPROVED';
+  approvedBy?: string;
+  approvedAt?: string;
+}
+
 

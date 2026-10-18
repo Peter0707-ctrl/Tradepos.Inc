@@ -33,6 +33,8 @@ export const TopHeader: React.FC<TopHeaderProps> = ({ pageTitle, onNavigate, onL
     unreadNotificationCount,
     markNotificationRead,
     markAllNotificationsRead,
+    employees,
+    switchEmployeeAccount,
     t
   } = useApp();
 
@@ -166,16 +168,53 @@ export const TopHeader: React.FC<TopHeaderProps> = ({ pageTitle, onNavigate, onL
             </div>
             <div className="hidden lg:block text-left pr-1">
               <span className="block text-xs font-black text-[#172709] leading-tight">{user?.name || "Peter Joseph"}</span>
-              <span className="block text-[10px] font-bold text-[#5C724F]">{user?.role || "Mwenye Duka"}</span>
+              <span className="block text-[10px] font-bold text-[#5C724F]">
+                {user?.role === "OWNER" ? "👑 Mwenye Duka" : `👤 ${user?.role}`}
+              </span>
             </div>
             <ChevronDown className="w-3.5 h-3.5 text-[#5B6F50]" />
           </button>
 
           {isProfileOpen && (
-            <div className="absolute right-0 mt-2 w-56 rounded-2xl bg-white border-2 border-[#C2E880] shadow-xl p-2 z-50 animate-fade-in text-xs font-bold text-[#2C401E]">
+            <div className="absolute right-0 mt-2 w-64 rounded-2xl bg-white border-2 border-[#C2E880] shadow-xl p-2 z-50 animate-fade-in text-xs font-bold text-[#2C401E]">
               <div className="px-3 py-2 border-b border-[#EDF4E4]">
                 <span className="block font-black text-[#162708]">{user?.name}</span>
                 <span className="block text-[11px] text-[#697E5D] font-normal">{user?.email}</span>
+              </div>
+
+              {/* Quick Switch Between Owner & Staff Accounts */}
+              <div className="py-1.5 px-2 border-b border-[#EDF4E4] bg-[#F8FBF4] rounded-xl my-1">
+                <span className="block text-[10px] font-black text-[#58704A] uppercase px-1 mb-1">
+                  {language === "sw" ? "Badili Akaunti (Owner / Wafanyakazi)" : "Switch Shop Account"}
+                </span>
+                <div className="space-y-1">
+                  {employees.map((emp) => {
+                    const isActive = user?.id === emp.id;
+                    return (
+                      <button
+                        key={emp.id}
+                        onClick={() => {
+                          switchEmployeeAccount(emp.id);
+                          setIsProfileOpen(false);
+                          onNavigate(emp.role === "OWNER" ? "dashboard" : "cash-register");
+                        }}
+                        className={`w-full flex items-center justify-between px-2 py-1.5 rounded-lg text-[11px] transition ${
+                          isActive
+                            ? "bg-[#E1FFAC] text-[#162808] font-black border border-[#9CE034]"
+                            : "hover:bg-white text-[#334A24]"
+                        }`}
+                      >
+                        <span className="truncate">
+                          {emp.role === "OWNER" ? "👑 " : "👤 "}
+                          {emp.name}
+                        </span>
+                        <span className="text-[9px] px-1.5 py-0.5 rounded bg-white/80 text-[#3F582E] font-bold">
+                          {emp.role === "OWNER" ? "Boss" : emp.role}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
 
               <div className="py-1 space-y-0.5">
@@ -188,6 +227,17 @@ export const TopHeader: React.FC<TopHeaderProps> = ({ pageTitle, onNavigate, onL
                 >
                   <User className="w-4 h-4 text-[#476517]" />
                   <span>{language === "sw" ? "Wasifu Wangu" : "My Profile"}</span>
+                </button>
+
+                <button
+                  onClick={() => {
+                    setIsProfileOpen(false);
+                    onNavigate("employees");
+                  }}
+                  className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-[#F2F7EB] transition text-left"
+                >
+                  <Shield className="w-4 h-4 text-[#476517]" />
+                  <span>{language === "sw" ? "Akaunti za Wafanyakazi" : "Staff Accounts"}</span>
                 </button>
 
                 <button
@@ -210,17 +260,6 @@ export const TopHeader: React.FC<TopHeaderProps> = ({ pageTitle, onNavigate, onL
                 >
                   <CreditCard className="w-4 h-4 text-[#476517]" />
                   <span>{language === "sw" ? "Vifurushi & Malipo" : "Subscription & Billing"}</span>
-                </button>
-
-                <button
-                  onClick={() => {
-                    setIsProfileOpen(false);
-                    onNavigate("settings");
-                  }}
-                  className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-[#F2F7EB] transition text-left"
-                >
-                  <Shield className="w-4 h-4 text-[#476517]" />
-                  <span>{language === "sw" ? "Usalama & Ukaguzi" : "Security & Audits"}</span>
                 </button>
               </div>
 

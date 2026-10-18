@@ -17,7 +17,9 @@ import {
   CashRegister,
   AppNotification,
   AuditLog,
-  StockMovement
+  StockMovement,
+  EmployeeAccount,
+  DailyShiftReport
 } from "@/types";
 import { en, sw } from "@/locales/translations";
 
@@ -42,6 +44,8 @@ interface AppContextType {
   warehouses: Warehouse[];
   cashRegister: CashRegister;
   stockMovements: StockMovement[];
+  employees: EmployeeAccount[];
+  dailyReports: DailyShiftReport[];
   notifications: AppNotification[];
   unreadNotificationCount: number;
   markNotificationRead: (id: string) => void;
@@ -53,6 +57,10 @@ interface AppContextType {
   loginUser: (emailOrPhone: string, role?: string) => boolean;
   logoutUser: () => void;
   registerBusiness: (accountData: any, businessData: any, plan: any) => void;
+  addEmployee: (emp: Omit<EmployeeAccount, "id" | "tenantId" | "status" | "lastActive">) => void;
+  switchEmployeeAccount: (employeeId: string) => void;
+  submitDailyReport: (notes?: string, actualCashCounted?: number) => DailyShiftReport | undefined;
+  approveDailyReport: (reportId: string) => void;
   addProduct: (product: Omit<Product, "id" | "tenantId">) => Product | undefined;
   updateProduct: (product: Product) => void;
   deleteProduct: (id: string) => void;
@@ -633,6 +641,103 @@ const initialStockMovements: StockMovement[] = [
   },
 ];
 
+const initialEmployees: EmployeeAccount[] = [
+  {
+    id: "emp-01",
+    tenantId: "tenant-karibu-001",
+    name: "Peter Joseph",
+    email: "peter@petercosmetics.co.tz",
+    phone: "+255 712 345 678",
+    pin: "1234",
+    role: "OWNER",
+    branch: "Kariakoo Branch (HQ)",
+    status: "Active",
+    lastActive: "Sasa hivi",
+  },
+  {
+    id: "emp-02",
+    tenantId: "tenant-karibu-001",
+    name: "Baraka Mushi",
+    email: "baraka@petercosmetics.co.tz",
+    phone: "+255 754 991 223",
+    pin: "2222",
+    role: "CASHIER",
+    branch: "Kariakoo Branch (HQ)",
+    status: "Active",
+    lastActive: "Dakika 5 zilizopita",
+  },
+  {
+    id: "emp-03",
+    tenantId: "tenant-karibu-001",
+    name: "Amina Hassan",
+    email: "amina@petercosmetics.co.tz",
+    phone: "+255 788 334 112",
+    pin: "3333",
+    role: "STOREKEEPER",
+    branch: "Kariakoo Branch (HQ)",
+    status: "Active",
+    lastActive: "Saa 1 iliyopita",
+  },
+  {
+    id: "emp-04",
+    tenantId: "tenant-karibu-001",
+    name: "Frank Temba",
+    email: "frank@petercosmetics.co.tz",
+    phone: "+255 713 445 667",
+    pin: "4444",
+    role: "ACCOUNTANT",
+    branch: "Kariakoo Branch (HQ)",
+    status: "Active",
+    lastActive: "Jana",
+  },
+];
+
+const initialDailyReports: DailyShiftReport[] = [
+  {
+    id: "rep-001",
+    tenantId: "tenant-karibu-001",
+    branchName: "Kariakoo Branch (HQ)",
+    submittedBy: "Baraka Mushi",
+    staffRole: "CASHIER",
+    submittedAt: "2026-10-08 17:45",
+    date: "2026-10-08",
+    totalSales: 141000,
+    cashSales: 24000,
+    mobileSales: 82500,
+    creditSales: 34500,
+    totalExpenses: 50000,
+    expectedCash: 259000,
+    actualCashCounted: 259000,
+    variance: 0,
+    totalUnitsSold: 6,
+    soldItems: [
+      { name: "Nivea Nourishing Body Milk 400ml", quantity: 2, revenue: 44000 },
+      { name: "CeraVe Hydrating Facial Cleanser 236ml", quantity: 1, revenue: 38000 },
+      { name: "Garnier Micellar Cleansing Water 400ml", quantity: 1, revenue: 24000 },
+      { name: "L'Oreal Paris Elvive Serum 100ml", quantity: 1, revenue: 35000 },
+    ],
+    dailyExpenses: [
+      { category: "Usafiri & Bodaboda", description: "Bodaboda kupeleka mzigo Posta na kurudisha risiti", amount: 15000, paymentMethod: "CASH" },
+      { category: "Chakula & Maji ya Wafanyakazi", description: "Chakula cha mchana na maji dukani", amount: 10000, paymentMethod: "CASH" },
+      { category: "Umeme (LUKU)", description: "Tokeni za LUKU tawi la Kariakoo", amount: 25000, paymentMethod: "MPESA" },
+    ],
+    remainingStockSummary: {
+      totalProductsCount: 8,
+      totalUnitsInStore: 234,
+      lowStockCount: 2,
+      stockSnapshot: [
+        { id: "prod-001", name: "Nivea Nourishing Body Milk 400ml", remainingQty: 42, minStock: 15, unit: "Bottle" },
+        { id: "prod-002", name: "Maybelline Matte Lip Gloss Velvet", remainingQty: 18, minStock: 8, unit: "Pcs" },
+        { id: "prod-003", name: "CeraVe Hydrating Facial Cleanser 236ml", remainingQty: 25, minStock: 10, unit: "Bottle" },
+        { id: "prod-004", name: "Garnier Micellar Cleansing Water 400ml", remainingQty: 6, minStock: 12, unit: "Bottle" },
+        { id: "prod-005", name: "L'Oreal Paris Elvive Serum 100ml", remainingQty: 7, minStock: 10, unit: "Bottle" },
+      ],
+    },
+    notes: "Mauzo yameenda vizuri leo. Garnier Micellar na L'Oreal Elvive zimebaki chache stoo (chini ya 10), tafadhali agiza mzigo mpya.",
+    status: "PENDING_REVIEW",
+  },
+];
+
 export function AppProvider({ children }: { children: React.ReactNode }) {
   const [language, setLanguage] = useState<"en" | "sw">("sw");
   const [user, setUser] = useState<User | null>(defaultUser);
@@ -675,6 +780,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [warehouses, setWarehouses] = useState<Warehouse[]>(initialWarehouses);
   const [cashRegister, setCashRegister] = useState<CashRegister>(initialCashRegister);
   const [stockMovements, setStockMovements] = useState<StockMovement[]>(initialStockMovements);
+  const [employees, setEmployees] = useState<EmployeeAccount[]>(initialEmployees);
+  const [dailyReports, setDailyReports] = useState<DailyShiftReport[]>(initialDailyReports);
   const [notifications, setNotifications] = useState<AppNotification[]>(initialNotifications);
   const [isHydrated, setIsHydrated] = useState<boolean>(false);
 
@@ -691,6 +798,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         if (Array.isArray(parsed.onlineOrders)) setOnlineOrders(parsed.onlineOrders);
         if (parsed.cashRegister) setCashRegister(parsed.cashRegister);
         if (Array.isArray(parsed.stockMovements)) setStockMovements(parsed.stockMovements);
+        if (Array.isArray(parsed.employees) && parsed.employees.length > 0) setEmployees(parsed.employees);
+        if (Array.isArray(parsed.dailyReports)) setDailyReports(parsed.dailyReports);
       }
     } catch (e) {}
     setIsHydrated(true);
@@ -710,10 +819,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           onlineOrders,
           cashRegister,
           stockMovements,
+          employees,
+          dailyReports,
         })
       );
     } catch (e) {}
-  }, [isHydrated, products, sales, customers, expenses, onlineOrders, cashRegister, stockMovements]);
+  }, [isHydrated, products, sales, customers, expenses, onlineOrders, cashRegister, stockMovements, employees, dailyReports]);
   
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>([
     {
@@ -827,15 +938,33 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       return true;
     }
 
-    const loggedUser: User = {
-      id: "usr-001",
-      name: "Peter Joseph",
-      email: emailOrPhone.includes("@") ? emailOrPhone : "peter@petercosmetics.co.tz",
-      phone: emailOrPhone.includes("@") ? "+255 712 345 678" : emailOrPhone,
-      role: (role as any) || "OWNER",
-      businessId: business?.id || "tenant-karibu-001",
-      branchId: currentBranch?.id || "br-01",
-    };
+    const cleanInput = emailOrPhone.trim().toLowerCase();
+    const matchedEmployee = employees.find(
+      (e) =>
+        e.email.toLowerCase() === cleanInput ||
+        e.phone.replace(/\s+/g, "") === cleanInput.replace(/\s+/g, "") ||
+        e.name.toLowerCase() === cleanInput
+    );
+
+    const loggedUser: User = matchedEmployee
+      ? {
+          id: matchedEmployee.id,
+          name: matchedEmployee.name,
+          email: matchedEmployee.email,
+          phone: matchedEmployee.phone,
+          role: matchedEmployee.role,
+          businessId: business?.id || "tenant-karibu-001",
+          branchId: currentBranch?.id || "br-01",
+        }
+      : {
+          id: "usr-001",
+          name: role === "CASHIER" ? "Baraka Mushi" : "Peter Joseph",
+          email: emailOrPhone.includes("@") ? emailOrPhone : "peter@petercosmetics.co.tz",
+          phone: emailOrPhone.includes("@") ? "+255 712 345 678" : emailOrPhone,
+          role: (role as any) || "OWNER",
+          businessId: business?.id || "tenant-karibu-001",
+          branchId: currentBranch?.id || "br-01",
+        };
 
     setUser(loggedUser);
     try {
@@ -844,6 +973,151 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     } catch (e) {}
 
     return true;
+  };
+
+  const addEmployee = (empData: Omit<EmployeeAccount, "id" | "tenantId" | "status" | "lastActive">) => {
+    if (!business) return;
+    const newEmp: EmployeeAccount = {
+      ...empData,
+      id: "emp-" + Date.now(),
+      tenantId: business.id,
+      status: "Active",
+      lastActive: "Sasa hivi",
+    };
+    setEmployees((prev) => [...prev, newEmp]);
+  };
+
+  const switchEmployeeAccount = (employeeId: string) => {
+    const targetEmp = employees.find((e) => e.id === employeeId);
+    if (!targetEmp) return;
+    const switchedUser: User = {
+      id: targetEmp.id,
+      name: targetEmp.name,
+      email: targetEmp.email,
+      phone: targetEmp.phone,
+      role: targetEmp.role,
+      businessId: business?.id || "tenant-karibu-001",
+      branchId: currentBranch?.id || "br-01",
+    };
+    setUser(switchedUser);
+    try {
+      localStorage.setItem("tradepos_session_user", JSON.stringify(switchedUser));
+    } catch (e) {}
+  };
+
+  const submitDailyReport = (notes?: string, actualCashCounted?: number) => {
+    if (!business) return undefined;
+    const validSales = sales.filter((s) => s.status !== "REFUNDED");
+    const totalSalesVal = validSales.reduce((a, b) => a + b.total, 0);
+    const cashSalesVal = validSales
+      .filter((s) => s.paymentMethod === "CASH")
+      .reduce((a, b) => a + b.total, 0);
+    const mobileSalesVal = validSales
+      .filter((s) => ["MPESA", "AIRTEL_MONEY", "MIXX", "HALOPESA"].includes(s.paymentMethod))
+      .reduce((a, b) => a + b.total, 0);
+    const creditSalesVal = validSales
+      .filter((s) => s.paymentMethod === "CREDIT")
+      .reduce((a, b) => a + b.total, 0);
+
+    const totalExpensesVal = expenses.reduce((a, b) => a + b.amount, 0);
+    const expectedCashVal =
+      cashRegister.openingBalance +
+      (cashSalesVal > 0 ? cashSalesVal : cashRegister.cashSales) +
+      cashRegister.cashDeposits -
+      cashRegister.cashExpenses -
+      cashRegister.cashWithdrawals;
+    const countedCash = actualCashCounted !== undefined ? actualCashCounted : cashRegister.actualCash;
+    const varianceVal = countedCash - expectedCashVal;
+
+    // Aggregate sold products
+    const soldMap: { [name: string]: { name: string; quantity: number; revenue: number } } = {};
+    validSales.forEach((s) => {
+      s.items.forEach((item) => {
+        if (!soldMap[item.productName]) {
+          soldMap[item.productName] = { name: item.productName, quantity: 0, revenue: 0 };
+        }
+        soldMap[item.productName].quantity += item.quantity;
+        soldMap[item.productName].revenue += item.total;
+      });
+    });
+    const soldItemsList = Object.values(soldMap).sort((a, b) => b.quantity - a.quantity);
+    const totalUnits = soldItemsList.reduce((a, b) => a + b.quantity, 0);
+
+    // Remaining stock snapshot
+    const totalUnitsInStore = products.reduce((a, b) => a + b.stockQuantity, 0);
+    const lowStockCount = products.filter((p) => p.stockQuantity <= p.minStock).length;
+
+    const now = new Date();
+    const newReport: DailyShiftReport = {
+      id: "rep-" + Date.now(),
+      tenantId: business.id,
+      branchName: currentBranch?.name || "Kariakoo Branch (HQ)",
+      submittedBy: user?.name || "Baraka Mushi",
+      staffRole: user?.role || "CASHIER",
+      submittedAt: `${now.toISOString().split("T")[0]} ${now.toTimeString().slice(0, 5)}`,
+      date: now.toISOString().split("T")[0],
+      totalSales: totalSalesVal,
+      cashSales: cashSalesVal,
+      mobileSales: mobileSalesVal,
+      creditSales: creditSalesVal,
+      totalExpenses: totalExpensesVal,
+      expectedCash: expectedCashVal,
+      actualCashCounted: countedCash,
+      variance: varianceVal,
+      totalUnitsSold: totalUnits,
+      soldItems: soldItemsList,
+      dailyExpenses: expenses.slice(0, 10).map((e) => ({
+        category: e.category,
+        description: e.title || e.description || e.category,
+        amount: e.amount,
+        paymentMethod: e.paymentMethod || "CASH",
+      })),
+      remainingStockSummary: {
+        totalProductsCount: products.length,
+        totalUnitsInStore,
+        lowStockCount,
+        stockSnapshot: products.map((p) => ({
+          id: p.id,
+          name: p.name,
+          remainingQty: p.stockQuantity,
+          minStock: p.minStock,
+          unit: p.unit,
+        })),
+      },
+      notes: notes || "Mahesabu ya siku na stoo iliyobaki yamekaguliwa na kutumwa kwa Mwenye Duka.",
+      status: "PENDING_REVIEW",
+    };
+
+    setDailyReports((prev) => [newReport, ...prev]);
+
+    // Notify Owner immediately
+    const newNotif: AppNotification = {
+      id: "notif-" + Date.now(),
+      title: `Ripoti ya Siku: ${newReport.submittedBy}`,
+      message: `Mauzo: TZS ${totalSalesVal.toLocaleString()} | Matumizi: TZS ${totalExpensesVal.toLocaleString()} | Stoo Iliyobaki: ${totalUnitsInStore} pcs`,
+      type: "SYSTEM",
+      timestamp: "Sasa hivi",
+      read: false,
+      actionUrl: "dashboard",
+    };
+    setNotifications((prev) => [newNotif, ...prev]);
+
+    return newReport;
+  };
+
+  const approveDailyReport = (reportId: string) => {
+    setDailyReports((prev) =>
+      prev.map((r) =>
+        r.id === reportId
+          ? {
+              ...r,
+              status: "APPROVED",
+              approvedBy: user?.name || "Peter Joseph (Owner)",
+              approvedAt: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+            }
+          : r
+      )
+    );
   };
 
   const logoutUser = () => {
@@ -1046,6 +1320,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       tenantId: business.id,
     };
     setExpenses((prev) => [newExp, ...prev]);
+    if (expenseData.paymentMethod === "CASH") {
+      setCashRegister((prev) => ({
+        ...prev,
+        cashExpenses: prev.cashExpenses + expenseData.amount,
+        actualCash: Math.max(0, prev.actualCash - expenseData.amount),
+      }));
+    }
   };
 
   const addCustomer = (custData: Omit<Customer, "id" | "tenantId" | "totalSpent" | "debtBalance" | "loyaltyPoints">) => {
@@ -1210,6 +1491,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         warehouses,
         cashRegister,
         stockMovements,
+        employees,
+        dailyReports,
         notifications,
         unreadNotificationCount,
         markNotificationRead,
@@ -1220,6 +1503,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         loginUser,
         logoutUser,
         registerBusiness,
+        addEmployee,
+        switchEmployeeAccount,
+        submitDailyReport,
+        approveDailyReport,
         addProduct,
         updateProduct,
         deleteProduct,

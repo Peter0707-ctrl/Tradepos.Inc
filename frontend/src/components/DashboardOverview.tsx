@@ -44,6 +44,8 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate
     cashRegister,
     refundSale,
     stockMovements,
+    dailyReports,
+    approveDailyReport,
     t,
     language
   } = useApp();
@@ -309,6 +311,158 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate
           </button>
         </div>
       </div>
+
+      {/* 2.8. RIPOTI ZA MAHESABU YA SIKU KUTOKA KWA WAFANYAKAZI (WAMEUZA NINI, MATUMIZI YA SIKU & STOCK ILIYobaki STOO) */}
+      {dailyReports && dailyReports.length > 0 && (
+        <div className="bg-white rounded-2xl border-2 border-[#BFE973] p-4 sm:p-5 shadow-xs space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[#E6F0DC]">
+            <div>
+              <div className="flex flex-wrap items-center gap-2">
+                <h3 className="text-sm sm:text-base font-black text-[#152508]">
+                  📬 {language === "sw" ? "Mahesabu ya Siku Kutoka kwa Wafanyakazi" : "Daily Staff Shift Reports"}
+                </h3>
+                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-[#E1FFAC] text-[#172C08] border border-[#9CE034]">
+                  {dailyReports[0].submittedBy} ({dailyReports[0].staffRole}) • {dailyReports[0].submittedAt}
+                </span>
+                <span
+                  className={`px-2 py-0.5 rounded-full text-[10px] font-black ${
+                    dailyReports[0].status === "APPROVED"
+                      ? "bg-emerald-100 text-emerald-900 border border-emerald-300"
+                      : "bg-amber-100 text-amber-900 border border-amber-300"
+                  }`}
+                >
+                  {dailyReports[0].status === "APPROVED" ? "✓ IMEHAKIKIWA NA MWENYE DUKA" : "⏳ MPYA: KAGUA MAHESABU HAYA"}
+                </span>
+              </div>
+              <p className="text-xs text-[#546A49] mt-0.5">
+                {language === "sw"
+                  ? "Muhtasari uliotumwa na mfanyakazi ukionyesha walichouza leo, matumizi ya siku hiyo, na stock iliyobaki stoo."
+                  : "Live summary submitted by your staff showing items sold today, today's expenses, and remaining store stock."}
+              </p>
+            </div>
+
+            <div className="flex items-center gap-2 shrink-0">
+              {dailyReports[0].status !== "APPROVED" && (
+                <button
+                  onClick={() => approveDailyReport(dailyReports[0].id)}
+                  className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black transition cursor-pointer"
+                >
+                  ✓ {language === "sw" ? "Idhinisha Hesabu" : "Approve Report"}
+                </button>
+              )}
+              <button
+                onClick={() => onNavigate("cash-register")}
+                className="px-3 py-1.5 rounded-xl bg-[#F4F8EC] hover:bg-[#E1FFAC] border border-[#C6DDA8] text-[#182C09] text-xs font-black transition cursor-pointer"
+              >
+                {language === "sw" ? "Fungua Hesabu za Siku Zote →" : "Open All Shift Reports →"}
+              </button>
+            </div>
+          </div>
+
+          {/* 3 Pillars of the Staff Report for the Owner */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 text-xs">
+            {/* Pillar 1: Wameuza Nini Leo */}
+            <div className="p-3.5 rounded-2xl bg-[#F8FBF4] border border-[#D8E6CC] flex flex-col justify-between">
+              <div>
+                <div className="flex items-center justify-between pb-2 border-b border-[#E5EFE0]">
+                  <span className="font-black text-[#162709] uppercase">
+                    1. Walichouza Leo ({dailyReports[0].totalUnitsSold} pcs)
+                  </span>
+                  <span className="font-black text-emerald-800">
+                    TZS {dailyReports[0].totalSales.toLocaleString()}
+                  </span>
+                </div>
+                <div className="divide-y divide-[#EBF2E6] my-2">
+                  {dailyReports[0].soldItems.slice(0, 4).map((item, idx) => (
+                    <div key={idx} className="py-1.5 flex items-center justify-between">
+                      <span className="font-bold text-[#1B2F0B] truncate pr-2">
+                        {item.name} <strong className="text-emerald-800">×{item.quantity}</strong>
+                      </span>
+                      <span className="font-black text-[#162709] shrink-0">
+                        TZS {item.revenue.toLocaleString()}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div className="pt-2 border-t border-[#E5EFE0] flex justify-between text-[11px] text-[#526846]">
+                <span>Cash: <strong>TZS {dailyReports[0].cashSales.toLocaleString()}</strong></span>
+                <span>Simu: <strong>TZS {dailyReports[0].mobileSales.toLocaleString()}</strong></span>
+                <span>Deni: <strong>TZS {dailyReports[0].creditSales.toLocaleString()}</strong></span>
+              </div>
+            </div>
+
+            {/* Pillar 2: Matumizi ya Siku Hiyo */}
+            <div className="p-3.5 rounded-2xl bg-rose-50/40 border border-rose-200 flex flex-col justify-between">
+              <div>
+                <div className="flex items-center justify-between pb-2 border-b border-rose-200/70">
+                  <span className="font-black text-rose-950 uppercase">
+                    2. Matumizi ya Siku Hiyo ({dailyReports[0].dailyExpenses.length})
+                  </span>
+                  <span className="font-black text-rose-700">
+                    TZS {dailyReports[0].totalExpenses.toLocaleString()}
+                  </span>
+                </div>
+                <div className="divide-y divide-rose-100 my-2">
+                  {dailyReports[0].dailyExpenses.slice(0, 4).map((exp, idx) => (
+                    <div key={idx} className="py-1.5 flex items-center justify-between">
+                      <span className="text-[#2C1618] truncate pr-2">
+                        <strong>{exp.category}:</strong> {exp.description}
+                      </span>
+                      <span className="font-black text-rose-800 shrink-0">
+                        TZS {exp.amount.toLocaleString()}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div className="pt-2 border-t border-rose-200/70 flex justify-between text-[11px] text-rose-900 font-semibold">
+                <span>Pesa Iliyohesabiwa Drooni:</span>
+                <strong>TZS {dailyReports[0].actualCashCounted.toLocaleString()}</strong>
+              </div>
+            </div>
+
+            {/* Pillar 3: Stock Iliyobaki Stoo */}
+            <div className="p-3.5 rounded-2xl bg-[#F8FBF4] border border-[#D8E6CC] flex flex-col justify-between">
+              <div>
+                <div className="flex items-center justify-between pb-2 border-b border-[#E5EFE0]">
+                  <span className="font-black text-[#162709] uppercase">
+                    3. Stock Iliyobaki Stoo ({dailyReports[0].remainingStockSummary.totalUnitsInStore} pcs)
+                  </span>
+                  <span className="text-[11px] font-black text-amber-800">
+                    {dailyReports[0].remainingStockSummary.lowStockCount} zinaisha
+                  </span>
+                </div>
+                <div className="divide-y divide-[#EBF2E6] my-2">
+                  {dailyReports[0].remainingStockSummary.stockSnapshot.slice(0, 4).map((st) => (
+                    <div key={st.id} className="py-1.5 flex items-center justify-between">
+                      <span className="font-bold text-[#1B2F0B] truncate pr-2">{st.name}</span>
+                      <span
+                        className={`px-2 py-0.5 rounded-md font-black shrink-0 ${
+                          st.remainingQty <= st.minStock
+                            ? "bg-amber-100 text-amber-900"
+                            : "bg-[#E1FFAC] text-[#172B08]"
+                        }`}
+                      >
+                        {st.remainingQty} {st.unit}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div className="pt-2 border-t border-[#E5EFE0] flex justify-between items-center text-[11px] text-[#526846]">
+                <span>Jumla ya Aina za Bidhaa: <strong>{dailyReports[0].remainingStockSummary.totalProductsCount}</strong></span>
+                <button
+                  onClick={() => onNavigate("inventory")}
+                  className="font-black text-[#2F520E] hover:underline"
+                >
+                  Ona Stoo Yote →
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* 3. Sales Analytics & Profit Analytics Section */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
