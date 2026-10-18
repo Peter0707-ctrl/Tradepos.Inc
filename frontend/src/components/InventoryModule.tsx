@@ -391,7 +391,9 @@ export const InventoryModule: React.FC = () => {
             +{totalStockInQty} <span className="text-xs font-bold">Vipande</span>
           </p>
           <span className="text-[11px] font-semibold text-emerald-800">
-            Thamani ya Mzigo: TZS {totalStockInValue.toLocaleString()}
+            {!user || user.role === "OWNER" || user.role === "SUPER_ADMIN"
+              ? `Thamani ya Mtaji (Boss): TZS ${totalStockInValue.toLocaleString()}`
+              : `Aina ${products.length} za bidhaa zilizopo stoo`}
           </span>
         </div>
 
@@ -447,7 +449,11 @@ export const InventoryModule: React.FC = () => {
           <thead className="bg-[#F8FAF4] font-bold text-[#44573d]">
             <tr>
               <th className="py-3 px-4">Bidhaa & Kipimo cha Bando</th>
-              <th className="py-3 px-4">Bei (Kununua / Kuuza)</th>
+              <th className="py-3 px-4">
+                {!user || user.role === "OWNER" || user.role === "SUPER_ADMIN"
+                  ? "Bei (Kununua / Kuuza)"
+                  : "Bei ya Kuuza"}
+              </th>
               <th className="py-3 px-4 text-center">Iliyoingizwa (+ IN)</th>
               <th className="py-3 px-4 text-center">Iliyotoka (Mauzo & Manual)</th>
               <th className="py-3 px-4">Ukaguzi wa Bando (Stoo vs Mauzo)</th>
@@ -472,6 +478,7 @@ export const InventoryModule: React.FC = () => {
                 loosePiecesInOpenedBundle,
               }) => {
                 const isLow = currentStock <= p.minStock;
+                const isOwnerView = !user || user.role === "OWNER" || user.role === "SUPER_ADMIN";
                 return (
                   <tr key={p.id} className="hover:bg-[#FAFCF7] transition">
                     {/* 1. Product Name & Bundle Size */}
@@ -482,14 +489,16 @@ export const InventoryModule: React.FC = () => {
                       </span>
                     </td>
 
-                    {/* 2. Prices */}
+                    {/* 2. Prices (Buying Price hidden from Sellers for Boss Privacy) */}
                     <td className="py-3 px-4">
                       <div className="font-bold text-[#162709]">
                         Kuuza: TZS {p.sellingPrice.toLocaleString()}
                       </div>
-                      <div className="text-[11px] text-[#5B714F]">
-                        Kununua: TZS {p.buyingPrice.toLocaleString()}
-                      </div>
+                      {isOwnerView && (
+                        <div className="text-[11px] text-[#5B714F]">
+                          Kununua (Boss): TZS {p.buyingPrice.toLocaleString()}
+                        </div>
+                      )}
                     </td>
 
                     {/* 3. Stock IN (Pcs & Bundles) */}
@@ -572,12 +581,14 @@ export const InventoryModule: React.FC = () => {
                         >
                           - Toa
                         </button>
-                        <button
-                          onClick={() => deleteProduct(p.id)}
-                          className="p-1.5 rounded-lg text-red-600 hover:bg-red-50 transition cursor-pointer"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
+                        {isOwnerView && (
+                          <button
+                            onClick={() => deleteProduct(p.id)}
+                            className="p-1.5 rounded-lg text-red-600 hover:bg-red-50 transition cursor-pointer"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -726,19 +737,21 @@ export const InventoryModule: React.FC = () => {
               </div>
 
               <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block font-bold text-[#35482c] mb-1">
-                    Bei ya Kununua 1 Pc (TZS)
-                  </label>
-                  <input
-                    type="number"
-                    value={movBuyingPrice}
-                    onChange={(e) => setMovBuyingPrice(e.target.value)}
-                    placeholder="15000"
-                    className="w-full py-2 px-3 rounded-xl neu-input font-bold"
-                  />
-                </div>
-                <div>
+                {(!user || user.role === "OWNER" || user.role === "SUPER_ADMIN") && (
+                  <div>
+                    <label className="block font-bold text-[#35482c] mb-1">
+                      Bei ya Kununua 1 Pc (TZS)
+                    </label>
+                    <input
+                      type="number"
+                      value={movBuyingPrice}
+                      onChange={(e) => setMovBuyingPrice(e.target.value)}
+                      placeholder="15000"
+                      className="w-full py-2 px-3 rounded-xl neu-input font-bold"
+                    />
+                  </div>
+                )}
+                <div className={!user || user.role === "OWNER" || user.role === "SUPER_ADMIN" ? "" : "col-span-2"}>
                   <label className="block font-bold text-[#35482c] mb-1">
                     Bei ya Kuuza 1 Pc (TZS)
                   </label>

@@ -60,6 +60,10 @@ interface AppContextType {
   addEmployee: (emp: Omit<EmployeeAccount, "id" | "tenantId" | "status" | "lastActive">) => void;
   switchEmployeeAccount: (employeeId: string) => void;
   submitDailyReport: (notes?: string, actualCashCounted?: number) => DailyShiftReport | undefined;
+  closeDayAndSendToBoss: (notes?: string) => DailyShiftReport | undefined;
+  startNewDay: () => void;
+  isDayClosed: boolean;
+  activeDayLabel: string;
   approveDailyReport: (reportId: string) => void;
   addProduct: (product: Omit<Product, "id" | "tenantId">) => Product | undefined;
   updateProduct: (product: Product) => void;
@@ -386,33 +390,26 @@ const initialExpenses: Expense[] = [
     id: "exp-01",
     tenantId: "tenant-karibu-001",
     branchId: "br-01",
-    category: "Rent",
-    title: "Store Monthly Lease Advance",
-    amount: 1200000,
-    date: "2026-10-01",
-    recordedBy: "Peter Joseph",
-    notes: "Kariakoo retail shop commercial rent",
+    category: "Usafiri & Bodaboda",
+    title: "Nauli ya Bodaboda kupeleka mzigo Posta",
+    description: "Nauli ya Bodaboda kupeleka mzigo Posta",
+    amount: 5000,
+    date: "2026-10-19",
+    recordedBy: "Baraka Mushi",
+    paymentMethod: "CASH",
   },
   {
     id: "exp-02",
     tenantId: "tenant-karibu-001",
     branchId: "br-01",
-    category: "Electricity",
-    title: "LUKU Commercial Token Units",
-    amount: 140000,
-    date: "2026-10-04",
-    recordedBy: "Peter Joseph",
+    category: "Chakula & Maji Dukani",
+    title: "Maji ya kunywa na chakula cha mchana dukani",
+    description: "Maji ya kunywa na chakula cha mchana dukani",
+    amount: 6000,
+    date: "2026-10-19",
+    recordedBy: "Baraka Mushi",
+    paymentMethod: "CASH",
   },
-  {
-    id: "exp-03",
-    tenantId: "tenant-karibu-001",
-    branchId: "br-01",
-    category: "Salary",
-    title: "Cashier Shift Bi-weekly Allowance",
-    amount: 320000,
-    date: "2026-10-07",
-    recordedBy: "Peter Joseph",
-  }
 ];
 
 const initialSuppliers: Supplier[] = [
@@ -787,12 +784,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [employees, setEmployees] = useState<EmployeeAccount[]>(initialEmployees);
   const [dailyReports, setDailyReports] = useState<DailyShiftReport[]>(initialDailyReports);
   const [notifications, setNotifications] = useState<AppNotification[]>(initialNotifications);
+  const [isDayClosed, setIsDayClosed] = useState<boolean>(false);
+  const [activeDayLabel, setActiveDayLabel] = useState<string>(new Date().toISOString().split("T")[0]);
   const [isHydrated, setIsHydrated] = useState<boolean>(false);
 
   // Restore persisted store data from localStorage on mount
   useEffect(() => {
     try {
-      const savedStore = localStorage.getItem("tradepos_store_data_v1");
+      const savedStore = localStorage.getItem("tradepos_store_data_v2");
       if (savedStore) {
         const parsed = JSON.parse(savedStore);
         if (Array.isArray(parsed.products) && parsed.products.length > 0) setProducts(parsed.products);
@@ -804,6 +803,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         if (Array.isArray(parsed.stockMovements)) setStockMovements(parsed.stockMovements);
         if (Array.isArray(parsed.employees) && parsed.employees.length > 0) setEmployees(parsed.employees);
         if (Array.isArray(parsed.dailyReports)) setDailyReports(parsed.dailyReports);
+        if (typeof parsed.isDayClosed === "boolean") setIsDayClosed(parsed.isDayClosed);
+        if (typeof parsed.activeDayLabel === "string") setActiveDayLabel(parsed.activeDayLabel);
       }
     } catch (e) {}
     setIsHydrated(true);
@@ -814,7 +815,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     if (!isHydrated) return;
     try {
       localStorage.setItem(
-        "tradepos_store_data_v1",
+        "tradepos_store_data_v2",
         JSON.stringify({
           products,
           sales,
@@ -825,10 +826,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           stockMovements,
           employees,
           dailyReports,
+          isDayClosed,
+          activeDayLabel,
         })
       );
     } catch (e) {}
-  }, [isHydrated, products, sales, customers, expenses, onlineOrders, cashRegister, stockMovements, employees, dailyReports]);
+  }, [isHydrated, products, sales, customers, expenses, onlineOrders, cashRegister, stockMovements, employees, dailyReports, isDayClosed, activeDayLabel]);
   
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>([
     {
@@ -1058,8 +1061,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       branchName: currentBranch?.name || "Kariakoo Branch (HQ)",
       submittedBy: user?.name || "Baraka Mushi",
       staffRole: user?.role || "CASHIER",
-      submittedAt: `${now.toISOString().split("T")[0]} ${now.toTimeString().slice(0, 5)}`,
-      date: now.toISOString().split("T")[0],
+      submittedAt: `${activeDayLabel} ${now.toTimeString().slice(0, 5)}`,
+      date: activeDayLabel,
       totalSales: totalSalesVal,
       cashSales: cashSalesVal,
       mobileSales: mobileSalesVal,
@@ -1070,7 +1073,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       variance: varianceVal,
       totalUnitsSold: totalUnits,
       soldItems: soldItemsList,
-      dailyExpenses: expenses.slice(0, 10).map((e) => ({
+      dailyExpenses: expenses.slice(0, 20).map((e) => ({
         category: e.category,
         description: e.title || e.description || e.category,
         amount: e.amount,
@@ -1088,25 +1091,48 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           unit: p.unit,
         })),
       },
-      notes: notes || "Mahesabu ya siku na stoo iliyobaki yamekaguliwa na kutumwa kwa Mwenye Duka.",
+      notes:
+        notes ||
+        "Siku imefungwa (Funga Mauzo): Mahesabu ya mauzo, matumizi ya leo na stoo iliyobaki yametumwa automatically kwa Boss.",
       status: "PENDING_REVIEW",
     };
 
     setDailyReports((prev) => [newReport, ...prev]);
+    setIsDayClosed(true);
 
     // Notify Owner immediately
     const newNotif: AppNotification = {
       id: "notif-" + Date.now(),
-      title: `Ripoti ya Siku: ${newReport.submittedBy}`,
+      title: `Siku Imefungwa (${activeDayLabel}) - ${newReport.submittedBy}`,
       message: `Mauzo: TZS ${totalSalesVal.toLocaleString()} | Matumizi: TZS ${totalExpensesVal.toLocaleString()} | Stoo Iliyobaki: ${totalUnitsInStore} pcs`,
       type: "SYSTEM",
       timestamp: "Sasa hivi",
       read: false,
-      actionUrl: "dashboard",
+      actionUrl: "cash-register",
     };
     setNotifications((prev) => [newNotif, ...prev]);
 
     return newReport;
+  };
+
+  const closeDayAndSendToBoss = (notes?: string) => {
+    return submitDailyReport(notes);
+  };
+
+  const startNewDay = () => {
+    // Advance activeDayLabel by 1 day or set to today and reset active shift's sales & expenses to 0
+    const nextDate = new Date();
+    setActiveDayLabel(nextDate.toISOString().split("T")[0]);
+    setSales([]);
+    setExpenses([]);
+    setIsDayClosed(false);
+    setCashRegister((prev) => ({
+      ...prev,
+      cashSales: 0,
+      cashExpenses: 0,
+      isOpen: true,
+      openedAt: `${nextDate.toISOString().split("T")[0]} 08:00 AM`,
+    }));
   };
 
   const approveDailyReport = (reportId: string) => {
@@ -1527,6 +1553,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         addEmployee,
         switchEmployeeAccount,
         submitDailyReport,
+        closeDayAndSendToBoss,
+        startNewDay,
+        isDayClosed,
+        activeDayLabel,
         approveDailyReport,
         addProduct,
         updateProduct,

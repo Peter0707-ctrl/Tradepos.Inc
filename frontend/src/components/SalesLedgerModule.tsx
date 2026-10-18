@@ -6,23 +6,28 @@ import {
   ShoppingBag,
   PlusCircle,
   Search,
-  UserCheck,
   RotateCcw,
-  Calculator
+  Calculator,
+  Send,
+  CheckCircle2,
+  Calendar
 } from "lucide-react";
 
 export const SalesLedgerModule: React.FC = () => {
   const {
     user,
-    employees,
-    switchEmployeeAccount,
     sales,
+    expenses,
     processSale,
     refundSale,
     products,
     addProduct,
     currentBranch,
     language,
+    closeDayAndSendToBoss,
+    startNewDay,
+    isDayClosed,
+    activeDayLabel,
   } = useApp();
 
   const [search, setSearch] = useState("");
@@ -34,6 +39,9 @@ export const SalesLedgerModule: React.FC = () => {
   const [unitPrice, setUnitPrice] = useState("");
   const [paymentMethod, setPaymentMethod] = useState<"CASH" | "MPESA" | "CREDIT">("CASH");
   const [customerName, setCustomerName] = useState("");
+  const [justClosedReport, setJustClosedReport] = useState<boolean>(false);
+
+  const isOwner = !user || user.role === "OWNER" || user.role === "SUPER_ADMIN";
 
   // Automatic calculation preview for current form input
   const parsedQty = parseInt(qty) || 0;
@@ -44,7 +52,7 @@ export const SalesLedgerModule: React.FC = () => {
     parseFloat(unitPrice) || (matchedProduct ? matchedProduct.sellingPrice : 0);
   const autoLineTotal = parsedQty * parsedUnitPrice;
 
-  // Automatic System Calculations across all valid sales
+  // Automatic System Calculations across all valid sales of the active day
   const validSales = sales.filter((s) => s.status !== "REFUNDED");
   const totalSalesAmount = validSales.reduce((acc, s) => acc + s.total, 0);
   const totalCashSales = validSales
@@ -61,6 +69,9 @@ export const SalesLedgerModule: React.FC = () => {
     (acc, s) => acc + s.items.reduce((sum, i) => sum + i.quantity, 0),
     0
   );
+
+  const totalExpensesToday = expenses.reduce((acc, e) => acc + e.amount, 0);
+  const totalStoreStockRemaining = products.reduce((acc, p) => acc + p.stockQuantity, 0);
 
   const filteredSales = validSales.filter((s) => {
     const itemsText = s.items.map((i) => i.productName).join(" ").toLowerCase();
@@ -132,6 +143,12 @@ export const SalesLedgerModule: React.FC = () => {
     setQty("1");
     setUnitPrice("");
     setCustomerName("");
+    setJustClosedReport(false);
+  };
+
+  const handleCloseDaySales = () => {
+    closeDayAndSendToBoss();
+    setJustClosedReport(true);
   };
 
   return (
@@ -145,45 +162,81 @@ export const SalesLedgerModule: React.FC = () => {
         ))}
       </datalist>
 
-      {/* Top Header */}
+      {/* Top Header + "Funga Mauzo ya Siku" Action */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <div className="flex flex-wrap items-center gap-2">
             <h2 className="text-xl font-black text-[#162709] tracking-tight">
               {language === "sw"
-                ? "2. Mauzo ya Siku (Mfanyakazi Anaandika & Owner Anaona Mauzo)"
-                : "2. Daily Sales (Staff Entry & Owner Live View)"}
+                ? isOwner
+                  ? "2. Mauzo ya Siku (Owner Anaona Mauzo & Hesabu Auto)"
+                  : "1. Mauzo ya Leo (Andika Mauzo Manually & Hesabu Auto)"
+                : "Daily Sales (Manual Entry & Automatic Calculation)"}
             </h2>
-            <span className="px-2.5 py-0.5 rounded-full text-[11px] font-black bg-[#E1FFAC] text-[#172B08] border border-[#9CE034]">
-              {user?.role === "OWNER"
-                ? "Mwonekano wa Mwenye Duka"
-                : `Mfanyakazi: ${user?.name}`}
+            <span className="px-2.5 py-0.5 rounded-full text-[11px] font-black bg-[#E1FFAC] text-[#172B08] border border-[#9CE034] flex items-center gap-1">
+              <Calendar className="w-3 h-3" />
+              <span>Siku: {activeDayLabel}</span>
             </span>
           </div>
           <p className="text-xs text-[#526848] mt-0.5">
             {language === "sw"
-              ? "Andika bidhaa iliyouzwa na idadi yake; mfumo unapiga mahesabu ya jumla na kupunguza stoo automatically."
-              : "Type the product sold and quantity; the system calculates totals and deducts store stock automatically."}
+              ? "Andika bidhaa iliyouzwa na idadi yake hapa chini; mfumo unapiga jumla ya pesa na kupunguza stoo automatically. Ukibonyeza 'Funga Mauzo ya Siku', siku inaisha na hesabu zote zinakwenda kwa Boss automatically."
+              : "Type the item sold and quantity; the system calculates totals automatically. Click 'Close Day Sales' to end the day and send the report to the Boss."}
           </p>
         </div>
 
-        {/* Account Switcher to test Owner vs Staff */}
-        <div className="flex items-center gap-1.5 bg-white px-3 py-1.5 rounded-xl border border-[#D4E4C3] shadow-xs text-xs self-start sm:self-auto">
-          <UserCheck className="w-3.5 h-3.5 text-[#3F6315]" />
-          <span className="font-bold text-[#4D6340]">Akaunti:</span>
-          <select
-            value={user?.id || "emp-01"}
-            onChange={(e) => switchEmployeeAccount(e.target.value)}
-            className="font-black text-[#162808] bg-transparent focus:outline-none cursor-pointer"
-          >
-            {employees.map((emp) => (
-              <option key={emp.id} value={emp.id}>
-                {emp.name} ({emp.role === "OWNER" ? "Mwenye Duka" : emp.role})
-              </option>
-            ))}
-          </select>
+        {/* Prominent "Funga Mauzo ya Siku" Button */}
+        <div className="flex items-center gap-2 shrink-0">
+          {!isDayClosed ? (
+            <button
+              onClick={handleCloseDaySales}
+              className="px-4 py-2.5 rounded-xl bg-[#1B2F09] hover:bg-[#27430D] text-[#E1FFAC] border-2 border-[#A6DF52] text-xs font-black flex items-center gap-2 shadow-md transition cursor-pointer"
+            >
+              <Send className="w-4 h-4" />
+              <span>Funga Mauzo ya Siku (Tuma kwa Boss Auto)</span>
+            </button>
+          ) : (
+            <button
+              onClick={() => {
+                startNewDay();
+                setJustClosedReport(false);
+              }}
+              className="px-4 py-2.5 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-black flex items-center gap-2 shadow-md transition cursor-pointer"
+            >
+              <CheckCircle2 className="w-4 h-4" />
+              <span>Fungua Siku Mpya (Anza Siku Mpya 0)</span>
+            </button>
+          )}
         </div>
       </div>
+
+      {/* BANNER WHEN "FUNGA MAUZO YA SIKU" IS CLICKED (DAY ENDED & SENT TO BOSS AUTOMATICALLY) */}
+      {(isDayClosed || justClosedReport) && (
+        <div className="p-4 rounded-2xl bg-emerald-950 text-[#E1FFAC] border-2 border-[#A6DF52] flex flex-col lg:flex-row lg:items-center justify-between gap-3 text-xs shadow-md">
+          <div className="space-y-1">
+            <div className="font-black text-sm flex items-center gap-2">
+              <CheckCircle2 className="w-4 h-4 text-[#A6DF52]" />
+              <span>
+                SIKU IMEFUNGWA ({activeDayLabel}) — HESABU IMETUMWA KWA BOSS AUTOMATICALLY!
+              </span>
+            </div>
+            <p className="text-emerald-100/90">
+              Muhtasari uliotumwa kwa Mwenye Duka: <strong>Mauzo ya Leo: TZS {totalSalesAmount.toLocaleString()}</strong> ({totalUnitsSold} pcs) |{" "}
+              <strong>Matumizi ya Leo: TZS {totalExpensesToday.toLocaleString()}</strong> |{" "}
+              <strong>Stoo Iliyobaki: {totalStoreStockRemaining} pcs</strong>.
+            </p>
+          </div>
+          <button
+            onClick={() => {
+              startNewDay();
+              setJustClosedReport(false);
+            }}
+            className="px-4 py-2 rounded-xl bg-[#E1FFAC] text-[#162708] font-black text-xs shrink-0 hover:bg-white transition cursor-pointer"
+          >
+            Anza Siku Mpya (Weka Mauzo & Matumizi 0)
+          </button>
+        </div>
+      )}
 
       {/* 4 AUTOMATIC CALCULATION SUMMARY CARDS */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
@@ -207,7 +260,7 @@ export const SalesLedgerModule: React.FC = () => {
             TZS {totalCashSales.toLocaleString()}
           </p>
           <span className="text-[11px] text-[#69825B] font-bold">
-            Pesa taslimu iliyoingia drooni
+            Pesa taslimu iliyoingia drooni leo
           </span>
         </div>
 
@@ -219,33 +272,33 @@ export const SalesLedgerModule: React.FC = () => {
             TZS {totalMobileSales.toLocaleString()}
           </p>
           <span className="text-[11px] text-[#69825B] font-bold">
-            Malipo ya Lipa Namba / Simu
+            Malipo ya Lipa Namba / Simu leo
           </span>
         </div>
 
         <div className="p-3.5 rounded-2xl bg-white border border-[#D8E6CC] shadow-xs">
           <span className="text-xs font-bold text-[#566E49] block">
-            Mauzo ya Mkopo (Madeni)
+            Mauzo ya Mkopo (Madeni ya Leo)
           </span>
           <p className="text-xl font-black text-amber-700 mt-0.5">
             TZS {totalCreditSales.toLocaleString()}
           </p>
           <span className="text-[11px] text-amber-800 font-bold">
-            Inaingia kwenye Wateja & Madeni
+            Inaingia kwenye Wateja & Madeni auto
           </span>
         </div>
       </div>
 
-      {/* MAIN WORKSPACE: LEFT = ENTER TODAY'S SALES | RIGHT = LIVE SALES TABLE FOR OWNER & STAFF */}
+      {/* MAIN WORKSPACE: LEFT = ENTER TODAY'S SALES | RIGHT = LIVE SALES TABLE */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 flex-1">
         {/* Left: Enter Today's Sales Form */}
         <div className="bg-white rounded-2xl border-2 border-[#BFE973] p-4 shadow-xs h-fit">
           <h3 className="font-black text-sm text-[#162709] mb-1 flex items-center gap-1.5">
             <PlusCircle className="w-4 h-4 text-[#3A6112]" />
-            <span>Andika Mauzo ya Leo</span>
+            <span>Andika Mauzo ya Leo (Manual)</span>
           </h3>
           <p className="text-[11px] text-[#5B714F] mb-3">
-            Andika jina la bidhaa uliyouza na idadi yake. Mfumo utapiga jumla ya pesa na kupunguza stoo moja kwa moja.
+            Andika jina la bidhaa uliyouza na idadi yake. Mfumo unakupigia hesabu ya jumla na kupunguza stoo moja kwa moja.
           </p>
 
           <form onSubmit={handleRecordSale} className="space-y-3 text-xs">
@@ -357,21 +410,21 @@ export const SalesLedgerModule: React.FC = () => {
               type="submit"
               className="w-full py-3 rounded-xl neu-btn font-black text-xs uppercase tracking-wider cursor-pointer"
             >
-              + Hifadhi Mauzo ya Sasa
+              + Hifadhi Mauzo ya Leo
             </button>
           </form>
         </div>
 
-        {/* Right: Owner & Staff Live Sales Table */}
+        {/* Right: Live Sales Table */}
         <div className="lg:col-span-2 bg-white rounded-2xl border border-[#D8E6CC] p-4 shadow-xs flex flex-col">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-[#EBF2E2]">
             <div>
               <h3 className="font-black text-sm text-[#162709] flex items-center gap-1.5">
                 <ShoppingBag className="w-4 h-4 text-[#233F0D]" />
-                <span>Orodha ya Mauzo ya Leo (Owner & Mfanyakazi)</span>
+                <span>Orodha ya Mauzo ya Siku ({activeDayLabel})</span>
               </h3>
               <p className="text-[11px] text-[#546949]">
-                Kila bidhaa iliyouzwa, idadi, bei, aliyeuza na jumla iliyopigwa na mfumo.
+                Kila bidhaa iliyouzwa leo, idadi, malipo na jumla iliyopigwa na mfumo.
               </p>
             </div>
 
@@ -416,7 +469,7 @@ export const SalesLedgerModule: React.FC = () => {
                 {filteredSales.length === 0 ? (
                   <tr>
                     <td colSpan={7} className="py-8 text-center text-gray-400">
-                      Hakuna mauzo yaliyoandikwa bado. Tumia fomu ya kushoto kuandika mauzo ya leo.
+                      Siku hii haina mauzo bado (TZS 0). Tumia fomu ya kushoto kuandika mauzo ya leo.
                     </td>
                   </tr>
                 ) : (

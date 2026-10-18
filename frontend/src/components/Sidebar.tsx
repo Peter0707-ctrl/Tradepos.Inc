@@ -9,9 +9,7 @@ import {
   Truck,
   Users,
   DollarSign,
-  Calculator,
   UserCheck,
-  BarChart3,
   Sparkles,
   Bell,
   Settings,
@@ -21,7 +19,10 @@ import {
   ChevronLeft,
   ChevronRight,
   ShieldAlert,
-  TrendingUp
+  TrendingUp,
+  Lock,
+  CheckCircle2,
+  Send
 } from "lucide-react";
 
 interface SidebarProps {
@@ -38,67 +39,95 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeModule, setActiveModule,
     setIsAiModalOpen,
     unreadNotificationCount,
     dailyReports,
+    employees,
     switchEmployeeAccount,
+    closeDayAndSendToBoss,
+    isDayClosed,
+    startNewDay,
   } = useApp();
+
   const [collapsed, setCollapsed] = useState(false);
+  const [isPinModalOpen, setIsPinModalOpen] = useState(false);
+  const [pinInput, setPinInput] = useState("");
+  const [pinError, setPinError] = useState("");
 
   const isSuperAdmin = user?.role === "SUPER_ADMIN";
   const isOwner = !user || user.role === "OWNER" || isSuperAdmin;
   const pendingReportsCount = (dailyReports || []).filter((r) => r.status === "PENDING_REVIEW").length;
 
-  // EXACT SIDEBAR ORDER REQUESTED BY USER:
-  // 1. Dashibodi Kuu (dashboard)
-  // 2. Mauzo ya Siku (sales) — Owner anaona mauzo & Mfanyakazi anaandika mauzo ya leo, mfumo unapiga mahesabu automatically
-  // 3. Matumizi ya Siku (expenses) — Anaweka matumizi ya siku hiyo
-  // 4. Stoo & Bidhaa (inventory) — Store stock kuweka na kutoa + hesabu ya Bando/Katoni vs Mauzo
-  // 5. Ufuatiliaji wa Delivery (deliveries) — Kutrack delivery
-  // 6. Wateja & Madeni (customers) — Kurekodi deni la mteja na jina
-  // 7. Ripoti za Siku: Faida & Hasara (cash-register) — Kuonyesha faida na hasara ya kila siku
-  const mainDailyWorkflowNav: { id: string; label: string; icon: any; badge?: string }[] = [
-    ...(isOwner
-      ? [
-          {
-            id: "dashboard",
-            label: language === "sw" ? "1. Dashibodi Kuu" : "1. Main Dashboard",
-            icon: Store,
-          },
-        ]
-      : []),
-    {
-      id: "sales",
-      label: language === "sw" ? "2. Mauzo ya Siku" : "2. Daily Sales",
-      icon: ShoppingBag,
-      badge: "AUTO",
-    },
-    {
-      id: "expenses",
-      label: language === "sw" ? "3. Matumizi ya Siku" : "3. Daily Expenses",
-      icon: DollarSign,
-    },
-    {
-      id: "inventory",
-      label: language === "sw" ? "4. Stoo & Bidhaa (Store)" : "4. Store Stock (IN/OUT)",
-      icon: Layers,
-    },
-    {
-      id: "deliveries",
-      label: language === "sw" ? "5. Kutrack Delivery" : "5. Track Deliveries",
-      icon: Truck,
-    },
-    {
-      id: "customers",
-      label: language === "sw" ? "6. Wateja & Madeni" : "6. Customers & Debts",
-      icon: Users,
-    },
-    {
-      id: "cash-register",
-      label: language === "sw" ? "7. Ripoti za Siku (Faida & Hasara)" : "7. Daily Reports (Profit & Loss)",
-      icon: TrendingUp,
-      badge: pendingReportsCount > 0 ? String(pendingReportsCount) : undefined,
-    },
-  ];
+  // SEPARATE SIDEBAR BUTTONS FOR OWNER VS SELLERS (STRICT PRIVACY):
+  // - Owner sees all 7 sections (including Dashibodi Kuu & Ripoti za Faida na Hasara)
+  // - Sellers ONLY see their separate daily task buttons (1. Mauzo ya Leo, 2. Matumizi ya Leo, 3. Stoo & Bidhaa, 4. Kutrack Delivery, 5. Wateja & Madeni)
+  const mainDailyWorkflowNav: { id: string; label: string; icon: any; badge?: string }[] = isOwner
+    ? [
+        {
+          id: "dashboard",
+          label: language === "sw" ? "1. Dashibodi Kuu" : "1. Main Dashboard",
+          icon: Store,
+        },
+        {
+          id: "sales",
+          label: language === "sw" ? "2. Mauzo ya Siku" : "2. Daily Sales",
+          icon: ShoppingBag,
+          badge: "AUTO",
+        },
+        {
+          id: "expenses",
+          label: language === "sw" ? "3. Matumizi ya Siku" : "3. Daily Expenses",
+          icon: DollarSign,
+        },
+        {
+          id: "inventory",
+          label: language === "sw" ? "4. Stoo & Bidhaa (Store)" : "4. Store Stock (IN/OUT)",
+          icon: Layers,
+        },
+        {
+          id: "deliveries",
+          label: language === "sw" ? "5. Kutrack Delivery" : "5. Track Deliveries",
+          icon: Truck,
+        },
+        {
+          id: "customers",
+          label: language === "sw" ? "6. Wateja & Madeni" : "6. Customers & Debts",
+          icon: Users,
+        },
+        {
+          id: "cash-register",
+          label: language === "sw" ? "7. Ripoti za Siku (Faida & Hasara)" : "7. Daily Reports (Profit & Loss)",
+          icon: TrendingUp,
+          badge: pendingReportsCount > 0 ? String(pendingReportsCount) : undefined,
+        },
+      ]
+    : [
+        {
+          id: "sales",
+          label: language === "sw" ? "1. Mauzo ya Leo" : "1. Today's Sales",
+          icon: ShoppingBag,
+          badge: "AUTO",
+        },
+        {
+          id: "expenses",
+          label: language === "sw" ? "2. Matumizi ya Leo" : "2. Today's Expenses",
+          icon: DollarSign,
+        },
+        {
+          id: "inventory",
+          label: language === "sw" ? "3. Stoo & Bidhaa (Store)" : "3. Store Stock (IN/OUT)",
+          icon: Layers,
+        },
+        {
+          id: "deliveries",
+          label: language === "sw" ? "4. Kutrack Delivery" : "4. Track Deliveries",
+          icon: Truck,
+        },
+        {
+          id: "customers",
+          label: language === "sw" ? "5. Wateja & Madeni" : "5. Customers & Debts",
+          icon: Users,
+        },
+      ];
 
-  // LOWER SECTION FOR OWNER: MANAGEMENT & SETTINGS
+  // LOWER SECTION FOR OWNER ONLY: MANAGEMENT & SETTINGS
   const lowUsageNav: { id: string; label: string; icon: any; badge?: string }[] = [
     { id: "employees", label: t.nav.employees, icon: UserCheck },
     { id: "ai-assistant", label: t.nav.aiAssistant, icon: Sparkles, badge: "AI" },
@@ -123,6 +152,21 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeModule, setActiveModule,
       return;
     }
     setActiveModule(id);
+  };
+
+  const handleVerifyOwnerPin = (e: React.FormEvent) => {
+    e.preventDefault();
+    const ownerAcc = employees.find((emp) => emp.role === "OWNER");
+    const expectedPin = ownerAcc?.pin || "1234";
+    if (pinInput.trim() === expectedPin) {
+      switchEmployeeAccount(ownerAcc?.id || "emp-01");
+      setActiveModule("dashboard");
+      setIsPinModalOpen(false);
+      setPinInput("");
+      setPinError("");
+    } else {
+      setPinError("PIN si sahihi! Ingiza PIN ya Boss (1234).");
+    }
   };
 
   const renderNavItem = (item: { id: string; label: string; icon: any; badge?: string }) => {
@@ -159,106 +203,205 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeModule, setActiveModule,
   };
 
   return (
-    <aside
-      className={`bg-[#F4F7EE] border-r border-[#D8E6CC] flex flex-col justify-between h-screen shrink-0 select-none shadow-xs transition-all duration-300 ${
-        collapsed ? "w-20" : "w-64"
-      }`}
-    >
-      {/* Brand & Collapse Header */}
-      <div>
-        <div className="p-4 border-b border-[#D8E6CC] flex items-center justify-between">
-          {!collapsed ? (
-            <div className="flex items-center gap-2.5">
-              <div className="w-9 h-9 rounded-xl bg-[#E1FFAC] border border-[#A6DF52] flex items-center justify-center text-[#182C08] shadow-xs">
+    <>
+      <aside
+        className={`bg-[#F4F7EE] border-r border-[#D8E6CC] flex flex-col justify-between h-screen shrink-0 select-none shadow-xs transition-all duration-300 ${
+          collapsed ? "w-20" : "w-64"
+        }`}
+      >
+        {/* Brand & Collapse Header */}
+        <div>
+          <div className="p-4 border-b border-[#D8E6CC] flex items-center justify-between">
+            {!collapsed ? (
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-[#E1FFAC] border border-[#A6DF52] flex items-center justify-center text-[#182C08] shadow-xs">
+                  <ShoppingBag className="w-5 h-5" />
+                </div>
+                <div>
+                  <h2 className="text-sm font-black text-[#152508] tracking-tight">TradePOS</h2>
+                  <span className="text-[10px] font-bold text-[#556D48] uppercase tracking-wider block">
+                    {isOwner ? "Mwenye Duka (Boss)" : `Muuzaji: ${user?.name}`}
+                  </span>
+                </div>
+              </div>
+            ) : (
+              <div className="w-9 h-9 rounded-xl bg-[#E1FFAC] border border-[#A6DF52] flex items-center justify-center text-[#182C08] mx-auto shadow-xs">
                 <ShoppingBag className="w-5 h-5" />
               </div>
-              <div>
-                <h2 className="text-sm font-black text-[#152508] tracking-tight">TradePOS</h2>
-                <span className="text-[10px] font-bold text-[#556D48] uppercase tracking-wider block">
-                  {isOwner ? "Mwenye Duka" : `${user?.role}`}
-                </span>
-              </div>
-            </div>
-          ) : (
-            <div className="w-9 h-9 rounded-xl bg-[#E1FFAC] border border-[#A6DF52] flex items-center justify-center text-[#182C08] mx-auto shadow-xs">
-              <ShoppingBag className="w-5 h-5" />
-            </div>
-          )}
+            )}
 
-          <button
-            onClick={() => setCollapsed(!collapsed)}
-            className="w-7 h-7 rounded-lg bg-white border border-[#D5E5C4] hover:bg-[#F2F7EB] flex items-center justify-center text-[#3B5424] transition hidden md:flex"
-            title={collapsed ? "Expand Sidebar" : "Collapse Sidebar"}
-          >
-            {collapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
-          </button>
+            <button
+              onClick={() => setCollapsed(!collapsed)}
+              className="w-7 h-7 rounded-lg bg-white border border-[#D5E5C4] hover:bg-[#F2F7EB] flex items-center justify-center text-[#3B5424] transition hidden md:flex"
+              title={collapsed ? "Expand Sidebar" : "Collapse Sidebar"}
+            >
+              {collapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
+            </button>
+          </div>
+
+          {/* Scrollable Navigation Items */}
+          <div className="overflow-y-auto max-h-[calc(100vh-230px)] p-2.5 space-y-1">
+            <div className="px-2 py-1 text-[10px] font-extrabold text-[#4E683D] uppercase tracking-wider">
+              {!collapsed
+                ? isOwner
+                  ? language === "sw"
+                    ? "Mtiririko wa Biashara (Owner)"
+                    : "Owner Business Workflow"
+                  : language === "sw"
+                  ? "Sehemu za Muuzaji Kila Siku"
+                  : "Seller Daily Tasks"
+                : "•"}
+            </div>
+            {mainDailyWorkflowNav.map(renderNavItem)}
+
+            {isOwner && (
+              <>
+                <div className="pt-2 px-2 pb-1 text-[10px] font-extrabold text-[#6E8560] uppercase tracking-wider border-t border-[#DDE9D1] mt-2">
+                  {!collapsed ? (language === "sw" ? "Usimamizi wa Boss" : "Owner Management") : "•"}
+                </div>
+                {lowUsageNav.map(renderNavItem)}
+              </>
+            )}
+          </div>
         </div>
 
-        {/* Scrollable Navigation Items */}
-        <div className="overflow-y-auto max-h-[calc(100vh-170px)] p-2.5 space-y-1">
-          <div className="px-2 py-1 text-[10px] font-extrabold text-[#4E683D] uppercase tracking-wider">
-            {!collapsed
-              ? isOwner
-                ? language === "sw"
-                  ? "Mtiririko wa Biashara Kila Siku"
-                  : "Daily Business Workflow"
-                : language === "sw"
-                ? "Kazi za Mfanyakazi Kila Siku"
-                : "Daily Staff Workflow"
-              : "•"}
-          </div>
-          {mainDailyWorkflowNav.map(renderNavItem)}
-
-          {isOwner && (
+        {/* Footer Controls: Funga Mauzo ya Siku + Protected Switch Owner/Staff & Logout */}
+        <div className="p-3 border-t border-[#D8E6CC] bg-[#EDF3E4] space-y-1.5">
+          {!collapsed && (
             <>
-              <div className="pt-2 px-2 pb-1 text-[10px] font-extrabold text-[#6E8560] uppercase tracking-wider border-t border-[#DDE9D1] mt-2">
-                {!collapsed ? (language === "sw" ? "Usimamizi & Mipangilio" : "Management & Setup") : "•"}
-              </div>
-              {lowUsageNav.map(renderNavItem)}
+              {/* Quick "Funga Mauzo ya Siku" button so Seller/Owner can end the day and auto-send to Boss */}
+              {!isDayClosed ? (
+                <button
+                  onClick={() => {
+                    closeDayAndSendToBoss();
+                  }}
+                  className="w-full flex items-center justify-center gap-1.5 px-2.5 py-2 rounded-xl text-[11px] font-black bg-[#1B2F09] hover:bg-[#26420D] text-[#E1FFAC] border border-[#8ECE28] transition cursor-pointer shadow-xs"
+                >
+                  <Send className="w-3.5 h-3.5" />
+                  <span>Funga Mauzo ya Siku (End Day)</span>
+                </button>
+              ) : (
+                <button
+                  onClick={() => {
+                    startNewDay();
+                    setActiveModule("sales");
+                  }}
+                  className="w-full flex items-center justify-center gap-1.5 px-2.5 py-2 rounded-xl text-[11px] font-black bg-emerald-700 hover:bg-emerald-800 text-white transition cursor-pointer shadow-xs"
+                >
+                  <CheckCircle2 className="w-3.5 h-3.5" />
+                  <span>Siku Imefungwa • Anza Siku Mpya</span>
+                </button>
+              )}
+
+              <button
+                onClick={() => {
+                  if (isOwner) {
+                    switchEmployeeAccount("emp-02");
+                    setActiveModule("sales");
+                  } else {
+                    setPinInput("");
+                    setPinError("");
+                    setIsPinModalOpen(true);
+                  }
+                }}
+                className="w-full flex items-center justify-center gap-1.5 px-2.5 py-1.5 rounded-xl text-[11px] font-black bg-white hover:bg-[#E1FFAC] text-[#182C08] border border-[#C6DDA8] transition cursor-pointer"
+              >
+                {isOwner ? (
+                  <UserCheck className="w-3.5 h-3.5 text-[#3F6315]" />
+                ) : (
+                  <Lock className="w-3.5 h-3.5 text-[#3F6315]" />
+                )}
+                <span>
+                  {isOwner
+                    ? language === "sw"
+                      ? "Jaribu Akaunti ya Muuzaji"
+                      : "Switch to Seller View"
+                    : language === "sw"
+                    ? "Ingia Akaunti ya Boss (PIN)"
+                    : "Boss Account (PIN)"}
+                </span>
+              </button>
             </>
           )}
-        </div>
-      </div>
 
-      {/* Footer Controls: Quick Switch Owner/Staff & Logout */}
-      <div className="p-3 border-t border-[#D8E6CC] bg-[#EDF3E4] space-y-1.5">
-        {!collapsed && (
           <button
-            onClick={() => {
-              if (isOwner) {
-                switchEmployeeAccount("emp-02");
-                setActiveModule("sales");
-              } else {
-                switchEmployeeAccount("emp-01");
-                setActiveModule("dashboard");
-              }
-            }}
-            className="w-full flex items-center justify-center gap-1.5 px-2.5 py-1.5 rounded-xl text-[11px] font-black bg-white hover:bg-[#E1FFAC] text-[#182C08] border border-[#C6DDA8] transition cursor-pointer"
+            onClick={onLogout}
+            title={collapsed ? (language === "sw" ? "Toka Nje" : "Sign Out") : undefined}
+            className={`w-full flex items-center ${
+              collapsed ? "justify-center" : "gap-2.5 px-3"
+            } py-2 rounded-xl text-xs font-bold text-rose-700 hover:bg-rose-50 transition cursor-pointer`}
           >
-            <UserCheck className="w-3.5 h-3.5 text-[#3F6315]" />
-            <span>
-              {isOwner
-                ? language === "sw"
-                  ? "Jaribu Akaunti ya Mfanyakazi"
-                  : "Switch to Staff View"
-                : language === "sw"
-                ? "Rudi Akaunti ya Mwenye Duka"
-                : "Back to Owner View"}
-            </span>
+            <LogOut className="w-4 h-4 shrink-0" />
+            {!collapsed && <span>{language === "sw" ? "Toka Nje" : "Sign Out"}</span>}
           </button>
-        )}
+        </div>
+      </aside>
 
-        <button
-          onClick={onLogout}
-          title={collapsed ? (language === "sw" ? "Toka Nje" : "Sign Out") : undefined}
-          className={`w-full flex items-center ${
-            collapsed ? "justify-center" : "gap-2.5 px-3"
-          } py-2 rounded-xl text-xs font-bold text-rose-700 hover:bg-rose-50 transition cursor-pointer`}
-        >
-          <LogOut className="w-4 h-4 shrink-0" />
-          {!collapsed && <span>{language === "sw" ? "Toka Nje" : "Sign Out"}</span>}
-        </button>
-      </div>
-    </aside>
+      {/* BOSS PIN PRIVACY MODAL WHEN SWITCHING FROM SELLER TO OWNER */}
+      {isPinModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4">
+          <div className="w-full max-w-sm bg-white rounded-3xl p-6 border-2 border-[#BFE973] shadow-2xl animate-slide-up">
+            <div className="flex items-center gap-2.5 mb-2">
+              <div className="w-9 h-9 rounded-xl bg-[#E1FFAC] border border-[#9CE034] flex items-center justify-center text-[#182C08]">
+                <Lock className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="text-sm font-black text-[#162709]">
+                  Ulinzi wa Akaunti ya Mwenye Duka (Boss)
+                </h3>
+                <p className="text-[11px] text-[#5B714F]">
+                  Wauzaji hawawezi kuona faida na ripoti za Boss bila PIN.
+                </p>
+              </div>
+            </div>
+
+            <form onSubmit={handleVerifyOwnerPin} className="space-y-3 mt-3 text-xs">
+              <div>
+                <label className="block font-bold text-[#334A26] mb-1">
+                  Ingiza PIN ya Siri ya Boss (Tarakimu 4):
+                </label>
+                <input
+                  type="password"
+                  maxLength={4}
+                  autoFocus
+                  required
+                  value={pinInput}
+                  onChange={(e) => {
+                    setPinInput(e.target.value);
+                    setPinError("");
+                  }}
+                  placeholder="****"
+                  className="w-full py-2.5 px-3 rounded-xl neu-input text-center font-mono text-lg font-black tracking-widest"
+                />
+                <span className="block text-[10px] text-[#637B56] mt-1">
+                  Kwa majaribio (Demo), PIN ya Boss ni: <strong>1234</strong>
+                </span>
+                {pinError && (
+                  <span className="block text-[11px] font-bold text-rose-600 mt-1">
+                    {pinError}
+                  </span>
+                )}
+              </div>
+
+              <div className="flex gap-2 pt-1">
+                <button
+                  type="button"
+                  onClick={() => setIsPinModalOpen(false)}
+                  className="flex-1 py-2.5 rounded-xl neu-btn-secondary font-bold cursor-pointer"
+                >
+                  Ghairi
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 py-2.5 rounded-xl neu-btn font-black cursor-pointer"
+                >
+                  Fungua Akaunti ya Boss
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+    </>
   );
 };

@@ -82,6 +82,17 @@ function MainApp() {
   }, [user]);
 
   const isLoggedIn = !!user;
+  const isOwner = !user || user.role === "OWNER" || user.role === "SUPER_ADMIN";
+
+  // Strict privacy guard: Sellers never see Boss pages (dashboard, cash-register/reports, employees, settings, subscription)
+  const bossOnlyModules = ["dashboard", "cash-register", "reports", "employees", "settings", "subscription"];
+  const effectiveModule = !isOwner && bossOnlyModules.includes(activeModule) ? "sales" : activeModule;
+
+  React.useEffect(() => {
+    if (!isOwner && bossOnlyModules.includes(activeModule)) {
+      setActiveModule("sales");
+    }
+  }, [isOwner, activeModule]);
 
   const handleDemoLogin = () => {
     loginUser("peter@petercosmetics.co.tz");
@@ -95,18 +106,18 @@ function MainApp() {
   // Human readable title lookup
   const getModuleTitle = (mod: string) => {
     switch (mod) {
-      case "dashboard": return language === "sw" ? "1. Dashibodi Kuu ya Biashara" : t.titles.dashboard;
-      case "sales": return language === "sw" ? "2. Mauzo ya Siku (Andika Mauzo & Hesabu Auto)" : "2. Daily Sales & Auto Calculation";
+      case "dashboard": return language === "sw" ? "1. Dashibodi Kuu ya Biashara (Boss)" : t.titles.dashboard;
+      case "sales": return language === "sw" ? (isOwner ? "2. Mauzo ya Siku (Owner & Wafanyakazi)" : "1. Mauzo ya Leo (Andika Mauzo & Hesabu Auto)") : "Daily Sales & Auto Calculation";
       case "expenses":
-      case "accounting": return language === "sw" ? "3. Matumizi ya Siku Hiyo" : "3. Daily Shop Expenses";
+      case "accounting": return language === "sw" ? (isOwner ? "3. Matumizi ya Siku Hiyo" : "2. Matumizi ya Leo Dukani") : "Daily Shop Expenses";
       case "products":
-      case "inventory": return language === "sw" ? "4. Stoo & Bidhaa (Bando za Stoo vs Mauzo)" : "4. Store Stock & Bundle Reconciliation";
+      case "inventory": return language === "sw" ? (isOwner ? "4. Stoo & Bidhaa (Bando za Stoo vs Mauzo)" : "3. Stoo & Bidhaa (Weka & Toa Stock)") : "Store Stock & Bundle Reconciliation";
       case "deliveries":
       case "orders":
-      case "online-store": return language === "sw" ? "5. Ufuatiliaji wa Delivery za Wateja" : "5. Customer Delivery Tracking";
-      case "customers": return language === "sw" ? "6. Wateja & Daftari la Madeni" : "6. Customers & Debt Ledger";
+      case "online-store": return language === "sw" ? (isOwner ? "5. Ufuatiliaji wa Delivery za Wateja" : "4. Kutrack Delivery za Wateja") : "Customer Delivery Tracking";
+      case "customers": return language === "sw" ? (isOwner ? "6. Wateja & Daftari la Madeni" : "5. Wateja & Daftari la Madeni") : "Customers & Debt Ledger";
       case "cash-register":
-      case "reports": return language === "sw" ? "7. Ripoti za Siku: Faida na Hasara ya Kila Siku" : "7. Daily Reports: Profit & Loss";
+      case "reports": return language === "sw" ? "7. Ripoti za Siku: Faida na Hasara ya Kila Siku (Boss)" : "7. Daily Reports: Profit & Loss";
       case "purchases": return t.titles.purchases;
       case "suppliers": return t.titles.suppliers;
       case "employees": return t.titles.employees;
@@ -141,7 +152,7 @@ function MainApp() {
           onSuccess={() => {
             setAuthModal(null);
             setView("app");
-            setActiveModule(user?.role === "SUPER_ADMIN" ? "super-admin" : "dashboard");
+            setActiveModule(user?.role === "SUPER_ADMIN" ? "super-admin" : isOwner ? "dashboard" : "sales");
           }}
         />
       )}
@@ -162,7 +173,7 @@ function MainApp() {
           {/* DESKTOP FIXED SIDEBAR */}
           <div className="hidden md:flex">
             <Sidebar
-              activeModule={activeModule}
+              activeModule={effectiveModule}
               setActiveModule={setActiveModule}
               onLogout={() => {
                 logoutUser();
@@ -175,7 +186,7 @@ function MainApp() {
           <div className="flex-1 flex flex-col h-full min-w-0 overflow-hidden bg-[#F4F7EE]/95">
             {/* TOP HEADER */}
             <TopHeader
-              pageTitle={getModuleTitle(activeModule)}
+              pageTitle={getModuleTitle(effectiveModule)}
               onNavigate={(mod) => setActiveModule(mod)}
               onLogout={() => {
                 logoutUser();
@@ -185,27 +196,27 @@ function MainApp() {
 
             {/* CENTER BUSINESS WORKSPACE */}
             <main className="flex-1 overflow-hidden relative">
-              {(activeModule === "dashboard" || activeModule === "ai-assistant") && (
+              {isOwner && (effectiveModule === "dashboard" || effectiveModule === "ai-assistant") && (
                 <DashboardOverview onNavigate={(m) => setActiveModule(m)} />
               )}
-              {(activeModule === "sales" || activeModule === "pos") && <SalesLedgerModule />}
-              {(activeModule === "expenses" || activeModule === "accounting") && <ExpensesAccountingModule />}
-              {(activeModule === "products" || activeModule === "inventory") && <InventoryModule />}
-              {(activeModule === "online-store" || activeModule === "orders" || activeModule === "deliveries") && (
+              {(effectiveModule === "sales" || effectiveModule === "pos") && <SalesLedgerModule />}
+              {(effectiveModule === "expenses" || effectiveModule === "accounting") && <ExpensesAccountingModule />}
+              {(effectiveModule === "products" || effectiveModule === "inventory") && <InventoryModule />}
+              {(effectiveModule === "online-store" || effectiveModule === "orders" || effectiveModule === "deliveries") && (
                 <OnlineStoreDeliveriesModule />
               )}
-              {activeModule === "customers" && <CustomersModule />}
-              {(activeModule === "cash-register" || activeModule === "reports") && <CashRegisterModule />}
-              {(activeModule === "purchases" || activeModule === "suppliers") && <PurchasesSuppliersModule />}
-              {activeModule === "employees" && <EmployeesRolesModule onNavigate={(m) => setActiveModule(m)} />}
-              {(activeModule === "branches" || activeModule === "warehouses") && <MultiBranchWarehouseModule />}
-              {activeModule === "notifications" && <NotificationCenterModule onNavigate={(m) => setActiveModule(m)} />}
-              {activeModule === "settings" && <BusinessSettingsModule />}
-              {activeModule === "help" && <HelpSupportModule />}
-              {activeModule === "subscription" && <SubscriptionBillingModule />}
-              {activeModule === "profile" && <ProfileSecurityModule />}
-              {activeModule === "super-admin" && <SuperAdminPanel />}
-              {activeModule === "audit-logs" && <AuditLogsModule />}
+              {effectiveModule === "customers" && <CustomersModule />}
+              {isOwner && (effectiveModule === "cash-register" || effectiveModule === "reports") && <CashRegisterModule />}
+              {(effectiveModule === "purchases" || effectiveModule === "suppliers") && <PurchasesSuppliersModule />}
+              {isOwner && effectiveModule === "employees" && <EmployeesRolesModule onNavigate={(m) => setActiveModule(m)} />}
+              {(effectiveModule === "branches" || effectiveModule === "warehouses") && <MultiBranchWarehouseModule />}
+              {effectiveModule === "notifications" && <NotificationCenterModule onNavigate={(m) => setActiveModule(m)} />}
+              {isOwner && effectiveModule === "settings" && <BusinessSettingsModule />}
+              {effectiveModule === "help" && <HelpSupportModule />}
+              {isOwner && effectiveModule === "subscription" && <SubscriptionBillingModule />}
+              {effectiveModule === "profile" && <ProfileSecurityModule />}
+              {effectiveModule === "super-admin" && <SuperAdminPanel />}
+              {effectiveModule === "audit-logs" && <AuditLogsModule />}
             </main>
 
             {/* FLOATING ASK AI BUTTON */}
@@ -217,46 +228,48 @@ function MainApp() {
               <span>Ask AI</span>
             </button>
 
-            {/* MOBILE BOTTOM NAVIGATION BAR (ORDERED BY HIGHEST DAILY USAGE) */}
+            {/* MOBILE BOTTOM NAVIGATION BAR (SEPARATE BUTTONS FOR MAUZO, MATUMIZI, STOO, WATEJA) */}
             <div className="md:hidden h-14 bg-white border-t border-[#D8E6CC] px-2 flex items-center justify-around z-30 shrink-0">
+              {isOwner && (
+                <button
+                  onClick={() => setActiveModule("dashboard")}
+                  className={`flex flex-col items-center text-[10px] font-bold ${
+                    effectiveModule === "dashboard" ? "text-[#1C350A] font-black" : "text-[#627956]"
+                  }`}
+                >
+                  <Store className="w-4 h-4" />
+                  <span>Dashibodi</span>
+                </button>
+              )}
+
               <button
-                onClick={() => setActiveModule("dashboard")}
+                onClick={() => setActiveModule("sales")}
                 className={`flex flex-col items-center text-[10px] font-bold ${
-                  activeModule === "dashboard" ? "text-[#1C350A] font-black" : "text-[#627956]"
+                  effectiveModule === "sales" ? "text-[#1C350A] font-black" : "text-[#627956]"
                 }`}
               >
-                <Store className="w-4 h-4" />
-                <span>{t.nav.dashboard}</span>
+                <ShoppingBag className="w-4 h-4" />
+                <span>{language === "sw" ? "Mauzo" : "Sales"}</span>
               </button>
 
               <button
-                onClick={() => setActiveModule("cash-register")}
+                onClick={() => setActiveModule("expenses")}
                 className={`flex flex-col items-center text-[10px] font-bold ${
-                  activeModule === "cash-register" ? "text-[#1C350A] font-black" : "text-[#627956]"
+                  effectiveModule === "expenses" ? "text-[#1C350A] font-black" : "text-[#627956]"
                 }`}
               >
-                <Calculator className="w-4 h-4" />
-                <span>{language === "sw" ? "Hesabu ya Siku" : "Daily Shift"}</span>
+                <DollarSign className="w-4 h-4" />
+                <span>{language === "sw" ? "Matumizi" : "Expenses"}</span>
               </button>
 
               <button
                 onClick={() => setActiveModule("inventory")}
                 className={`flex flex-col items-center text-[10px] font-bold ${
-                  activeModule === "inventory" || activeModule === "products" ? "text-[#1C350A] font-black" : "text-[#627956]"
+                  effectiveModule === "inventory" || effectiveModule === "products" ? "text-[#1C350A] font-black" : "text-[#627956]"
                 }`}
               >
                 <Layers className="w-4 h-4" />
-                <span>{t.nav.inventory}</span>
-              </button>
-
-              <button
-                onClick={() => setActiveModule("customers")}
-                className={`flex flex-col items-center text-[10px] font-bold ${
-                  activeModule === "customers" ? "text-[#1C350A] font-black" : "text-[#627956]"
-                }`}
-              >
-                <Users className="w-4 h-4" />
-                <span>{t.nav.customers}</span>
+                <span>{language === "sw" ? "Stoo" : "Store"}</span>
               </button>
 
               <button
@@ -269,12 +282,12 @@ function MainApp() {
             </div>
           </div>
 
-          {/* MOBILE "MORE" DRAWER MODAL (ORDERED BY USAGE FREQUENCY) */}
+          {/* MOBILE "MORE" DRAWER MODAL (RESPECTS OWNER VS SELLER PRIVACY) */}
           {isMobileMoreOpen && (
             <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 backdrop-blur-xs md:hidden">
               <div className="w-full bg-white rounded-t-3xl p-5 border-t-2 border-[#BFE973] shadow-2xl max-h-[75vh] overflow-y-auto animate-slide-up">
                 <div className="flex items-center justify-between pb-3 border-b border-[#EDF4E4] mb-3">
-                  <h3 className="font-black text-sm text-[#162709]">{language === "sw" ? "Menu Zote za Biashara" : "All Business Menus"}</h3>
+                  <h3 className="font-black text-sm text-[#162709]">{language === "sw" ? "Menu Zote" : "All Menus"}</h3>
                   <button
                     onClick={() => setIsMobileMoreOpen(false)}
                     className="p-1.5 rounded-full bg-[#EDF3E6] text-[#334A23]"
@@ -285,19 +298,19 @@ function MainApp() {
 
                 <div className="grid grid-cols-3 gap-2.5 text-center">
                   {[
-                    { id: "cash-register", label: t.nav.cashRegister, icon: Calculator },
-                    { id: "deliveries", label: t.nav.deliveries, icon: Truck },
-                    {
-                      id: "expenses",
-                      label: language === "sw" ? "Matumizi & Faida" : "Expenses & Profit",
-                      icon: DollarSign,
-                    },
-                    { id: "reports", label: t.nav.reports, icon: BarChart3 },
-                    { id: "ai-assistant", label: t.nav.aiAssistant, icon: Sparkles },
-                    { id: "employees", label: t.nav.employees, icon: UserCheck },
-                    { id: "notifications", label: t.nav.notifications, icon: Bell },
-                    { id: "settings", label: t.nav.settings, icon: Settings },
-                    { id: "subscription", label: t.nav.subscription, icon: CreditCard },
+                    { id: "sales", label: "Mauzo ya Leo", icon: ShoppingBag },
+                    { id: "expenses", label: "Matumizi ya Leo", icon: DollarSign },
+                    { id: "inventory", label: "Stoo & Bidhaa", icon: Layers },
+                    { id: "deliveries", label: "Delivery", icon: Truck },
+                    { id: "customers", label: "Wateja & Madeni", icon: Users },
+                    ...(isOwner
+                      ? [
+                          { id: "cash-register", label: "Ripoti (Faida)", icon: BarChart3 },
+                          { id: "employees", label: t.nav.employees, icon: UserCheck },
+                          { id: "settings", label: t.nav.settings, icon: Settings },
+                          { id: "subscription", label: t.nav.subscription, icon: CreditCard },
+                        ]
+                      : []),
                     { id: "help", label: t.nav.help, icon: HelpCircle },
                   ].map((it) => {
                     const Icon = it.icon;
@@ -306,11 +319,7 @@ function MainApp() {
                         key={it.id}
                         onClick={() => {
                           setIsMobileMoreOpen(false);
-                          if (it.id === "ai-assistant") {
-                            setIsAiModalOpen(true);
-                          } else {
-                            setActiveModule(it.id);
-                          }
+                          setActiveModule(it.id);
                         }}
                         className="p-3 rounded-2xl bg-[#F8FAF4] hover:bg-[#E1FFAC] border border-[#D8E6CC] flex flex-col items-center gap-1.5 transition text-xs font-bold text-[#1C320A] active:scale-95"
                       >

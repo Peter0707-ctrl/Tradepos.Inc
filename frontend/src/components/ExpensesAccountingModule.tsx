@@ -3,19 +3,34 @@
 import React, { useState } from "react";
 import { useApp } from "@/context/AppContext";
 import {
-  DollarSign,
   PlusCircle,
-  Wallet
+  Wallet,
+  Send,
+  CheckCircle2,
+  Calendar
 } from "lucide-react";
 
 export const ExpensesAccountingModule: React.FC = () => {
-  const { user, currentBranch, expenses, addExpense, sales, language } = useApp();
+  const {
+    user,
+    currentBranch,
+    expenses,
+    addExpense,
+    sales,
+    language,
+    closeDayAndSendToBoss,
+    startNewDay,
+    isDayClosed,
+    activeDayLabel,
+  } = useApp();
 
   const [category, setCategory] = useState("Usafiri & Bodaboda");
   const [title, setTitle] = useState("");
   const [amount, setAmount] = useState("");
   const [paymentMethod, setPaymentMethod] = useState<"CASH" | "MPESA">("CASH");
   const [notes, setNotes] = useState("");
+
+  const isOwner = !user || user.role === "OWNER" || user.role === "SUPER_ADMIN";
 
   const handleSaveExpense = (e: React.FormEvent) => {
     e.preventDefault();
@@ -28,7 +43,7 @@ export const ExpensesAccountingModule: React.FC = () => {
       description: title.trim(),
       category,
       amount: amt,
-      date: new Date().toISOString().split("T")[0],
+      date: activeDayLabel,
       recordedBy: user?.name || "Baraka Mushi",
       paymentMethod,
       notes: notes.trim() || undefined,
@@ -57,16 +72,44 @@ export const ExpensesAccountingModule: React.FC = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h2 className="text-xl font-black text-[#172709] tracking-tight">
+          <div className="flex flex-wrap items-center gap-2">
+            <h2 className="text-xl font-black text-[#172709] tracking-tight">
+              {language === "sw"
+                ? isOwner
+                  ? "3. Matumizi ya Siku Hiyo (Owner & Wafanyakazi)"
+                  : "2. Matumizi ya Leo (Ametumia Nini Leo Dukani)"
+                : "Daily Shop Expenses"}
+            </h2>
+            <span className="px-2.5 py-0.5 rounded-full text-[11px] font-black bg-[#E1FFAC] text-[#172B08] border border-[#9CE034] flex items-center gap-1">
+              <Calendar className="w-3 h-3" />
+              <span>Siku: {activeDayLabel}</span>
+            </span>
+          </div>
+          <p className="text-xs text-[#52654c] mt-0.5">
             {language === "sw"
-              ? "3. Matumizi ya Siku Hiyo (Andika Matumizi ya Dukani Leo)"
-              : "3. Daily Shop Expenses"}
-          </h2>
-          <p className="text-xs text-[#52654c]">
-            {language === "sw"
-              ? "Andika pesa zote zilizotumika dukani leo (chakula, bodaboda, umeme, vifungashio). Mfumo unapiga jumla automatically."
+              ? "Andika pesa zote zilizotumika dukani leo (chakula, bodaboda, umeme, vifungashio). Mfumo unapiga jumla automatically na kupeleka kwa Boss siku ikifungwa."
               : "Record all daily shop expenses. The system calculates totals automatically."}
           </p>
+        </div>
+
+        <div className="flex items-center gap-2 shrink-0">
+          {!isDayClosed ? (
+            <button
+              onClick={() => closeDayAndSendToBoss()}
+              className="px-4 py-2.5 rounded-xl bg-[#1B2F09] hover:bg-[#27430D] text-[#E1FFAC] border-2 border-[#A6DF52] text-xs font-black flex items-center gap-2 shadow-md transition cursor-pointer"
+            >
+              <Send className="w-4 h-4" />
+              <span>Funga Mauzo ya Siku (Tuma kwa Boss Auto)</span>
+            </button>
+          ) : (
+            <button
+              onClick={() => startNewDay()}
+              className="px-4 py-2.5 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-black flex items-center gap-2 shadow-md transition cursor-pointer"
+            >
+              <CheckCircle2 className="w-4 h-4" />
+              <span>Fungua Siku Mpya (Anza Siku Mpya 0)</span>
+            </button>
+          )}
         </div>
       </div>
 
@@ -74,13 +117,13 @@ export const ExpensesAccountingModule: React.FC = () => {
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
         <div className="p-3.5 rounded-2xl bg-white border-2 border-rose-200 shadow-xs">
           <span className="text-xs font-bold text-[#5c7054] block">
-            Jumla ya Matumizi ya Siku (Auto)
+            Jumla ya Matumizi ya Leo (Auto)
           </span>
           <p className="text-xl font-black text-rose-700 mt-0.5">
             TZS {totalExpenses.toLocaleString()}
           </p>
           <span className="text-[11px] text-[#6d8065] font-bold">
-            Rekodi {expenses.length} za matumizi
+            Rekodi {expenses.length} za matumizi leo ({activeDayLabel})
           </span>
         </div>
 
@@ -98,13 +141,13 @@ export const ExpensesAccountingModule: React.FC = () => {
 
         <div className="p-3.5 rounded-2xl bg-white border border-[#d6e5c5] shadow-xs">
           <span className="text-xs font-bold text-[#5c7054] block">
-            Mauzo Ukitoa Matumizi ya Siku
+            Mauzo ya Leo Ukitoa Matumizi
           </span>
           <p className="text-xl font-black text-emerald-800 mt-0.5">
             TZS {remainingAfterExpenses.toLocaleString()}
           </p>
           <span className="text-[11px] text-emerald-700 font-bold">
-            Mauzo (TZS {totalSalesToday.toLocaleString()}) - Matumizi
+            Mauzo (TZS {totalSalesToday.toLocaleString()}) - Matumizi (TZS {totalExpenses.toLocaleString()})
           </span>
         </div>
       </div>
@@ -115,16 +158,16 @@ export const ExpensesAccountingModule: React.FC = () => {
         <div className="bg-white rounded-2xl border-2 border-[#BFE973] p-4 shadow-xs h-fit">
           <h3 className="font-black text-sm text-[#162709] mb-1 flex items-center gap-1.5">
             <PlusCircle className="w-4 h-4 text-[#3A6112]" />
-            <span>Andika Matumizi ya Siku Hiyo</span>
+            <span>Andika Matumizi ya Leo (Manual)</span>
           </h3>
           <p className="text-[11px] text-[#5B714F] mb-3">
-            Kila matumizi unayoandika hapa yanaonekana kwa Mwenye Duka na kuingia kwenye Ripoti ya Faida na Hasara ya Siku.
+            Andika umetumia nini leo na kiasi gani. Mfumo unapiga jumla moja kwa moja.
           </p>
 
           <form onSubmit={handleSaveExpense} className="space-y-3 text-xs">
             <div>
               <label className="block font-bold text-[#334A26] mb-1">
-                Maelezo ya Matumizi (Kimetumika Kwenye Nini?)
+                Ametumia Nini Leo? (Maelezo ya Matumizi)
               </label>
               <input
                 type="text"
@@ -137,7 +180,7 @@ export const ExpensesAccountingModule: React.FC = () => {
             </div>
 
             <div>
-              <label className="block font-bold text-[#334A26] mb-1">Aina ya Matumizi</label>
+              <label className="block font-bold text-[#334A26] mb-1">Kundi la Matumizi</label>
               <select
                 value={category}
                 onChange={(e) => setCategory(e.target.value)}
@@ -162,7 +205,7 @@ export const ExpensesAccountingModule: React.FC = () => {
                   required
                   value={amount}
                   onChange={(e) => setAmount(e.target.value)}
-                  placeholder="10000"
+                  placeholder="5000"
                   className="w-full py-2 px-3 rounded-xl neu-input font-black text-sm"
                 />
               </div>
@@ -195,7 +238,7 @@ export const ExpensesAccountingModule: React.FC = () => {
               type="submit"
               className="w-full py-3 rounded-xl neu-btn font-black text-xs uppercase tracking-wider cursor-pointer"
             >
-              + Hifadhi Matumizi ya Siku
+              + Hifadhi Matumizi ya Leo
             </button>
           </form>
         </div>
@@ -206,10 +249,10 @@ export const ExpensesAccountingModule: React.FC = () => {
             <div>
               <h3 className="font-black text-sm text-[#162709] flex items-center gap-1.5">
                 <Wallet className="w-4 h-4 text-[#233F0D]" />
-                <span>Orodha ya Matumizi ya Siku</span>
+                <span>Orodha ya Matumizi ya Leo ({activeDayLabel})</span>
               </h3>
               <p className="text-[11px] text-[#5B714F]">
-                Matumizi yote yaliyoandikwa na wafanyakazi au mwenye duka
+                Matumizi yote yaliyoandikwa kwa siku ya leo
               </p>
             </div>
             <span className="px-3 py-1 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs font-black">
@@ -221,8 +264,8 @@ export const ExpensesAccountingModule: React.FC = () => {
             <table className="w-full text-left text-xs divide-y divide-[#e8f0df]">
               <thead className="bg-[#F8FAF4] font-bold text-[#44573d]">
                 <tr>
-                  <th className="py-2.5 px-3">Maelezo ya Matumizi</th>
-                  <th className="py-2.5 px-3">Aina</th>
+                  <th className="py-2.5 px-3">Ametumia Nini Leo</th>
+                  <th className="py-2.5 px-3">Kundi</th>
                   <th className="py-2.5 px-3">Malipo</th>
                   <th className="py-2.5 px-3">Aliyeandika</th>
                   <th className="py-2.5 px-3">Tarehe</th>
@@ -230,28 +273,36 @@ export const ExpensesAccountingModule: React.FC = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#eff5e9] text-[#1c2c0e]">
-                {expenses.map((exp) => (
-                  <tr key={exp.id} className="hover:bg-[#FAFCF7] transition">
-                    <td className="py-3 px-3 font-bold text-[#162709]">
-                      {exp.description || exp.title}
-                    </td>
-                    <td className="py-3 px-3">
-                      <span className="px-2 py-0.5 rounded-md bg-[#EDF2E8] font-semibold text-[#304524]">
-                        {exp.category}
-                      </span>
-                    </td>
-                    <td className="py-3 px-3">
-                      <span className="px-2 py-0.5 rounded-md bg-[#EDF3E6] font-bold text-[10px]">
-                        {exp.paymentMethod || "CASH"}
-                      </span>
-                    </td>
-                    <td className="py-3 px-3 text-[#4C6240]">{exp.recordedBy}</td>
-                    <td className="py-3 px-3 font-mono text-[11px] text-[#5b6e54]">{exp.date}</td>
-                    <td className="py-3 px-3 text-right font-black text-rose-700">
-                      TZS {exp.amount.toLocaleString()}
+                {expenses.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="py-8 text-center text-gray-400">
+                      Siku hii haina matumizi bado (TZS 0). Tumia fomu ya kushoto kuandika matumizi ya leo.
                     </td>
                   </tr>
-                ))}
+                ) : (
+                  expenses.map((exp) => (
+                    <tr key={exp.id} className="hover:bg-[#FAFCF7] transition">
+                      <td className="py-3 px-3 font-bold text-[#162709]">
+                        {exp.description || exp.title}
+                      </td>
+                      <td className="py-3 px-3">
+                        <span className="px-2 py-0.5 rounded-md bg-[#EDF2E8] font-semibold text-[#304524]">
+                          {exp.category}
+                        </span>
+                      </td>
+                      <td className="py-3 px-3">
+                        <span className="px-2 py-0.5 rounded-md bg-[#EDF3E6] font-bold text-[10px]">
+                          {exp.paymentMethod || "CASH"}
+                        </span>
+                      </td>
+                      <td className="py-3 px-3 text-[#4C6240]">{exp.recordedBy}</td>
+                      <td className="py-3 px-3 font-mono text-[11px] text-[#5b6e54]">{exp.date}</td>
+                      <td className="py-3 px-3 text-right font-black text-rose-700">
+                        TZS {exp.amount.toLocaleString()}
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>

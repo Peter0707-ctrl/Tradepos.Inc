@@ -49,17 +49,12 @@ export const EmployeesRolesModule: React.FC<EmployeesRolesModuleProps> = ({ onNa
   const getRolePermissionsLabel = (r: string) => {
     if (r === "OWNER") {
       return language === "sw"
-        ? "Mamlaka Yote: Dashibodi ya Boss, Faida, Ripoti za Wafanyakazi & Mipangilio"
-        : "Full Access: Boss Dashboard, Profit, Staff Reports & Settings";
-    }
-    if (r === "STOREKEEPER") {
-      return language === "sw"
-        ? "Kuingiza Stock (Stock IN), Stock Iliyobaki Stoo & Hesabu ya Siku"
-        : "Stock Entry (IN), Remaining Store Stock & Daily Handover";
+        ? "Mamlaka Yote (Boss): Anaona Dashibodi Kuu, Bei za Kununua, Faida & Hasara ya Siku, Ripoti Zote & Mipangilio"
+        : "Full Access (Boss): Main Dashboard, Buying Prices, Daily Profit & Loss, All Reports & Settings";
     }
     return language === "sw"
-      ? "Kuingiza Mauzo ya Siku, Kuingiza Stock, Matumizi ya Siku & Kutuma Mahesabu kwa Boss"
-      : "Daily Sales Entry, Stock Entry, Daily Expenses & Submit Shift Report to Owner";
+      ? "Siri ya Boss Imelindwa: Anaona tu (1) Mauzo ya Leo, (2) Matumizi ya Leo, (3) Stoo & Bidhaa, (4) Delivery & (5) Madeni. Haoni Faida wala Bei ya Kununua!"
+      : "Protected Seller View: Sees only (1) Today's Sales, (2) Today's Expenses, (3) Store Stock, (4) Delivery & (5) Debts. Cannot see Boss Profit or Buying Prices!";
   };
 
   return (
@@ -69,13 +64,13 @@ export const EmployeesRolesModule: React.FC<EmployeesRolesModuleProps> = ({ onNa
         <div>
           <h2 className="text-xl font-black text-[#162709] tracking-tight">
             {language === "sw"
-              ? "Akaunti za Wafanyakazi wa Duka & Ruhusa Zao"
-              : "Shop Employee Accounts & Role Permissions"}
+              ? "Akaunti za Wafanyakazi wa Duka & Ulinzi wa Siri za Boss"
+              : "Shop Employee Accounts & Boss Privacy Protection"}
           </h2>
           <p className="text-xs text-[#526848]">
             {language === "sw"
-              ? "Sajili wafanyakazi wa duka lako. Kila mfanyakazi ana sehemu ya Mauzo, Stock Kuingiza, na Mahesabu ya Siku yanayotumwa moja kwa moja kwako (Mwenye Duka)."
-              : "Manage staff accounts for your shop. Employees record sales, stock IN, daily expenses, and submit daily shift reports directly to the Owner."}
+              ? "Mwenye Duka (Owner) anaona kila kitu. Wauzaji wanaona vitufe vyao tu (Mauzo ya Leo, Matumizi ya Leo, Stoo) na hawawezi kuona Faida ya Boss wala kuingia kwenye akaunti ya Boss bila PIN."
+              : "The Shop Owner sees everything. Sellers only see their daily buttons and cannot view Boss profits or switch to the Boss account without the Boss PIN."}
           </p>
         </div>
 
@@ -88,19 +83,19 @@ export const EmployeesRolesModule: React.FC<EmployeesRolesModuleProps> = ({ onNa
         </button>
       </div>
 
-      {/* Explainer Card for Owner-Employee Workflow */}
+      {/* Explainer Card for Owner-Employee Privacy & Daily Sync */}
       <div className="p-4 rounded-2xl bg-[#F6FAF0] border-2 border-[#BFE973] flex flex-col md:flex-row items-start md:items-center justify-between gap-4 text-xs">
         <div className="space-y-1">
           <span className="font-black text-[#162709] uppercase flex items-center gap-1.5">
             <Shield className="w-4 h-4 text-[#395F11]" />
             {language === "sw"
-              ? "Jinsi Akaunti ya Mfanyakazi Inavyofanya Kazi na Mwenye Duka:"
-              : "How Employee Accounts Sync with the Shop Owner:"}
+              ? "Jinsi Privacy (Usiri) Kati ya Mwenye Duka na Wauzaji Inavyofanya Kazi:"
+              : "How Privacy Between Shop Owner and Sellers Works:"}
           </span>
           <p className="text-[#4B613F]">
             {language === "sw"
-              ? "Mfanyakazi akiingia kwenye akaunti yake anaona sehemu zake kuu: (1) Mahesabu ya Siku (kuandika walichouza leo, matumizi ya siku hiyo, na stock iliyobaki) na (2) Kuingiza Stock & Kuona Iliyobaki Stoo, kisha anabonyeza 'Tuma kwa Mwenye Duka' na wewe unaiona papo hapo kwenye Dashibodi yako."
-              : "When an employee logs in, they access Daily Shift Handover (items sold, daily expenses, remaining stock) and Stock Entry, which sends directly to the Owner Dashboard."}
+              ? "1. Muuzaji akiingia anaona vitufe vyake tofauti: (1) Mauzo ya Leo, (2) Matumizi ya Leo, na (3) Stoo & Bidhaa. 2. Muuzaji haoni Dashibodi ya Boss, haoni Ripoti ya Faida na Hasara, na haoni Bei ya Kununua mzigo. 3. Akibonyeza 'Funga Mauzo ya Siku', siku inaisha na hesabu zote zinakwenda kwa Boss automatically. 4. Kurudi kwenye akaunti ya Boss kunahitaji PIN ya Siri ya Boss (1234)."
+              : "1. Sellers only see their separate daily buttons (Sales, Expenses, Store Stock). 2. Sellers never see Boss Dashboard, Profit & Loss, or Buying Prices. 3. Closing daily sales automatically sends the full report to the Boss."}
           </p>
         </div>
       </div>
@@ -112,7 +107,7 @@ export const EmployeesRolesModule: React.FC<EmployeesRolesModuleProps> = ({ onNa
             <tr>
               <th className="py-3 px-4">{language === "sw" ? "Jina & Barua Pepe" : "Employee"}</th>
               <th className="py-3 px-4">{language === "sw" ? "Cheo (Role)" : "Role"}</th>
-              <th className="py-3 px-4">{language === "sw" ? "Sehemu Anazoziona Kwenye Akaunti Yake" : "Assigned Workspace"}</th>
+              <th className="py-3 px-4">{language === "sw" ? "Ulinzi wa Siri & Sehemu Anazoziona" : "Privacy & Assigned Workspace"}</th>
               <th className="py-3 px-4">{language === "sw" ? "Simu & PIN" : "Phone & PIN"}</th>
               <th className="py-3 px-4">{language === "sw" ? "Hali" : "Status"}</th>
               <th className="py-3 px-4 text-right">{language === "sw" ? "Hatua (Jaribu Akaunti)" : "Action"}</th>
@@ -142,7 +137,7 @@ export const EmployeesRolesModule: React.FC<EmployeesRolesModuleProps> = ({ onNa
                           : "bg-[#EDF3E6] text-[#22390C]"
                       }`}
                     >
-                      {emp.role === "OWNER" ? "MWENYE DUKA (OWNER)" : emp.role}
+                      {emp.role === "OWNER" ? "MWENYE DUKA (BOSS)" : emp.role}
                     </span>
                   </td>
                   <td className="py-3.5 px-4 text-[#3F5632] font-semibold max-w-xs">
@@ -168,7 +163,7 @@ export const EmployeesRolesModule: React.FC<EmployeesRolesModuleProps> = ({ onNa
                         onClick={() => {
                           switchEmployeeAccount(emp.id);
                           if (onNavigate) {
-                            onNavigate(emp.role === "OWNER" ? "dashboard" : "cash-register");
+                            onNavigate(emp.role === "OWNER" ? "dashboard" : "sales");
                           }
                         }}
                         className="px-3 py-1.5 rounded-xl bg-[#E1FFAC] hover:bg-[#d2f988] border border-[#9CE034] text-xs font-black text-[#172B08] inline-flex items-center gap-1.5 cursor-pointer transition"
@@ -177,7 +172,7 @@ export const EmployeesRolesModule: React.FC<EmployeesRolesModuleProps> = ({ onNa
                         <span>
                           {emp.role === "OWNER"
                             ? "Ingia Kama Mwenye Duka"
-                            : "Fungua Akaunti ya Mfanyakazi"}
+                            : "Fungua Akaunti ya Muuzaji"}
                         </span>
                         <ArrowRight className="w-3 h-3" />
                       </button>
