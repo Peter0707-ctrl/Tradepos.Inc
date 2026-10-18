@@ -5,7 +5,6 @@ import { useApp } from "@/context/AppContext";
 import {
   Store,
   ShoppingBag,
-  Receipt,
   Layers,
   Truck,
   Users,
@@ -46,49 +45,45 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeModule, setActiveModule,
   const isOwner = !user || user.role === "OWNER" || isSuperAdmin;
   const pendingReportsCount = (dailyReports || []).filter((r) => r.status === "PENDING_REVIEW").length;
 
-  // EMPLOYEE / STAFF NAVIGATION (Focused on Sales, Stock Entry/Remaining, and Daily Shift Handover to Owner)
+  // EMPLOYEE / STAFF NAVIGATION (No POS machine or receipts — focused on Daily Sales/Expenses/Stock & Sending to Owner)
   const staffCoreNav: { id: string; label: string; icon: any; badge?: string }[] = [
-    { id: "pos", label: t.nav.pos, icon: ShoppingBag, badge: "FAST" },
-    {
-      id: "inventory",
-      label: language === "sw" ? "Stoo (Ingiza & Iliyobaki)" : "Stock (In & Remaining)",
-      icon: Layers,
-    },
     {
       id: "cash-register",
-      label: language === "sw" ? "Mahesabu ya Siku (Tuma)" : "Daily Handover (Send)",
+      label: language === "sw" ? "Mahesabu ya Siku & Mauzo" : "Daily Sales & Handover",
       icon: Calculator,
       badge: "TUMA",
     },
-    { id: "sales", label: t.nav.sales, icon: Receipt },
+    {
+      id: "inventory",
+      label: language === "sw" ? "Stoo & Bidhaa (IN / OUT)" : "Stock (IN / OUT)",
+      icon: Layers,
+    },
     { id: "customers", label: t.nav.customers, icon: Users },
     { id: "deliveries", label: t.nav.deliveries, icon: Truck },
   ];
 
-  // OWNER NAVIGATION (Ordered Most Used -> Least Used)
-  // 1. MOST USED (Every Minute / Every Hour - Daily Shop Operations)
+  // OWNER NAVIGATION (Ordered Most Used -> Least Used, with POS Machine & Receipts removed)
+  // 1. MOST USED (Every Hour - Daily Shop Operations)
   const highUsageNav: { id: string; label: string; icon: any; badge?: string }[] = [
-    { id: "pos", label: t.nav.pos, icon: ShoppingBag, badge: "FAST" },
     {
       id: "dashboard",
       label: t.nav.dashboard,
       icon: Store,
       badge: pendingReportsCount > 0 ? `${pendingReportsCount} MPYA` : undefined,
     },
-    { id: "sales", label: t.nav.sales, icon: Receipt },
+    {
+      id: "cash-register",
+      label: language === "sw" ? "Mahesabu ya Siku & Mauzo" : "Daily Sales & Handover",
+      icon: Calculator,
+      badge: pendingReportsCount > 0 ? String(pendingReportsCount) : undefined,
+    },
     { id: "inventory", label: t.nav.inventory, icon: Layers },
     { id: "customers", label: t.nav.customers, icon: Users },
     { id: "deliveries", label: t.nav.deliveries, icon: Truck },
   ];
 
-  // 2. MEDIUM USAGE (Daily Closing, Profit/Loss & Analytics)
+  // 2. MEDIUM USAGE (Profit/Loss & Analytics)
   const dailyFinanceNav: { id: string; label: string; icon: any; badge?: string }[] = [
-    {
-      id: "cash-register",
-      label: t.nav.cashRegister,
-      icon: Calculator,
-      badge: pendingReportsCount > 0 ? String(pendingReportsCount) : undefined,
-    },
     {
       id: "expenses",
       label: language === "sw" ? "Matumizi & Faida" : "Expenses & Profit",

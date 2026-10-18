@@ -6,7 +6,6 @@ import {
   Wallet,
   Package,
   CheckCircle2,
-  AlertTriangle,
   MessageCircle,
   Send,
   PlusCircle,
@@ -29,9 +28,11 @@ export const CashRegisterModule: React.FC = () => {
     updateCashRegister,
     currentBranch,
     sales,
+    processSale,
     expenses,
     addExpense,
     products,
+    addProduct,
     recordStockMovement,
     dailyReports,
     submitDailyReport,
@@ -50,15 +51,24 @@ export const CashRegisterModule: React.FC = () => {
   const [submitSuccessBanner, setSubmitSuccessBanner] = useState(false);
   const [selectedReport, setSelectedReport] = useState<DailyShiftReport | null>(null);
 
-  // Quick Expense Form State (for Staff)
+  // Direct Sale Entry Form State (Tab 2: Wameuza Nini Leo — User types product name directly)
+  const [saleProdName, setSaleProdName] = useState("");
+  const [saleQty, setSaleQty] = useState("1");
+  const [saleUnitPrice, setSaleUnitPrice] = useState("");
+  const [salePaymentMethod, setSalePaymentMethod] = useState<"CASH" | "MPESA" | "CREDIT">("CASH");
+  const [saleCustomerName, setSaleCustomerName] = useState("");
+
+  // Quick Expense Form State (Tab 3: Matumizi ya Siku)
   const [expCategory, setExpCategory] = useState("Usafiri & Bodaboda");
   const [expDesc, setExpDesc] = useState("");
   const [expAmount, setExpAmount] = useState("");
   const [expMethod, setExpMethod] = useState<"CASH" | "MPESA">("CASH");
 
-  // Quick Stock IN Form State (for Staff)
-  const [stockProdId, setStockProdId] = useState(products[0]?.id || "");
+  // Direct Stock IN Form State (Tab 4: Stock Iliyobaki Stoo — User types product name directly)
+  const [stockProdName, setStockProdName] = useState("");
   const [stockQty, setStockQty] = useState("");
+  const [stockBuyPrice, setStockBuyPrice] = useState("");
+  const [stockSellPrice, setStockSellPrice] = useState("");
   const [stockNote, setStockNote] = useState("");
 
   const handleDepositOrWithdraw = (e: React.FormEvent) => {
@@ -116,7 +126,9 @@ export const CashRegisterModule: React.FC = () => {
   } = {};
   validSales.forEach((s) => {
     s.items.forEach((item) => {
-      const matchedProd = products.find((p) => p.id === item.productId || p.name === item.productName);
+      const matchedProd = products.find(
+        (p) => p.id === item.productId || p.name.toLowerCase() === item.productName.toLowerCase()
+      );
       if (!soldProductsMap[item.productName]) {
         soldProductsMap[item.productName] = {
           name: item.productName,
@@ -129,6 +141,9 @@ export const CashRegisterModule: React.FC = () => {
       }
       soldProductsMap[item.productName].quantity += item.quantity;
       soldProductsMap[item.productName].revenue += item.total;
+      if (matchedProd) {
+        soldProductsMap[item.productName].remainingInStore = matchedProd.stockQuantity;
+      }
     });
   });
   const soldProductsList = Object.values(soldProductsMap).sort((a, b) => b.quantity - a.quantity);
@@ -138,6 +153,74 @@ export const CashRegisterModule: React.FC = () => {
   const totalUnitsRemainingInStore = products.reduce((a, b) => a + b.stockQuantity, 0);
   const lowStockItems = products.filter((p) => p.stockQuantity <= p.minStock);
 
+  // Handler for Direct Sale Entry (Tab 2: Wameuza Nini Leo)
+  const handleQuickSaleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const typedName = saleProdName.trim();
+    const qty = parseInt(saleQty) || 0;
+    if (!typedName || qty <= 0) return;
+
+    const existingProd = products.find((p) => p.name.toLowerCase() === typedName.toLowerCase());
+    const unitPrice =
+      parseFloat(saleUnitPrice) || (existingProd ? existingProd.sellingPrice : 0);
+    if (unitPrice <= 0) return;
+
+    let targetProdId = existingProd?.id || `prod-auto-${Date.now()}`;
+    let targetProdName = existingProd?.name || typedName;
+
+    if (!existingProd) {
+      const created = addProduct({
+        name: typedName,
+        sku: `AUTO-${Date.now().toString().slice(-4)}`,
+        barcode: "",
+        category: "General",
+        brand: "General",
+        buyingPrice: Math.round(unitPrice * 0.7),
+        sellingPrice: unitPrice,
+        wholesalePrice: unitPrice,
+        stockQuantity: Math.max(20, qty),
+        minStock: 5,
+        maxStock: 500,
+        unit: "Pcs",
+        branchId: currentBranch?.id || "br-01",
+      });
+      if (created) {
+        targetProdId = created.id;
+        targetProdName = created.name;
+      }
+    }
+
+    const total = qty * unitPrice;
+    processSale({
+      branchId: currentBranch?.id || "br-01",
+      items: [
+        {
+          productId: targetProdId,
+          productName: targetProdName,
+          quantity: qty,
+          price: unitPrice,
+          total,
+        },
+      ],
+      subtotal: total,
+      tax: 0,
+      discount: 0,
+      total,
+      paidAmount: salePaymentMethod === "CREDIT" ? 0 : total,
+      balance: salePaymentMethod === "CREDIT" ? total : 0,
+      paymentMethod: salePaymentMethod,
+      customerName: saleCustomerName.trim() || "Mteja wa Dukani",
+      cashierName: user?.name || "Baraka Mushi",
+      status: "COMPLETED",
+    });
+
+    setSaleProdName("");
+    setSaleQty("1");
+    setSaleUnitPrice("");
+    setSaleCustomerName("");
+  };
+
+  // Handler for Quick Expense (Tab 3: Matumizi ya Siku)
   const handleQuickExpenseSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const amt = parseFloat(expAmount) || 0;
@@ -156,24 +239,69 @@ export const CashRegisterModule: React.FC = () => {
     setExpAmount("");
   };
 
+  // Handler for Direct Stock IN (Tab 4: Stock Iliyobaki Stoo — User types product name directly)
   const handleQuickStockIn = (e: React.FormEvent) => {
     e.preventDefault();
+    const typedName = stockProdName.trim();
     const qty = parseInt(stockQty) || 0;
-    const prod = products.find((p) => p.id === stockProdId);
-    if (qty <= 0 || !prod) return;
-    recordStockMovement({
-      branchId: currentBranch?.id || "br-01",
-      productId: prod.id,
-      productName: prod.name,
-      type: "IN",
-      quantity: qty,
-      reason: "PURCHASE",
-      unitCost: prod.buyingPrice,
-      totalValue: qty * prod.buyingPrice,
-      recordedBy: user?.name || "Mfanyakazi",
-      notes: stockNote.trim() || "Stock mpya imeingizwa na mfanyakazi",
-    });
+    if (!typedName || qty <= 0) return;
+
+    const existingProd = products.find((p) => p.name.toLowerCase() === typedName.toLowerCase());
+    const buyPrice =
+      parseFloat(stockBuyPrice) || (existingProd ? existingProd.buyingPrice : 0);
+    const sellPrice =
+      parseFloat(stockSellPrice) ||
+      (existingProd ? existingProd.sellingPrice : Math.round(buyPrice * 1.3));
+
+    if (existingProd) {
+      recordStockMovement({
+        branchId: currentBranch?.id || "br-01",
+        productId: existingProd.id,
+        productName: existingProd.name,
+        type: "IN",
+        quantity: qty,
+        reason: "PURCHASE",
+        unitCost: buyPrice,
+        totalValue: qty * buyPrice,
+        recordedBy: user?.name || "Mfanyakazi",
+        notes: stockNote.trim() || "Stock mpya imeingizwa dukani",
+      });
+    } else {
+      const created = addProduct({
+        name: typedName,
+        sku: `AUTO-${Date.now().toString().slice(-4)}`,
+        barcode: "",
+        category: "General",
+        brand: "General",
+        buyingPrice: buyPrice,
+        sellingPrice: sellPrice,
+        wholesalePrice: sellPrice,
+        stockQuantity: 0,
+        minStock: 5,
+        maxStock: 500,
+        unit: "Pcs",
+        branchId: currentBranch?.id || "br-01",
+      });
+      if (created) {
+        recordStockMovement({
+          branchId: currentBranch?.id || "br-01",
+          productId: created.id,
+          productName: created.name,
+          type: "IN",
+          quantity: qty,
+          reason: "PURCHASE",
+          unitCost: buyPrice,
+          totalValue: qty * buyPrice,
+          recordedBy: user?.name || "Mfanyakazi",
+          notes: stockNote.trim() || "Bidhaa mpya imeingizwa stoo",
+        });
+      }
+    }
+
+    setStockProdName("");
     setStockQty("");
+    setStockBuyPrice("");
+    setStockSellPrice("");
     setStockNote("");
   };
 
@@ -195,6 +323,15 @@ export const CashRegisterModule: React.FC = () => {
 
   return (
     <div className="flex-1 flex flex-col h-full p-4 lg:p-6 overflow-y-auto gap-4">
+      {/* Datalist for optional autocomplete while typing product names */}
+      <datalist id="store-products-datalist">
+        {products.map((p) => (
+          <option key={p.id} value={p.name}>
+            Bei: TZS {p.sellingPrice.toLocaleString()} | Stoo: {p.stockQuantity} {p.unit}
+          </option>
+        ))}
+      </datalist>
+
       {/* Top Banner */}
       <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4">
         <div>
@@ -216,14 +353,13 @@ export const CashRegisterModule: React.FC = () => {
           </div>
           <p className="text-xs text-[#526848] mt-0.5">
             {language === "sw"
-              ? "Sehemu ya mfanyakazi kukagua walichouza leo, matumizi ya siku hiyo, na stock iliyobaki stoo kisha kutuma moja kwa moja kwa Mwenye Duka."
-              : "Staff & Owner workspace for daily sales, daily expenses, remaining store stock, and submitting shift reports to the Owner."}
+              ? "Andika moja kwa moja bidhaa zilizouzwa leo, matumizi ya siku hiyo, na stock iliyoingia au kubaki stoo kisha tuma kwa Mwenye Duka."
+              : "Directly enter daily sales, daily expenses, and store stock, then submit the daily shift report to the Shop Owner."}
           </p>
         </div>
 
         {/* Right: Quick Role Switcher + Submit to Owner Button */}
         <div className="flex flex-wrap items-center gap-2">
-          {/* Quick Account Switcher so Owner/User can test Staff vs Owner view in 1 click */}
           <div className="flex items-center gap-1.5 bg-white px-2.5 py-1.5 rounded-xl border border-[#D4E4C3] shadow-xs text-xs">
             <UserCheck className="w-3.5 h-3.5 text-[#3F6315]" />
             <span className="font-bold text-[#4D6340] hidden sm:inline">
@@ -284,7 +420,7 @@ export const CashRegisterModule: React.FC = () => {
         </div>
       )}
 
-      {/* 4 Key Pillars KPI Cards (Wameuza Nini, Matumizi ya Siku, Stock Iliyobaki Stoo, Pesa Drooni) */}
+      {/* 4 Key Pillars KPI Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
         <div
           onClick={() => setActiveTab("sold_products")}
@@ -297,7 +433,7 @@ export const CashRegisterModule: React.FC = () => {
             TZS {totalSalesAll.toLocaleString()}
           </p>
           <span className="text-[11px] text-emerald-700 font-bold">
-            {totalUnitsSold} pcs zimeuzwa ({validSales.length} risiti) →
+            {totalUnitsSold} pcs zimeuzwa ({validSales.length} mauzo) →
           </span>
         </div>
 
@@ -380,8 +516,8 @@ export const CashRegisterModule: React.FC = () => {
           <Package className="w-3.5 h-3.5" />
           <span>
             {language === "sw"
-              ? `2. Wameuza Nini Leo (${soldProductsList.length})`
-              : `2. What Was Sold Today (${soldProductsList.length})`}
+              ? `2. Wameuza Nini Leo / Ingiza Mauzo (${soldProductsList.length})`
+              : `2. What Was Sold Today / Enter Sales (${soldProductsList.length})`}
           </span>
         </button>
 
@@ -588,73 +724,169 @@ export const CashRegisterModule: React.FC = () => {
         </div>
       )}
 
-      {/* TAB 2: WAMEUZA NINI LEO (PRODUCTS SOLD TODAY + REMAINING STOCK) */}
+      {/* TAB 2: WAMEUZA NINI LEO (DIRECT SALE ENTRY + PRODUCTS SOLD TODAY) */}
       {activeTab === "sold_products" && (
-        <div className="bg-white rounded-2xl border border-[#D8E6CC] shadow-xs p-4 flex flex-col">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b border-[#EBF2E2] gap-2">
-            <div>
-              <h3 className="font-extrabold text-sm text-[#162709] flex items-center gap-2">
-                <Package className="w-4 h-4 text-[#233f0d]" />
-                <span>Orodha ya Bidhaa Walizouza Leo & Stock Iliyobaki Stoo</span>
-              </h3>
-              <p className="text-xs text-[#546949]">
-                Inaonyesha kila bidhaa iliyouzwa leo, nani aliuza, kiasi kilichopatikana, na idadi iliyobaki stoo.
-              </p>
-            </div>
-            <div className="flex items-center gap-3 bg-[#F4F8EE] px-3 py-1.5 rounded-xl border border-[#d4e6c1]">
-              <span className="text-xs font-bold text-[#4a5e40]">
-                Jumla Iliyouzwa: <strong className="text-[#162709]">{totalUnitsSold} pcs</strong>
-              </span>
-              <span className="text-[#cbd9be]">|</span>
-              <span className="text-xs font-bold text-[#4a5e40]">
-                Mapato: <strong className="text-emerald-800">TZS {totalSalesAll.toLocaleString()}</strong>
-              </span>
-            </div>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          {/* Left: Direct Sale Input Form (User types product name directly, no dropdown) */}
+          <div className="bg-white rounded-2xl border-2 border-[#BFE973] p-4 shadow-xs h-fit">
+            <h3 className="font-black text-sm text-[#162709] mb-1 flex items-center gap-1.5">
+              <PlusCircle className="w-4 h-4 text-[#3A6112]" />
+              <span>Andika Bidhaa Iliyouzwa Leo</span>
+            </h3>
+            <p className="text-[11px] text-[#5B714F] mb-3">
+              Andika jina la bidhaa uliyouza moja kwa moja hapa. Stoo itapungua na mauzo yataingia kwenye mahesabu ya siku.
+            </p>
+
+            <form onSubmit={handleQuickSaleSubmit} className="space-y-3 text-xs">
+              <div>
+                <label className="block font-bold text-[#334A26] mb-1">
+                  Andika Jina la Bidhaa Iliyouzwa:
+                </label>
+                <input
+                  type="text"
+                  list="store-products-datalist"
+                  required
+                  value={saleProdName}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setSaleProdName(val);
+                    const matched = products.find(
+                      (p) => p.name.toLowerCase() === val.trim().toLowerCase()
+                    );
+                    if (matched) {
+                      setSaleUnitPrice(String(matched.sellingPrice));
+                    }
+                  }}
+                  placeholder="Mfano: Nivea Body Milk 400ml..."
+                  className="w-full py-2 px-3 rounded-xl neu-input font-bold"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="block font-bold text-[#334A26] mb-1">Idadi (Pcs)</label>
+                  <input
+                    type="number"
+                    required
+                    min="1"
+                    value={saleQty}
+                    onChange={(e) => setSaleQty(e.target.value)}
+                    placeholder="1"
+                    className="w-full py-2 px-3 rounded-xl neu-input font-black"
+                  />
+                </div>
+                <div>
+                  <label className="block font-bold text-[#334A26] mb-1">Bei ya Kila Moja (TZS)</label>
+                  <input
+                    type="number"
+                    required
+                    min="1"
+                    value={saleUnitPrice}
+                    onChange={(e) => setSaleUnitPrice(e.target.value)}
+                    placeholder="Mfano: 15000"
+                    className="w-full py-2 px-3 rounded-xl neu-input font-black"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="block font-bold text-[#334A26] mb-1">Malipo</label>
+                  <select
+                    value={salePaymentMethod}
+                    onChange={(e) => setSalePaymentMethod(e.target.value as "CASH" | "MPESA" | "CREDIT")}
+                    className="w-full py-2 px-3 rounded-xl neu-input font-bold"
+                  >
+                    <option value="CASH">Cash (Taslimu)</option>
+                    <option value="MPESA">M-Pesa / Simu</option>
+                    <option value="CREDIT">Mkopo (Deni)</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block font-bold text-[#334A26] mb-1">Mteja (Hiari)</label>
+                  <input
+                    type="text"
+                    value={saleCustomerName}
+                    onChange={(e) => setSaleCustomerName(e.target.value)}
+                    placeholder="Jina la mteja..."
+                    className="w-full py-2 px-3 rounded-xl neu-input"
+                  />
+                </div>
+              </div>
+
+              <button type="submit" className="w-full py-2.5 rounded-xl neu-btn font-black text-xs">
+                + Hifadhi Mauzo ya Bidhaa Hii
+              </button>
+            </form>
           </div>
 
-          <div className="overflow-x-auto mt-3">
-            <table className="w-full text-left text-xs divide-y divide-[#EBF2E2]">
-              <thead className="text-[#516744] font-bold bg-[#F9FBF6]">
-                <tr>
-                  <th className="py-3 px-4">#</th>
-                  <th className="py-3 px-4">Bidhaa Iliyouzwa</th>
-                  <th className="py-3 px-4">Aliyeuza (Mfanyakazi)</th>
-                  <th className="py-3 px-4 text-center">Idadi Iliyouzwa Leo</th>
-                  <th className="py-3 px-4 text-right">Jumla ya Pesa</th>
-                  <th className="py-3 px-4 text-right">Stock Iliyobaki Stoo</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-[#F1F6EB] text-[#1A2E0A]">
-                {soldProductsList.length === 0 ? (
+          {/* Right: Table of Products Sold Today */}
+          <div className="lg:col-span-2 bg-white rounded-2xl border border-[#D8E6CC] shadow-xs p-4 flex flex-col">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b border-[#EBF2E2] gap-2">
+              <div>
+                <h3 className="font-extrabold text-sm text-[#162709] flex items-center gap-2">
+                  <Package className="w-4 h-4 text-[#233f0d]" />
+                  <span>Orodha ya Bidhaa Walizouza Leo & Stock Iliyobaki Stoo</span>
+                </h3>
+                <p className="text-xs text-[#546949]">
+                  Inaonyesha kila bidhaa iliyouzwa leo, nani aliuza, kiasi kilichopatikana, na idadi iliyobaki stoo.
+                </p>
+              </div>
+              <div className="flex items-center gap-3 bg-[#F4F8EE] px-3 py-1.5 rounded-xl border border-[#d4e6c1]">
+                <span className="text-xs font-bold text-[#4a5e40]">
+                  Jumla Iliyouzwa: <strong className="text-[#162709]">{totalUnitsSold} pcs</strong>
+                </span>
+                <span className="text-[#cbd9be]">|</span>
+                <span className="text-xs font-bold text-[#4a5e40]">
+                  Mapato: <strong className="text-emerald-800">TZS {totalSalesAll.toLocaleString()}</strong>
+                </span>
+              </div>
+            </div>
+
+            <div className="overflow-x-auto mt-3">
+              <table className="w-full text-left text-xs divide-y divide-[#EBF2E2]">
+                <thead className="text-[#516744] font-bold bg-[#F9FBF6]">
                   <tr>
-                    <td colSpan={6} className="py-8 text-center text-gray-400">
-                      Hakuna bidhaa iliyouzwa bado kwa siku ya leo.
-                    </td>
+                    <th className="py-3 px-4">#</th>
+                    <th className="py-3 px-4">Bidhaa Iliyouzwa</th>
+                    <th className="py-3 px-4">Aliyeuza (Mfanyakazi)</th>
+                    <th className="py-3 px-4 text-center">Idadi Iliyouzwa Leo</th>
+                    <th className="py-3 px-4 text-right">Jumla ya Pesa</th>
+                    <th className="py-3 px-4 text-right">Stock Iliyobaki Stoo</th>
                   </tr>
-                ) : (
-                  soldProductsList.map((item, idx) => (
-                    <tr key={item.name} className="hover:bg-[#F4F8EE]/60">
-                      <td className="py-3 px-4 font-bold text-[#617855]">{idx + 1}</td>
-                      <td className="py-3 px-4 font-extrabold text-[#162709]">{item.name}</td>
-                      <td className="py-3 px-4 text-[#4B623F] font-semibold">{item.lastCashier}</td>
-                      <td className="py-3 px-4 text-center">
-                        <span className="px-2.5 py-1 rounded-full bg-[#E1FFAC] text-[#182d09] font-black border border-[#aae056]">
-                          {item.quantity} {item.unit}
-                        </span>
-                      </td>
-                      <td className="py-3 px-4 text-right font-black text-emerald-800">
-                        TZS {item.revenue.toLocaleString()}
-                      </td>
-                      <td className="py-3 px-4 text-right">
-                        <span className="font-black text-[#162709]">
-                          {item.remainingInStore} {item.unit}
-                        </span>
+                </thead>
+                <tbody className="divide-y divide-[#F1F6EB] text-[#1A2E0A]">
+                  {soldProductsList.length === 0 ? (
+                    <tr>
+                      <td colSpan={6} className="py-8 text-center text-gray-400">
+                        Hakuna bidhaa iliyouzwa bado kwa siku ya leo.
                       </td>
                     </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
+                  ) : (
+                    soldProductsList.map((item, idx) => (
+                      <tr key={item.name} className="hover:bg-[#F4F8EE]/60">
+                        <td className="py-3 px-4 font-bold text-[#617855]">{idx + 1}</td>
+                        <td className="py-3 px-4 font-extrabold text-[#162709]">{item.name}</td>
+                        <td className="py-3 px-4 text-[#4B623F] font-semibold">{item.lastCashier}</td>
+                        <td className="py-3 px-4 text-center">
+                          <span className="px-2.5 py-1 rounded-full bg-[#E1FFAC] text-[#182d09] font-black border border-[#aae056]">
+                            {item.quantity} {item.unit}
+                          </span>
+                        </td>
+                        <td className="py-3 px-4 text-right font-black text-emerald-800">
+                          TZS {item.revenue.toLocaleString()}
+                        </td>
+                        <td className="py-3 px-4 text-right">
+                          <span className="font-black text-[#162709]">
+                            {item.remainingInStore} {item.unit}
+                          </span>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       )}
@@ -778,33 +1010,43 @@ export const CashRegisterModule: React.FC = () => {
         </div>
       )}
 
-      {/* TAB 4: STOCK ILIYobaki STOO & KUINGIZA STOCK (REMAINING STORE STOCK & QUICK STOCK IN) */}
+      {/* TAB 4: STOCK ILIYobaki STOO & KUINGIZA STOCK (DIRECT PRODUCT TYPING, NO FORCED DROPDOWN) */}
       {activeTab === "remaining_stock" && (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-          {/* Left: Quick Stock IN Form for Staff */}
+          {/* Left: Direct Stock IN Form for Staff/Owner */}
           <div className="bg-white rounded-2xl border-2 border-[#BFE973] p-4 shadow-xs h-fit">
             <h3 className="font-black text-sm text-[#162709] mb-1 flex items-center gap-1.5">
               <ArrowDownLeft className="w-4 h-4 text-emerald-700" />
               <span>Ingiza Stock Mpya Stoo (Stock IN)</span>
             </h3>
             <p className="text-[11px] text-[#5B714F] mb-3">
-              Ukiletewa mzigo mpya dukani, uingize hapa ili uongezeke kwenye stoo na Mwenye Duka aone mzigo ulioingia.
+              Andika jina la bidhaa uliyoingiza stoo moja kwa moja. Kama ni mpya itasajiliwa papo hapo.
             </p>
 
             <form onSubmit={handleQuickStockIn} className="space-y-3 text-xs">
               <div>
-                <label className="block font-bold text-[#334A26] mb-1">Chagua Bidhaa</label>
-                <select
-                  value={stockProdId}
-                  onChange={(e) => setStockProdId(e.target.value)}
-                  className="w-full py-2 px-3 rounded-xl neu-input"
-                >
-                  {products.map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.name} (Iliyobaki: {p.stockQuantity} {p.unit})
-                    </option>
-                  ))}
-                </select>
+                <label className="block font-bold text-[#334A26] mb-1">
+                  Andika Jina la Bidhaa:
+                </label>
+                <input
+                  type="text"
+                  list="store-products-datalist"
+                  required
+                  value={stockProdName}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setStockProdName(val);
+                    const matched = products.find(
+                      (p) => p.name.toLowerCase() === val.trim().toLowerCase()
+                    );
+                    if (matched) {
+                      setStockBuyPrice(String(matched.buyingPrice));
+                      setStockSellPrice(String(matched.sellingPrice));
+                    }
+                  }}
+                  placeholder="Andika jina la bidhaa hapa..."
+                  className="w-full py-2 px-3 rounded-xl neu-input font-bold"
+                />
               </div>
 
               <div>
@@ -818,6 +1060,29 @@ export const CashRegisterModule: React.FC = () => {
                   placeholder="Mfano: 24"
                   className="w-full py-2 px-3 rounded-xl neu-input font-black"
                 />
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="block font-bold text-[#334A26] mb-1">Bei ya Kununulia (TZS)</label>
+                  <input
+                    type="number"
+                    value={stockBuyPrice}
+                    onChange={(e) => setStockBuyPrice(e.target.value)}
+                    placeholder="10000"
+                    className="w-full py-2 px-3 rounded-xl neu-input font-bold"
+                  />
+                </div>
+                <div>
+                  <label className="block font-bold text-[#334A26] mb-1">Bei ya Kuuza (TZS)</label>
+                  <input
+                    type="number"
+                    value={stockSellPrice}
+                    onChange={(e) => setStockSellPrice(e.target.value)}
+                    placeholder="15000"
+                    className="w-full py-2 px-3 rounded-xl neu-input font-bold"
+                  />
+                </div>
               </div>
 
               <div>
@@ -889,7 +1154,7 @@ export const CashRegisterModule: React.FC = () => {
                                 : "bg-emerald-100 text-emerald-900 border border-emerald-300"
                             }`}
                           >
-                            {isLow ? "⚠ INAISHA STOO" : "✓ IPO YA KUTOSHA"}
+                            {isLow ? "! INAISHA STOO" : "✓ IPO YA KUTOSHA"}
                           </span>
                         </td>
                       </tr>

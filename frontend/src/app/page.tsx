@@ -189,13 +189,13 @@ function MainApp() {
               {(activeModule === "dashboard" || activeModule === "ai-assistant") && (
                 <DashboardOverview onNavigate={(m) => setActiveModule(m)} />
               )}
-              {activeModule === "pos" && <PosTerminal />}
-              {activeModule === "sales" && <SalesLedgerModule />}
               {(activeModule === "products" || activeModule === "inventory") && <InventoryModule />}
               {(activeModule === "purchases" || activeModule === "suppliers") && <PurchasesSuppliersModule />}
               {activeModule === "customers" && <CustomersModule />}
               {(activeModule === "expenses" || activeModule === "accounting") && <ExpensesAccountingModule />}
-              {activeModule === "cash-register" && <CashRegisterModule />}
+              {(activeModule === "cash-register" || activeModule === "pos" || activeModule === "sales") && (
+                <CashRegisterModule />
+              )}
               {activeModule === "employees" && <EmployeesRolesModule onNavigate={(m) => setActiveModule(m)} />}
               {(activeModule === "branches" || activeModule === "warehouses") && <MultiBranchWarehouseModule />}
               {(activeModule === "online-store" || activeModule === "orders" || activeModule === "deliveries") && (
@@ -217,21 +217,11 @@ function MainApp() {
               className="fixed bottom-16 md:bottom-6 right-6 z-40 px-4 py-2.5 rounded-2xl bg-[#1B2F09] text-[#E1FFAC] font-black text-xs shadow-xl border-2 border-[#A6DF52] flex items-center gap-2 hover:scale-105 active:scale-95 transition"
             >
               <Sparkles className="w-4 h-4 text-[#E1FFAC]" />
-              <span>✨ Ask AI</span>
+              <span>Ask AI</span>
             </button>
 
             {/* MOBILE BOTTOM NAVIGATION BAR (ORDERED BY HIGHEST DAILY USAGE) */}
             <div className="md:hidden h-14 bg-white border-t border-[#D8E6CC] px-2 flex items-center justify-around z-30 shrink-0">
-              <button
-                onClick={() => setActiveModule("pos")}
-                className={`flex flex-col items-center text-[10px] font-bold ${
-                  activeModule === "pos" ? "text-[#1C350A] font-black" : "text-[#627956]"
-                }`}
-              >
-                <ShoppingBag className="w-4 h-4" />
-                <span>{t.nav.pos}</span>
-              </button>
-
               <button
                 onClick={() => setActiveModule("dashboard")}
                 className={`flex flex-col items-center text-[10px] font-bold ${
@@ -240,6 +230,16 @@ function MainApp() {
               >
                 <Store className="w-4 h-4" />
                 <span>{t.nav.dashboard}</span>
+              </button>
+
+              <button
+                onClick={() => setActiveModule("cash-register")}
+                className={`flex flex-col items-center text-[10px] font-bold ${
+                  activeModule === "cash-register" ? "text-[#1C350A] font-black" : "text-[#627956]"
+                }`}
+              >
+                <Calculator className="w-4 h-4" />
+                <span>{language === "sw" ? "Hesabu ya Siku" : "Daily Shift"}</span>
               </button>
 
               <button
@@ -288,9 +288,8 @@ function MainApp() {
 
                 <div className="grid grid-cols-3 gap-2.5 text-center">
                   {[
-                    { id: "sales", label: t.nav.sales, icon: Receipt },
-                    { id: "deliveries", label: t.nav.deliveries, icon: Truck },
                     { id: "cash-register", label: t.nav.cashRegister, icon: Calculator },
+                    { id: "deliveries", label: t.nav.deliveries, icon: Truck },
                     {
                       id: "expenses",
                       label: language === "sw" ? "Matumizi & Faida" : "Expenses & Profit",

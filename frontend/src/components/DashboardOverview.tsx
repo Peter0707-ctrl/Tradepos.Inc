@@ -108,11 +108,11 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate
         {/* Quick Action Buttons */}
         <div className="flex flex-wrap items-center gap-2">
           <button
-            onClick={() => onNavigate("pos")}
+            onClick={() => onNavigate("cash-register")}
             className="px-3.5 py-2 rounded-xl bg-[#E1FFAC] border border-[#9EDE31] hover:bg-[#D5F98A] text-xs font-black text-[#172A08] shadow-xs flex items-center gap-1.5 transition"
           >
             <Plus className="w-4 h-4 text-[#20360A]" />
-            <span>{language === "sw" ? "Mauzo Mapya" : "New Sale"}</span>
+            <span>{language === "sw" ? "Rekodi Mauzo & Hesabu ya Siku" : "Record Daily Sales & Shift"}</span>
           </button>
 
           <button
@@ -671,80 +671,6 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate
           <div className="mt-3 p-2.5 rounded-xl bg-white border border-[#D5E5C4] text-[11px] text-[#344B26]">
             <strong>Action:</strong> Order 40 units of Garnier Micellar Water to prevent stockout before Saturday.
           </div>
-        </div>
-      </div>
-
-      {/* 5. Recent Sales Transactions Table */}
-      <div className="bg-white rounded-2xl p-5 border border-[#D8E6CC] shadow-xs">
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h3 className="font-extrabold text-sm text-[#162709]">Recent Sales Ledger</h3>
-            <p className="text-xs text-[#5D7351]">Latest completed transactions and customer receipts</p>
-          </div>
-          <button
-            onClick={() => onNavigate("sales")}
-            className="text-xs font-bold text-[#3B6414] hover:underline"
-          >
-            View All Sales
-          </button>
-        </div>
-
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs divide-y divide-[#EBF2E2]">
-            <thead>
-              <tr className="font-bold text-[#516744]">
-                <th className="py-2.5 px-3">Invoice</th>
-                <th className="py-2.5 px-3">Customer</th>
-                <th className="py-2.5 px-3">Cashier</th>
-                <th className="py-2.5 px-3">Amount</th>
-                <th className="py-2.5 px-3">Payment</th>
-                <th className="py-2.5 px-3">Status</th>
-                <th className="py-2.5 px-3 text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-[#F1F6EB] text-[#1B2F0B]">
-              {sales.slice(0, 5).map((s) => (
-                <tr key={s.id} className="hover:bg-[#F9FBF6] transition">
-                  <td className="py-3 px-3 font-bold">{s.saleNumber}</td>
-                  <td className="py-3 px-3">{s.customerName || "Walk-in Customer"}</td>
-                  <td className="py-3 px-3 text-[#4A613E]">{s.cashierName}</td>
-                  <td className="py-3 px-3 font-black">TZS {s.total.toLocaleString()}</td>
-                  <td className="py-3 px-3">
-                    <span className="px-2 py-0.5 rounded-md bg-[#EDF3E6] font-bold text-[#20360B]">
-                      {s.paymentMethod}
-                    </span>
-                  </td>
-                  <td className="py-3 px-3">
-                    <span
-                      className={`px-2 py-0.5 rounded-full text-[10px] font-black ${
-                        s.status === "COMPLETED"
-                          ? "bg-emerald-100 text-emerald-900 border border-emerald-300"
-                          : "bg-rose-100 text-rose-900 border border-rose-300"
-                      }`}
-                    >
-                      {s.status}
-                    </span>
-                  </td>
-                  <td className="py-3 px-3 text-right space-x-2">
-                    <button
-                      onClick={() => window.print()}
-                      className="px-2 py-1 rounded-lg bg-[#EDF3E6] hover:bg-[#E1FFAC] text-[#1A2E09] font-bold text-[11px] transition"
-                    >
-                      Print Receipt
-                    </button>
-                    {s.status === "COMPLETED" && (
-                      <button
-                        onClick={() => refundSale(s.id)}
-                        className="px-2 py-1 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold text-[11px] transition"
-                      >
-                        Refund
-                      </button>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
         </div>
       </div>
     </div>

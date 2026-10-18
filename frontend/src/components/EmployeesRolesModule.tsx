@@ -58,8 +58,8 @@ export const EmployeesRolesModule: React.FC<EmployeesRolesModuleProps> = ({ onNa
         : "Stock Entry (IN), Remaining Store Stock & Daily Handover";
     }
     return language === "sw"
-      ? "Mauzo (POS/Cash), Kuingiza Stock, Matumizi ya Siku & Kutuma Mahesabu kwa Boss"
-      : "Sales (POS/Cash), Stock Entry, Daily Expenses & Submit Shift Report to Owner";
+      ? "Kuingiza Mauzo ya Siku, Kuingiza Stock, Matumizi ya Siku & Kutuma Mahesabu kwa Boss"
+      : "Daily Sales Entry, Stock Entry, Daily Expenses & Submit Shift Report to Owner";
   };
 
   return (
@@ -99,8 +99,8 @@ export const EmployeesRolesModule: React.FC<EmployeesRolesModuleProps> = ({ onNa
           </span>
           <p className="text-[#4B613F]">
             {language === "sw"
-              ? "Mfanyakazi akiingia kwenye akaunti yake anaona sehemu zake kuu: (1) Mauzo ya POS/Cash, (2) Kuingiza Stock & Kuona Iliyobaki Stoo, na (3) Mahesabu ya Siku (walichouza, matumizi ya siku hiyo, na stock iliyobaki) ambapo anabonyeza 'Tuma kwa Mwenye Duka' na wewe unaiona papo hapo kwenye Dashibodi yako."
-              : "When an employee logs in, they access Sales, Stock Entry, and Daily Shift Handover (items sold, daily expenses, remaining stock) which sends directly to the Owner Dashboard."}
+              ? "Mfanyakazi akiingia kwenye akaunti yake anaona sehemu zake kuu: (1) Mahesabu ya Siku (kuandika walichouza leo, matumizi ya siku hiyo, na stock iliyobaki) na (2) Kuingiza Stock & Kuona Iliyobaki Stoo, kisha anabonyeza 'Tuma kwa Mwenye Duka' na wewe unaiona papo hapo kwenye Dashibodi yako."
+              : "When an employee logs in, they access Daily Shift Handover (items sold, daily expenses, remaining stock) and Stock Entry, which sends directly to the Owner Dashboard."}
           </p>
         </div>
       </div>
