@@ -210,37 +210,165 @@ export const ExpensesAccountingModule: React.FC = () => {
 
   return (
     <div className="flex-1 flex flex-col h-full p-4 lg:p-6 overflow-y-auto gap-4">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      {/* Top Header + Compact Small Calendar Box + "Funga Mauzo ya Siku" Action */}
+      <div className="flex flex-wrap items-center justify-between gap-2.5">
         <div>
-          <div className="flex flex-wrap items-center gap-2">
-            <h2 className="text-xl font-black text-[#172709] tracking-tight">
-              {language === "sw"
-                ? isOwner
-                  ? "3. Matumizi ya Siku & Kalenda ya Matumizi"
-                  : "2. Matumizi ya Leo & Kalenda ya Matumizi"
-                : "Daily Shop Expenses & Calendar"}
-            </h2>
-            <span className="px-2.5 py-0.5 rounded-full text-[11px] font-black bg-[#E1FFAC] text-[#172B08] border border-[#9CE034] flex items-center gap-1">
-              <Calendar className="w-3 h-3" />
-              <span>{selectedDate}</span>
-            </span>
-          </div>
-          <p className="text-xs text-[#52654c] mt-0.5">
+          <h2 className="text-lg sm:text-xl font-black text-[#172709] tracking-tight">
             {language === "sw"
-              ? "Sogeza kalenda kushoto au kulia (< / >) na bonyeza tarehe yoyote kuona matumizi ya siku hiyo."
-              : "Shift the calendar left or right (< / >) and click any date to view that day's expenses."}
+              ? isOwner
+                ? "3. Matumizi ya Siku"
+                : "2. Matumizi ya Leo Dukani"
+              : "Daily Shop Expenses"}
+          </h2>
+          <p className="text-xs text-[#52654c]">
+            {formatSelectedDateTitle(selectedDate)}
           </p>
         </div>
 
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex flex-wrap items-center gap-2">
+          {/* SMALL COMPACT CALENDAR BOX */}
+          <div className="relative">
+            <div className="inline-flex items-center gap-1 p-1 rounded-xl bg-white border-2 border-[#C2E880] shadow-xs">
+              <button
+                onClick={() => handleShiftSelectedDate(-1)}
+                className="w-7 h-7 rounded-lg bg-[#F4F7EE] hover:bg-[#E1FFAC] text-[#1B2F09] flex items-center justify-center transition cursor-pointer"
+                title="Siku Iliyopita"
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </button>
+
+              <button
+                onClick={() => setShowMonthGrid((prev) => !prev)}
+                className="px-2.5 py-1 rounded-lg bg-[#1B2F09] text-[#E1FFAC] font-black text-xs flex items-center gap-1.5 cursor-pointer"
+                title="Fungua Kalenda Ndogo"
+              >
+                <Calendar className="w-3.5 h-3.5 text-[#A6DF52]" />
+                <span>
+                  {selectedDate === todayStr
+                    ? `Leo (${selectedDate})`
+                    : selectedDate === yesterdayStr
+                    ? `Jana (${selectedDate})`
+                    : selectedDate}
+                </span>
+              </button>
+
+              <button
+                onClick={() => handleShiftSelectedDate(1)}
+                className="w-7 h-7 rounded-lg bg-[#F4F7EE] hover:bg-[#E1FFAC] text-[#1B2F09] flex items-center justify-center transition cursor-pointer"
+                title="Siku Inayofuata"
+              >
+                <ChevronRight className="w-4 h-4" />
+              </button>
+
+              {selectedDate !== todayStr && (
+                <button
+                  onClick={() => handleSelectCalendarDate(todayStr)}
+                  className="px-2 py-1 rounded-lg bg-[#E1FFAC] hover:bg-[#d2f88c] text-[#162709] font-black text-[11px] transition cursor-pointer"
+                >
+                  Leo
+                </button>
+              )}
+            </div>
+
+            {/* POPUP SMALL CALENDAR BOX */}
+            {showMonthGrid && (
+              <div className="absolute right-0 mt-1.5 w-64 rounded-2xl bg-white border-2 border-[#C2E880] shadow-2xl p-3 z-50">
+                <div className="flex items-center justify-between mb-2 pb-1.5 border-b border-[#EDF4E4]">
+                  <button
+                    onClick={() => handleShiftMonth(-1)}
+                    className="w-6 h-6 rounded-lg bg-[#F4F7EE] hover:bg-[#E1FFAC] text-[#162709] flex items-center justify-center cursor-pointer"
+                  >
+                    <ChevronLeft className="w-3.5 h-3.5" />
+                  </button>
+                  <span className="font-black text-xs text-[#162709]">
+                    {SWAHILI_MONTHS_FULL[viewMonth]} {viewYear}
+                  </span>
+                  <button
+                    onClick={() => handleShiftMonth(1)}
+                    className="w-6 h-6 rounded-lg bg-[#F4F7EE] hover:bg-[#E1FFAC] text-[#162709] flex items-center justify-center cursor-pointer"
+                  >
+                    <ChevronRight className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-7 gap-0.5 text-center text-[9px] font-black text-[#58704A] mb-1">
+                  <div>Jp</div>
+                  <div>Jt</div>
+                  <div>Jn</div>
+                  <div>Ju</div>
+                  <div>Al</div>
+                  <div>Ij</div>
+                  <div>Jm</div>
+                </div>
+
+                <div className="grid grid-cols-7 gap-1">
+                  {Array.from({ length: firstDayOfMonth }).map((_, emptyIdx) => (
+                    <div key={`empty-${emptyIdx}`} className="h-7" />
+                  ))}
+                  {Array.from({ length: daysInMonth }, (_, dIdx) => {
+                    const dayNum = dIdx + 1;
+                    const dStr = `${viewYear}-${String(viewMonth + 1).padStart(2, "0")}-${String(dayNum).padStart(2, "0")}`;
+                    const dayExp = getExpensesTotalForDate(dStr);
+                    const isSel = dStr === selectedDate;
+                    const isTod = dStr === todayStr;
+                    return (
+                      <button
+                        key={dStr}
+                        onClick={() => {
+                          handleSelectCalendarDate(dStr);
+                          setShowMonthGrid(false);
+                        }}
+                        className={`h-7 rounded-lg text-[11px] font-black flex flex-col items-center justify-center relative transition cursor-pointer ${
+                          isSel
+                            ? "bg-[#1B2F09] text-[#E1FFAC] border border-[#8ECE28]"
+                            : isTod
+                            ? "bg-[#E1FFAC] text-[#162709] border border-[#9CE034]"
+                            : dayExp > 0
+                            ? "bg-rose-50 hover:bg-rose-100 text-[#162709]"
+                            : "hover:bg-gray-100 text-[#4E6440]"
+                        }`}
+                      >
+                        <span>{dayNum}</span>
+                        {dayExp > 0 && (
+                          <span
+                            className={`w-1 h-1 rounded-full ${
+                              isSel ? "bg-[#A6DF52]" : "bg-rose-600"
+                            }`}
+                          />
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                <div className="flex items-center justify-between pt-2 mt-2 border-t border-[#EDF4E4]">
+                  <button
+                    onClick={() => {
+                      handleSelectCalendarDate(todayStr);
+                      setShowMonthGrid(false);
+                    }}
+                    className="text-[11px] font-black text-[#355B0F] hover:underline cursor-pointer"
+                  >
+                    Rudi Leo ({todayStr})
+                  </button>
+                  <button
+                    onClick={() => setShowMonthGrid(false)}
+                    className="px-2.5 py-1 rounded-lg bg-[#F4F7EE] text-[#162709] text-[10px] font-black cursor-pointer"
+                  >
+                    Funga
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+
           {!isDayClosed ? (
             <button
               onClick={() => closeDayAndSendToBoss()}
-              className="px-4 py-2.5 rounded-xl bg-[#1B2F09] hover:bg-[#27430D] text-[#E1FFAC] border-2 border-[#A6DF52] text-xs font-black flex items-center gap-2 shadow-md transition cursor-pointer"
+              className="px-3.5 py-2 rounded-xl bg-[#1B2F09] hover:bg-[#27430D] text-[#E1FFAC] border-2 border-[#A6DF52] text-xs font-black flex items-center gap-1.5 shadow-sm transition cursor-pointer"
             >
-              <Send className="w-4 h-4" />
-              <span>Funga Mauzo ya Siku (Tuma kwa Boss Auto)</span>
+              <Send className="w-3.5 h-3.5" />
+              <span>Funga Mauzo ya Siku</span>
             </button>
           ) : (
             <button
@@ -248,241 +376,13 @@ export const ExpensesAccountingModule: React.FC = () => {
                 startNewDay();
                 handleSelectCalendarDate(todayStr);
               }}
-              className="px-4 py-2.5 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-black flex items-center gap-2 shadow-md transition cursor-pointer"
+              className="px-3.5 py-2 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-black flex items-center gap-1.5 shadow-sm transition cursor-pointer"
             >
-              <CheckCircle2 className="w-4 h-4" />
-              <span>Fungua Siku Mpya (Anza Siku Mpya 0)</span>
+              <CheckCircle2 className="w-3.5 h-3.5" />
+              <span>Fungua Siku Mpya</span>
             </button>
           )}
         </div>
-      </div>
-
-      {/* INTERACTIVE CALENDAR DATE SHIFTER & SELECTOR */}
-      <div className="p-3.5 rounded-2xl bg-white border-2 border-[#C2E880] shadow-xs space-y-3">
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <div className="flex items-center gap-1.5">
-            <button
-              onClick={() => handleShiftSelectedDate(-1)}
-              className="px-3 py-1.5 rounded-xl bg-[#F4F7EE] hover:bg-[#E1FFAC] text-[#1B2F09] border border-[#C6DDA8] font-black text-xs flex items-center gap-1 transition cursor-pointer"
-            >
-              <ChevronLeft className="w-4 h-4" />
-              <span>Siku Iliyopita</span>
-            </button>
-
-            <div className="px-3.5 py-1.5 rounded-xl bg-[#1B2F09] text-[#E1FFAC] border border-[#8ECE28] font-black text-xs flex items-center gap-2">
-              <Calendar className="w-3.5 h-3.5 text-[#A6DF52]" />
-              <span>{formatSelectedDateTitle(selectedDate)}</span>
-            </div>
-
-            <button
-              onClick={() => handleShiftSelectedDate(1)}
-              className="px-3 py-1.5 rounded-xl bg-[#F4F7EE] hover:bg-[#E1FFAC] text-[#1B2F09] border border-[#C6DDA8] font-black text-xs flex items-center gap-1 transition cursor-pointer"
-            >
-              <span>Siku Inayofuata</span>
-              <ChevronRight className="w-4 h-4" />
-            </button>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-2">
-            {selectedDate !== todayStr && (
-              <button
-                onClick={() => {
-                  setSelectedDate(todayStr);
-                  setStripEndDate(todayStr);
-                  setViewMonthDate(todayStr);
-                }}
-                className="px-3 py-1.5 rounded-xl bg-[#E1FFAC] hover:bg-[#d2f88c] text-[#162709] border border-[#9CE034] font-black text-xs transition cursor-pointer"
-              >
-                Rudi Leo ({todayStr})
-              </button>
-            )}
-
-            <button
-              onClick={() => setShowMonthGrid((prev) => !prev)}
-              className={`px-3 py-1.5 rounded-xl font-black text-xs border flex items-center gap-1.5 transition cursor-pointer ${
-                showMonthGrid
-                  ? "bg-[#1B2F09] text-[#E1FFAC] border-[#8ECE28]"
-                  : "bg-[#F4F7EE] hover:bg-[#E1FFAC]/60 text-[#1B2F09] border-[#C6DDA8]"
-              }`}
-            >
-              <Calendar className="w-3.5 h-3.5" />
-              <span>{showMonthGrid ? "Ficha Kalenda ya Mwezi" : "Fungua Kalenda ya Mwezi"}</span>
-            </button>
-
-            <input
-              type="date"
-              value={selectedDate}
-              onChange={(e) => {
-                if (e.target.value) {
-                  handleSelectCalendarDate(e.target.value);
-                }
-              }}
-              className="py-1.5 px-2.5 rounded-xl neu-input font-bold text-xs cursor-pointer"
-            />
-          </div>
-        </div>
-
-        {/* 7-Day Horizontal Shifting Calendar Strip */}
-        <div className="flex items-center gap-1.5">
-          <button
-            onClick={() => handleShiftCalendarStrip(-7)}
-            className="p-2 rounded-xl bg-[#F4F7EE] hover:bg-[#E1FFAC] text-[#1B2F09] border border-[#D8E6CC] font-black text-xs flex flex-col items-center justify-center shrink-0 transition cursor-pointer"
-            title="Sogeza kalenda wiki 1 nyuma"
-          >
-            <ChevronsLeft className="w-4 h-4" />
-            <span className="text-[9px] font-extrabold mt-0.5">-7 Siku</span>
-          </button>
-
-          <div className="grid grid-cols-7 gap-1.5 flex-1">
-            {calendarStripDays.map((day) => (
-              <button
-                key={day.dateStr}
-                onClick={() => handleSelectCalendarDate(day.dateStr)}
-                className={`p-2 rounded-xl border text-left transition flex flex-col justify-between cursor-pointer ${
-                  day.isSelected
-                    ? "bg-[#1B2F09] text-[#E1FFAC] border-2 border-[#8ECE28] shadow-sm"
-                    : day.totalExpenses > 0
-                    ? "bg-[#F8FBF4] hover:bg-[#E1FFAC]/50 text-[#162709] border-[#C6DDA8]"
-                    : "bg-[#F4F6F1] hover:bg-[#EBF1E4] text-[#5B704E] border-[#E2EBDA]"
-                }`}
-              >
-                <div className="flex items-center justify-between gap-1 w-full">
-                  <span
-                    className={`text-[10px] font-bold truncate ${
-                      day.isSelected ? "text-[#A6DF52]" : "text-[#58704A]"
-                    }`}
-                  >
-                    {day.dayName}
-                  </span>
-                  {(day.isToday || day.isYesterday) && (
-                    <span
-                      className={`px-1.5 py-0.2 rounded text-[9px] font-black ${
-                        day.isSelected
-                          ? "bg-[#A6DF52] text-[#162709]"
-                          : "bg-[#E1FFAC] text-[#162709]"
-                      }`}
-                    >
-                      {day.isToday ? "LEO" : "JANA"}
-                    </span>
-                  )}
-                </div>
-
-                <div className="my-1">
-                  <span className="text-sm sm:text-base font-black leading-none">
-                    {day.dayNumber}
-                  </span>{" "}
-                  <span className="text-[10px] font-bold opacity-80">{day.monthShort}</span>
-                </div>
-
-                <div
-                  className={`text-[10px] font-extrabold truncate ${
-                    day.isSelected
-                      ? "text-white"
-                      : day.totalExpenses > 0
-                      ? "text-rose-700"
-                      : "text-gray-400"
-                  }`}
-                >
-                  {day.totalExpenses > 0
-                    ? `TZS ${day.totalExpenses.toLocaleString()}`
-                    : "TZS 0"}
-                </div>
-              </button>
-            ))}
-          </div>
-
-          <button
-            onClick={() => handleShiftCalendarStrip(7)}
-            className="p-2 rounded-xl bg-[#F4F7EE] hover:bg-[#E1FFAC] text-[#1B2F09] border border-[#D8E6CC] font-black text-xs flex flex-col items-center justify-center shrink-0 transition cursor-pointer"
-            title="Sogeza kalenda wiki 1 mbele"
-          >
-            <ChevronsRight className="w-4 h-4" />
-            <span className="text-[9px] font-extrabold mt-0.5">+7 Siku</span>
-          </button>
-        </div>
-
-        {/* Optional Expandable Full Month Calendar Grid */}
-        {showMonthGrid && (
-          <div className="pt-3 border-t border-[#E6F0DA]">
-            <div className="flex items-center justify-between mb-2">
-              <button
-                onClick={() => handleShiftMonth(-1)}
-                className="px-3 py-1 rounded-lg bg-[#F4F7EE] hover:bg-[#E1FFAC] text-[#162709] border border-[#C6DDA8] text-xs font-black flex items-center gap-1 cursor-pointer"
-              >
-                <ChevronLeft className="w-3.5 h-3.5" />
-                <span>Mwezi Uliopita</span>
-              </button>
-
-              <span className="font-black text-sm text-[#162709]">
-                Kalenda ya {SWAHILI_MONTHS_FULL[viewMonth]} {viewYear}
-              </span>
-
-              <button
-                onClick={() => handleShiftMonth(1)}
-                className="px-3 py-1 rounded-lg bg-[#F4F7EE] hover:bg-[#E1FFAC] text-[#162709] border border-[#C6DDA8] text-xs font-black flex items-center gap-1 cursor-pointer"
-              >
-                <span>Mwezi Unaofuata</span>
-                <ChevronRight className="w-3.5 h-3.5" />
-              </button>
-            </div>
-
-            <div className="grid grid-cols-7 gap-1 text-center text-[10px] font-black text-[#4E6440] mb-1">
-              <div>Jumapili</div>
-              <div>Jumatatu</div>
-              <div>Jumanne</div>
-              <div>Jumatano</div>
-              <div>Alhamisi</div>
-              <div>Ijumaa</div>
-              <div>Jumamosi</div>
-            </div>
-
-            <div className="grid grid-cols-7 gap-1">
-              {Array.from({ length: firstDayOfMonth }).map((_, emptyIdx) => (
-                <div key={`empty-${emptyIdx}`} className="p-2 rounded-lg bg-gray-50/50" />
-              ))}
-              {Array.from({ length: daysInMonth }, (_, dIdx) => {
-                const dayNum = dIdx + 1;
-                const dStr = `${viewYear}-${String(viewMonth + 1).padStart(2, "0")}-${String(dayNum).padStart(2, "0")}`;
-                const dayExp = getExpensesTotalForDate(dStr);
-                const isSel = dStr === selectedDate;
-                const isTod = dStr === todayStr;
-                return (
-                  <button
-                    key={dStr}
-                    onClick={() => handleSelectCalendarDate(dStr)}
-                    className={`p-1.5 rounded-lg border text-left transition cursor-pointer ${
-                      isSel
-                        ? "bg-[#1B2F09] text-[#E1FFAC] border-[#8ECE28] font-black"
-                        : dayExp > 0
-                        ? "bg-rose-50/60 hover:bg-rose-100/60 text-[#162709] border-rose-200"
-                        : "bg-white hover:bg-gray-50 text-[#58704A] border-gray-200"
-                    }`}
-                  >
-                    <div className="flex items-center justify-between text-xs font-black">
-                      <span>{dayNum}</span>
-                      {isTod && (
-                        <span className="text-[8px] px-1 rounded bg-[#A6DF52] text-[#162709]">
-                          LEO
-                        </span>
-                      )}
-                    </div>
-                    <div
-                      className={`text-[9px] font-bold truncate mt-0.5 ${
-                        isSel
-                          ? "text-[#E1FFAC]"
-                          : dayExp > 0
-                          ? "text-rose-700"
-                          : "text-gray-400"
-                      }`}
-                    >
-                      {dayExp > 0 ? `TZS ${dayExp.toLocaleString()}` : "-"}
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        )}
       </div>
 
       {/* 3 Automatic Expense Summary Cards for Selected Date */}
