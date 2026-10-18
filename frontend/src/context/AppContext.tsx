@@ -92,6 +92,23 @@ interface AppContextType {
   renewSubscription: () => void;
   isAiModalOpen: boolean;
   setIsAiModalOpen: (open: boolean) => void;
+  isHydrated: boolean;
+  viewState: "landing" | "app";
+  setViewState: (v: "landing" | "app") => void;
+  activeModule: string;
+  setActiveModule: (m: string) => void;
+  centerPopup: {
+    id: string;
+    title: string;
+    message: string;
+    type: "SUCCESS" | "ERROR" | "WARNING" | "INFO";
+  } | null;
+  notifyCenter: (
+    title: string,
+    message: string,
+    type?: "SUCCESS" | "ERROR" | "WARNING" | "INFO"
+  ) => void;
+  dismissCenterPopup: () => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -119,6 +136,7 @@ const emptyCashRegister: CashRegister = {
 const PROD_STORAGE_KEY = "tradepos_prod_store_v1";
 const PROD_USER_KEY = "tradepos_prod_user_v1";
 const PROD_VIEW_KEY = "tradepos_prod_view_v1";
+const PROD_MODULE_KEY = "tradepos_prod_module_v1";
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
   const [language, setLanguage] = useState<"en" | "sw">("sw");
@@ -145,10 +163,115 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [isDayClosed, setIsDayClosed] = useState<boolean>(false);
   const [activeDayLabel, setActiveDayLabel] = useState<string>(getOffsetDateStr(0));
   const [isHydrated, setIsHydrated] = useState<boolean>(false);
+  const [viewState, setViewStateInternal] = useState<"landing" | "app">("landing");
+  const [activeModule, setActiveModuleInternal] = useState<string>("dashboard");
   const [isOffline, setIsOffline] = useState<boolean>(false);
   const [isAiModalOpen, setIsAiModalOpen] = useState<boolean>(false);
+  const [centerPopup, setCenterPopup] = useState<{
+    id: string;
+    title: string;
+    message: string;
+    type: "SUCCESS" | "ERROR" | "WARNING" | "INFO";
+  } | null>(null);
 
-  // Clean up legacy demo localStorage keys and restore production store state on mount
+  const setViewState = (v: "landing" | "app") => {
+    setViewStateInternal(v);
+    try {
+      localStorage.setItem(PROD_VIEW_KEY, v);
+    } catch (e) {}
+  };
+
+  const setActiveModule = (m: string) => {
+    setActiveModuleInternal(m);
+    try {
+      localStorage.setItem(PROD_MODULE_KEY, m);
+    } catch (e) {}
+  };
+
+  const notifyCenter = (
+    title: string,
+    message: string,
+    type: "SUCCESS" | "ERROR" | "WARNING" | "INFO" = "INFO"
+  ) => {
+    const popupId = "pop-" + Date.now() + "-" + Math.floor(Math.random() * 1000);
+    setCenterPopup({ id: popupId, title, message, type });
+    const newNotif: AppNotification = {
+      id: "notif-" + Date.now() + "-" + Math.floor(Math.random() * 1000),
+      title,
+      message,
+      type: type === "ERROR" || type === "WARNING" ? "SYSTEM" : "PAYMENT",
+      timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+      read: false,
+    };
+    setNotifications((prev) => [newNotif, ...prev.slice(0, 49)]);
+  };
+
+  const dismissCenterPopup = () => {
+    setCenterPopup(null);
+  };
+
+  // Auto-dismiss centered notification box after 3.2 seconds
+  useEffect(() => {
+    if (!centerPopup) return;
+    const timer = setTimeout(() => {
+      setCenterPopup((cur) => (cur?.id === centerPopup.id ? null : cur));
+    }, 3200);
+    return () => clearTimeout(timer);
+  }, [centerPopup]);
+
+  // Intercept window.alert, window.onerror, and unhandledrejection so all notifications & errors appear as a centered little box
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const origAlert = window.alert;
+    window.alert = (msg?: any) => {
+      const text = String(msg ?? "");
+      const lower = text.toLowerCase();
+      const isErr =
+        lower.includes("error") ||
+        lower.includes("kosa") ||
+        lower.includes("tafadhali") ||
+        lower.includes("shida") ||
+        lower.includes("cannot") ||
+        lower.includes("out of stock") ||
+        lower.includes("si sahihi") ||
+        lower.includes("haijakamilika");
+      notifyCenter(
+        isErr ? "Ilani ya Mfumo" : "Taarifa ya Mfumo",
+        text,
+        isErr ? "ERROR" : "INFO"
+      );
+    };
+
+    const handleGlobalError = (event: ErrorEvent) => {
+      event.preventDefault();
+      notifyCenter(
+        "Taarifa ya Mfumo",
+        "Tafadhali hakikisha umejaza taarifa zote kwa usahihi.",
+        "ERROR"
+      );
+    };
+
+    const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
+      event.preventDefault();
+      notifyCenter(
+        "Taarifa ya Mtandao",
+        "Ombi halikukamilika kwa wakati. Mfumo unaendelea kufanya kazi salama.",
+        "ERROR"
+      );
+    };
+
+    window.addEventListener("error", handleGlobalError);
+    window.addEventListener("unhandledrejection", handleUnhandledRejection);
+
+    return () => {
+      window.alert = origAlert;
+      window.removeEventListener("error", handleGlobalError);
+      window.removeEventListener("unhandledrejection", handleUnhandledRejection);
+    };
+  }, []);
+
+  // Clean up legacy demo localStorage keys and restore production store state on mount in ONE single synchronous batch
   useEffect(() => {
     try {
       // Remove any legacy demo keys from previous development iterations
@@ -191,8 +314,23 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       }
 
       const storedUser = localStorage.getItem(PROD_USER_KEY);
+      const storedView = localStorage.getItem(PROD_VIEW_KEY);
+      const storedModule = localStorage.getItem(PROD_MODULE_KEY);
+
       if (storedUser) {
-        setUser(JSON.parse(storedUser));
+        const parsedUser: User = JSON.parse(storedUser);
+        setUser(parsedUser);
+        if (storedView === "app" || !storedView) {
+          setViewStateInternal("app");
+        }
+        if (storedModule) {
+          setActiveModuleInternal(storedModule);
+        } else {
+          const isBoss = parsedUser.role === "OWNER" || parsedUser.role === "SUPER_ADMIN";
+          setActiveModuleInternal(isBoss ? "dashboard" : "sales");
+        }
+      } else {
+        setViewStateInternal("landing");
       }
     } catch (e) {
       // safe fallback
@@ -449,10 +587,20 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }
 
     setUser(loggedUser);
+    setViewState("app");
+    const isBoss = loggedUser.role === "OWNER" || loggedUser.role === "SUPER_ADMIN";
+    const nextMod = loggedUser.role === "SUPER_ADMIN" ? "super-admin" : isBoss ? "dashboard" : "sales";
+    setActiveModule(nextMod);
     appendAuditLog("LOGIN_SUCCESS", `User ${loggedUser.name} signed in`, loggedUser.name);
+    notifyCenter(
+      "Karibu Kwenye Mfumo",
+      `Umeingia kikamilifu kama ${loggedUser.name} (${loggedUser.role}).`,
+      "SUCCESS"
+    );
     try {
       localStorage.setItem(PROD_USER_KEY, JSON.stringify(loggedUser));
       localStorage.setItem(PROD_VIEW_KEY, "app");
+      localStorage.setItem(PROD_MODULE_KEY, nextMod);
     } catch (e) {}
 
     return true;
@@ -469,6 +617,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     };
     setEmployees((prev) => [...prev, newEmp]);
     appendAuditLog("EMPLOYEE_ADDED", `Added staff account: ${newEmp.name} (${newEmp.role})`);
+    notifyCenter(
+      "Mfanyakazi Ameongezwa",
+      `Akaunti ya ${newEmp.name} (${newEmp.role}) imefunguliwa kikamilifu.`,
+      "SUCCESS"
+    );
   };
 
   const switchEmployeeAccount = (employeeId: string) => {
@@ -484,6 +637,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       branchId: currentBranch?.id || "",
     };
     setUser(switchedUser);
+    const isBoss = switchedUser.role === "OWNER" || switchedUser.role === "SUPER_ADMIN";
+    setActiveModule(isBoss ? "dashboard" : "sales");
+    notifyCenter(
+      "Akaunti Imebadilishwa",
+      `Sasa unatumia akaunti ya ${switchedUser.name} (${switchedUser.role}).`,
+      "INFO"
+    );
     try {
       localStorage.setItem(PROD_USER_KEY, JSON.stringify(switchedUser));
     } catch (e) {}
@@ -579,16 +739,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setDailyReports((prev) => [newReport, ...prev]);
     setIsDayClosed(true);
 
-    const newNotif: AppNotification = {
-      id: "notif-" + Date.now(),
-      title: `Siku Imefungwa (${activeDayLabel}) - ${newReport.submittedBy}`,
-      message: `Mauzo: TZS ${totalSalesVal.toLocaleString()} | Matumizi: TZS ${totalExpensesVal.toLocaleString()} | Stoo Iliyobaki: ${totalUnitsInStore} pcs`,
-      type: "SYSTEM",
-      timestamp: "Sasa hivi",
-      read: false,
-      actionUrl: "cash-register",
-    };
-    setNotifications((prev) => [newNotif, ...prev]);
+    notifyCenter(
+      `Siku Imefungwa (${activeDayLabel})`,
+      `Ripoti ya Mauzo (TZS ${totalSalesVal.toLocaleString()}) na Matumizi (TZS ${totalExpensesVal.toLocaleString()}) imetumwa kwa Mwenye Duka.`,
+      "SUCCESS"
+    );
     appendAuditLog("DAY_CLOSED", `Closed daily sales for ${activeDayLabel}`);
 
     return newReport;
@@ -620,6 +775,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       isOpen: true,
       openedAt: `${todayStr} 08:00`,
     }));
+    notifyCenter(
+      "Siku Mpya Imeanza",
+      `Daftari la mauzo na matumizi ya leo (${todayStr}) limefunguliwa.`,
+      "SUCCESS"
+    );
   };
 
   const approveDailyReport = (reportId: string) => {
@@ -635,10 +795,16 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           : r
       )
     );
+    notifyCenter(
+      "Ripoti Imethibitishwa",
+      "Ripoti ya siku imekaguliwa na kuthibitishwa na Mwenye Duka.",
+      "SUCCESS"
+    );
   };
 
   const logoutUser = () => {
     setUser(null);
+    setViewState("landing");
     try {
       localStorage.removeItem(PROD_USER_KEY);
       localStorage.setItem(PROD_VIEW_KEY, "landing");
@@ -699,6 +865,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setAvailableBusinesses((prev) => [newBusiness, ...prev]);
     setCurrentBranch(mainBranch);
     setUser(newUser);
+    setViewState("app");
+    setActiveModule("dashboard");
     setEmployees([ownerEmployee]);
     setProducts([]);
     setSales([]);
@@ -717,10 +885,16 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setActiveDayLabel(getOffsetDateStr(0));
 
     appendAuditLog("BUSINESS_REGISTERED", `Registered business ${newBusiness.name}`, newUser.name);
+    notifyCenter(
+      "Biashara Imesajiliwa",
+      `Karibu ${newBusiness.name}! Akaunti yako imefunguliwa kikamilifu.`,
+      "SUCCESS"
+    );
 
     try {
       localStorage.setItem(PROD_USER_KEY, JSON.stringify(newUser));
       localStorage.setItem(PROD_VIEW_KEY, "app");
+      localStorage.setItem(PROD_MODULE_KEY, "dashboard");
     } catch (e) {}
   };
 
@@ -746,6 +920,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setProducts((prev) => prev.filter((p) => p.id !== id));
     if (target) {
       appendAuditLog("PRODUCT_DELETED", `Removed product ${target.name}`);
+      notifyCenter("Bidhaa Imeondolewa", `${target.name} imeondolewa kwenye orodha ya stoo.`, "INFO");
     }
   };
 
@@ -845,6 +1020,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
     setSales((prev) => [newSale, ...prev]);
     appendAuditLog("SALE_RECORDED", `Recorded sale ${saleNum} for TZS ${newSale.total.toLocaleString()}`);
+    notifyCenter(
+      "Mauzo Yamerekodiwa",
+      `${saleData.items.map((i) => `${i.productName} (x${i.quantity})`).join(", ")} — Jumla: TZS ${newSale.total.toLocaleString()}.`,
+      "SUCCESS"
+    );
     return newSale;
   };
 
@@ -853,6 +1033,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       prev.map((s) => (s.id === saleId ? { ...s, status: "REFUNDED" } : s))
     );
     appendAuditLog("SALE_REFUNDED", `Refunded sale ${saleId}`);
+    notifyCenter("Mauzo Yamerudishwa", "Muamala umerudishwa (Refunded).", "WARNING");
   };
 
   const recordStockMovement = (movData: Omit<StockMovement, "id" | "tenantId" | "createdAt">) => {
@@ -880,6 +1061,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       `STOCK_${movData.type}`,
       `${movData.type === "IN" ? "Added" : "Removed"} ${movData.quantity} units of ${movData.productName}`
     );
+    notifyCenter(
+      movData.type === "IN" ? "Stock Imeingizwa Stoo" : "Stock Imetolewa Stoo",
+      `${movData.productName}: ${movData.type === "IN" ? "+" : "-"}${movData.quantity} pcs zimesasishwa stoo.`,
+      "SUCCESS"
+    );
   };
 
   const addExpense = (expenseData: Omit<Expense, "id" | "tenantId">) => {
@@ -898,6 +1084,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       }));
     }
     appendAuditLog("EXPENSE_RECORDED", `Recorded expense: ${expenseData.title} (TZS ${expenseData.amount.toLocaleString()})`);
+    notifyCenter(
+      "Matumizi Yamerekodiwa",
+      `${expenseData.title}: TZS ${expenseData.amount.toLocaleString()} imerekodiwa.`,
+      "SUCCESS"
+    );
   };
 
   const addCustomer = (
@@ -930,10 +1121,16 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     };
     setCustomers((prev) => [newCust, ...prev]);
     appendAuditLog("CUSTOMER_ADDED", `Added customer ${newCust.name} (Debt: TZS ${debt.toLocaleString()})`);
+    notifyCenter(
+      "Mteja Amesajiliwa",
+      `${newCust.name} ameongezwa kwenye daftari la wateja.`,
+      "SUCCESS"
+    );
   };
 
   const payCustomerDebt = (customerId: string, amount: number, method = "CASH") => {
     if (!amount || amount <= 0) return;
+    const targetCust = customers.find((c) => c.id === customerId);
     setCustomers((prev) =>
       prev.map((c) => {
         if (c.id === customerId) {
@@ -954,10 +1151,16 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       }));
     }
     appendAuditLog("DEBT_PAYMENT", `Customer ${customerId} paid TZS ${amount.toLocaleString()} via ${method}`);
+    notifyCenter(
+      "Deni Limelipwa",
+      `${targetCust?.name || "Mteja"} amelipa TZS ${amount.toLocaleString()} (${method}).`,
+      "SUCCESS"
+    );
   };
 
   const addCustomerDebt = (customerId: string, amount: number) => {
     if (!amount || amount <= 0) return;
+    const targetCust = customers.find((c) => c.id === customerId);
     setCustomers((prev) =>
       prev.map((c) => {
         if (c.id === customerId) {
@@ -972,6 +1175,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       })
     );
     appendAuditLog("DEBT_ADDED", `Added TZS ${amount.toLocaleString()} debt to customer ${customerId}`);
+    notifyCenter(
+      "Deni Limeongezwa",
+      `Deni la TZS ${amount.toLocaleString()} limeongezwa kwa ${targetCust?.name || "Mteja"}.`,
+      "INFO"
+    );
   };
 
   const addSupplier = (supplierData: Omit<Supplier, "id" | "tenantId" | "totalPurchased" | "amountOwed">) => {
@@ -985,6 +1193,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       lastPurchaseDate: activeDayLabel,
     };
     setSuppliers((prev) => [newSup, ...prev]);
+    notifyCenter("Msambazaji Ameongezwa", `${newSup.name} ameongezwa kikamilifu.`, "SUCCESS");
   };
 
   const createPurchaseOrder = (poData: Omit<PurchaseOrder, "id" | "tenantId" | "createdAt" | "orderNumber">) => {
@@ -997,6 +1206,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       createdAt: activeDayLabel,
     };
     setPurchaseOrders((prev) => [newPO, ...prev]);
+    notifyCenter("Oda ya Manunuzi Imeundwa", `${newPO.orderNumber} imehifadhiwa kikamilifu.`, "SUCCESS");
   };
 
   const createOnlineOrder = (orderData: Omit<OnlineOrder, "id" | "tenantId" | "createdAt" | "orderNumber">) => {
@@ -1010,6 +1220,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       createdAt: new Date().toISOString(),
     };
     setOnlineOrders((prev) => [newOrder, ...prev]);
+    notifyCenter("Delivery Imerekodiwa", `Mzigo ${orderNum} wa ${orderData.customerName} umeingizwa.`, "SUCCESS");
     return newOrder;
   };
 
@@ -1017,6 +1228,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setOnlineOrders((prev) =>
       prev.map((o) => (o.id === orderId ? { ...o, status } : o))
     );
+    notifyCenter("Hali ya Delivery Imesasishwa", `Hali ya mzigo sasa ni: ${status}.`, "INFO");
   };
 
   const updateDeliveryDetails = (orderId: string, updates: Partial<OnlineOrder>) => {
@@ -1058,6 +1270,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setBusiness(updatedBiz);
     setAvailableBusinesses((prev) =>
       prev.map((b) => (b.id === updatedBiz.id ? updatedBiz : b))
+    );
+    appendAuditLog("SUBSCRIPTION_RENEWED", `Renewed subscription until ${nextDate}`);
+    notifyCenter(
+      "Kifurushi Kimehuishwa",
+      `Leseni ya biashara yako imehuishwa hadi tarehe ${nextDate}.`,
+      "SUCCESS"
     );
   };
 
@@ -1129,9 +1347,73 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         renewSubscription,
         isAiModalOpen,
         setIsAiModalOpen,
+        isHydrated,
+        viewState,
+        setViewState,
+        activeModule,
+        setActiveModule,
+        centerPopup,
+        notifyCenter,
+        dismissCenterPopup,
       }}
     >
       {children}
+
+      {/* GLOBAL CENTERED LITTLE NOTIFICATION & ERROR BOX */}
+      {centerPopup && (
+        <div
+          onClick={dismissCenterPopup}
+          className="fixed inset-0 z-[150] flex items-center justify-center p-4 bg-black/25 backdrop-blur-[2px]"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className={`w-full max-w-xs sm:max-w-sm rounded-2xl bg-white p-5 shadow-2xl border-2 text-center transition-all ${
+              centerPopup.type === "ERROR"
+                ? "border-rose-400"
+                : centerPopup.type === "WARNING"
+                ? "border-amber-400"
+                : "border-[#8ECE28]"
+            }`}
+          >
+            <div
+              className={`w-10 h-10 mx-auto mb-2.5 rounded-xl flex items-center justify-center font-black text-sm border ${
+                centerPopup.type === "ERROR"
+                  ? "bg-rose-50 text-rose-800 border-rose-200"
+                  : centerPopup.type === "WARNING"
+                  ? "bg-amber-50 text-amber-800 border-amber-200"
+                  : "bg-[#E1FFAC] text-[#172709] border-[#9EDE31]"
+              }`}
+            >
+              {centerPopup.type === "ERROR" ? "!" : centerPopup.type === "WARNING" ? "!" : "✓"}
+            </div>
+            <h4
+              className={`text-sm font-black ${
+                centerPopup.type === "ERROR"
+                  ? "text-rose-900"
+                  : centerPopup.type === "WARNING"
+                  ? "text-amber-900"
+                  : "text-[#162709]"
+              }`}
+            >
+              {centerPopup.title}
+            </h4>
+            <p className="text-xs text-[#4A613E] font-medium mt-1 leading-relaxed">
+              {centerPopup.message}
+            </p>
+            <button
+              type="button"
+              onClick={dismissCenterPopup}
+              className={`mt-4 w-full py-2 rounded-xl text-xs font-black transition cursor-pointer ${
+                centerPopup.type === "ERROR"
+                  ? "bg-rose-700 text-white hover:bg-rose-800"
+                  : "bg-[#1B2F09] text-[#E1FFAC] hover:bg-[#122006]"
+              }`}
+            >
+              {language === "sw" ? "Sawa (Funga)" : "OK (Close)"}
+            </button>
+          </div>
+        </div>
+      )}
     </AppContext.Provider>
   );
 }

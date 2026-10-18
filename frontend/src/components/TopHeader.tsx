@@ -32,6 +32,7 @@ export const TopHeader: React.FC<TopHeaderProps> = ({ pageTitle, onNavigate, onL
     markAllNotificationsRead,
     employees,
     switchEmployeeAccount,
+    notifyCenter,
     t
   } = useApp();
 
@@ -71,7 +72,9 @@ export const TopHeader: React.FC<TopHeaderProps> = ({ pageTitle, onNavigate, onL
       setPinError("");
       onNavigate("dashboard");
     } else {
-      setPinError("PIN ya Boss si sahihi! (PIN ya majaribio: 1234)");
+      const errMsg = "PIN ya Boss si sahihi! Tafadhali jaribu tena.";
+      setPinError(errMsg);
+      notifyCenter("Hitilafu ya PIN", errMsg, "ERROR");
     }
   };
 
@@ -87,38 +90,44 @@ export const TopHeader: React.FC<TopHeaderProps> = ({ pageTitle, onNavigate, onL
 
         {/* Right Controls: Notifications, Help, Language, Profile */}
         <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
-          {/* 1. Notification Center (Owner sees all alerts) */}
-          {isOwner && (
-            <div className="relative" ref={notifRef}>
-              <button
-                onClick={() => setIsNotifOpen(!isNotifOpen)}
-                className="w-9 h-9 rounded-xl bg-white border border-[#D5E5C4] hover:bg-[#F4F7EE] flex items-center justify-center relative text-[#2B3F1E] shadow-xs transition"
-              >
-                <Bell className="w-4 h-4" />
-                {unreadNotificationCount > 0 && (
-                  <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-[#1B2F09] text-[#E1FFAC] text-[9px] font-black flex items-center justify-center border border-white">
-                    {unreadNotificationCount}
-                  </span>
-                )}
-              </button>
+          {/* 1. Notification Center (Owner & Staff see centered little box) */}
+          <div className="relative" ref={notifRef}>
+            <button
+              onClick={() => setIsNotifOpen(!isNotifOpen)}
+              className="w-9 h-9 rounded-xl bg-white border border-[#D5E5C4] hover:bg-[#F4F7EE] flex items-center justify-center relative text-[#2B3F1E] shadow-xs transition cursor-pointer"
+            >
+              <Bell className="w-4 h-4" />
+              {unreadNotificationCount > 0 && (
+                <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-[#1B2F09] text-[#E1FFAC] text-[9px] font-black flex items-center justify-center border border-white">
+                  {unreadNotificationCount}
+                </span>
+              )}
+            </button>
 
-              {isNotifOpen && (
-                <div className="absolute right-0 mt-2 w-80 sm:w-96 rounded-2xl bg-white border-2 border-[#C2E880] shadow-xl p-3 z-50 animate-fade-in">
-                  <div className="flex items-center justify-between pb-2 border-b border-[#EDF4E4] px-1">
+            {isNotifOpen && (
+              <div
+                className="fixed inset-0 z-[140] flex items-center justify-center p-4 bg-black/25 backdrop-blur-[2px] animate-fade-in"
+                onClick={() => setIsNotifOpen(false)}
+              >
+                <div
+                  onClick={(e) => e.stopPropagation()}
+                  className="w-full max-w-xs sm:max-w-sm rounded-2xl bg-white border-2 border-[#C2E880] shadow-2xl p-4"
+                >
+                  <div className="flex items-center justify-between pb-2.5 border-b border-[#EDF4E4]">
                     <span className="text-xs font-black text-[#192A0B]">{t.header.notifications}</span>
                     {unreadNotificationCount > 0 && (
                       <button
                         onClick={markAllNotificationsRead}
-                        className="text-[11px] text-[#3D6612] font-bold hover:underline"
+                        className="text-[11px] text-[#3D6612] font-bold hover:underline cursor-pointer"
                       >
                         {t.header.markAllRead}
                       </button>
                     )}
                   </div>
 
-                  <div className="divide-y divide-[#EDF4E4] max-h-72 overflow-y-auto my-1">
+                  <div className="divide-y divide-[#EDF4E4] max-h-64 overflow-y-auto my-1.5">
                     {notifications.length === 0 ? (
-                      <div className="p-4 text-center text-xs text-[#718765]">{t.header.noNotifications}</div>
+                      <div className="p-5 text-center text-xs font-bold text-[#718765]">{t.header.noNotifications}</div>
                     ) : (
                       notifications.map((n) => (
                         <div
@@ -133,7 +142,7 @@ export const TopHeader: React.FC<TopHeaderProps> = ({ pageTitle, onNavigate, onL
                           }`}
                         >
                           <div className="flex items-start justify-between gap-2">
-                            <h4 className="text-xs font-bold text-[#1B2D0C]">{n.title}</h4>
+                            <h4 className="text-xs font-black text-[#1B2D0C]">{n.title}</h4>
                             <span className="text-[10px] text-[#718765] shrink-0">{n.timestamp}</span>
                           </div>
                           <p className="text-xs text-[#4F6444] mt-0.5 leading-snug">{n.message}</p>
@@ -142,21 +151,27 @@ export const TopHeader: React.FC<TopHeaderProps> = ({ pageTitle, onNavigate, onL
                     )}
                   </div>
 
-                  <div className="pt-2 border-t border-[#EDF4E4] text-center">
+                  <div className="pt-2.5 border-t border-[#EDF4E4] flex items-center justify-between gap-2">
                     <button
                       onClick={() => {
                         setIsNotifOpen(false);
                         onNavigate("notifications");
                       }}
-                      className="text-xs font-bold text-[#355B0F] hover:underline"
+                      className="text-xs font-black text-[#355B0F] hover:underline cursor-pointer"
                     >
                       {language === "sw" ? "Ona Taarifa Zote" : "View All Notifications"}
                     </button>
+                    <button
+                      onClick={() => setIsNotifOpen(false)}
+                      className="px-3 py-1 rounded-lg bg-[#1B2F09] text-[#E1FFAC] text-[11px] font-black cursor-pointer"
+                    >
+                      {language === "sw" ? "Funga" : "Close"}
+                    </button>
                   </div>
                 </div>
-              )}
-            </div>
-          )}
+              </div>
+            )}
+          </div>
 
           {/* 2. Help & Docs */}
           <button

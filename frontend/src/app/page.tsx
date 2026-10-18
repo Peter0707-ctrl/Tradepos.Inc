@@ -54,32 +54,81 @@ import {
   X
 } from "lucide-react";
 
+class AppErrorBoundary extends React.Component<
+  { children: React.ReactNode },
+  { hasError: boolean; errorMsg: string }
+> {
+  constructor(props: { children: React.ReactNode }) {
+    super(props);
+    this.state = { hasError: false, errorMsg: "" };
+  }
+
+  static getDerivedStateFromError(error: Error) {
+    return { hasError: true, errorMsg: error?.message || "Hitilafu imetokea kwenye ukurasa." };
+  }
+
+  componentDidCatch() {
+    // Suppress raw console error overlay
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="min-h-screen bg-[#F4F7EE] flex items-center justify-center p-4 select-none">
+          <div className="w-full max-w-xs rounded-2xl bg-white border-2 border-rose-400 shadow-2xl p-5 text-center">
+            <div className="w-10 h-10 rounded-xl bg-rose-100 text-rose-700 border border-rose-300 flex items-center justify-center mx-auto mb-2.5 font-black text-sm">
+              !
+            </div>
+            <h4 className="text-sm font-black text-rose-900">Hitilafu ya Mfumo Imerekebishwa</h4>
+            <p className="text-xs font-bold text-[#495D3E] mt-1 leading-relaxed">
+              Mfumoumezuia hitilafu ndogo isiharibu ukurasa wako. Bonyeza hapa chini kuendelea.
+            </p>
+            <button
+              onClick={() => this.setState({ hasError: false, errorMsg: "" })}
+              className="mt-4 w-full py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-black transition cursor-pointer"
+            >
+              Endelea na Kazi
+            </button>
+          </div>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 function MainApp() {
-  const { user, loginUser, logoutUser, isAiModalOpen, setIsAiModalOpen, t, language } = useApp();
+  const {
+    user,
+    isHydrated,
+    viewState: view,
+    setViewState: setView,
+    activeModule,
+    setActiveModule,
+    logoutUser,
+    isAiModalOpen,
+    setIsAiModalOpen,
+    t,
+    language
+  } = useApp();
 
   const [showSplash, setShowSplash] = useState(false);
-  const [view, setView] = useState<"landing" | "app">("landing");
   const [authModal, setAuthModal] = useState<"login" | "register" | null>(null);
-  const [activeModule, setActiveModule] = useState<string>("dashboard");
   const [isMobileMoreOpen, setIsMobileMoreOpen] = useState<boolean>(false);
 
-  // Restore authenticated session and view state on page reload
+  // Only show splash on first visit when not logged in
   React.useEffect(() => {
+    if (!isHydrated) return;
     try {
-      const storedView = localStorage.getItem("tradepos_prod_view_v1");
-      const storedUser = localStorage.getItem("tradepos_prod_user_v1");
       const hasSeenSplash = sessionStorage.getItem("tradepos_splash_shown");
-
-      if (!hasSeenSplash) {
+      if (!hasSeenSplash && !user) {
         setShowSplash(true);
         sessionStorage.setItem("tradepos_splash_shown", "true");
-      }
-
-      if (storedUser && storedView === "app") {
-        setView("app");
+      } else if (!hasSeenSplash) {
+        sessionStorage.setItem("tradepos_splash_shown", "true");
       }
     } catch (e) {}
-  }, [user]);
+  }, [isHydrated, user]);
 
   const isLoggedIn = !!user;
   const isOwner = !user || user.role === "OWNER" || user.role === "SUPER_ADMIN";
@@ -89,10 +138,15 @@ function MainApp() {
   const effectiveModule = !isOwner && bossOnlyModules.includes(activeModule) ? "sales" : activeModule;
 
   React.useEffect(() => {
-    if (!isOwner && bossOnlyModules.includes(activeModule)) {
+    if (isHydrated && !isOwner && bossOnlyModules.includes(activeModule)) {
       setActiveModule("sales");
     }
-  }, [isOwner, activeModule]);
+  }, [isHydrated, isOwner, activeModule, setActiveModule]);
+
+  // Prevent any flash of LandingPage ("beginning of web") while localStorage state hydrates on refresh
+  if (!isHydrated) {
+    return <div className="min-h-screen bg-[#F4F7EE] select-none" />;
+  }
 
   // Human readable title lookup
   const getModuleTitle = (mod: string) => {
@@ -331,7 +385,9 @@ function MainApp() {
 export default function Home() {
   return (
     <AppProvider>
-      <MainApp />
+      <AppErrorBoundary>
+        <MainApp />
+      </AppErrorBoundary>
     </AppProvider>
   );
 }

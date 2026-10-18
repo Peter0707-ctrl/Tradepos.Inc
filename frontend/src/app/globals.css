@@ -222,3 +222,12 @@
 ::-webkit-scrollbar-thumb:hover {
   background: #9FB893;
 }
+
+/* Suppress default framework error overlays so all errors use the centered notification box */
+nextjs-portal,
+#__next-build-watcher,
+[data-nextjs-dialog-overlay],
+[data-nextjs-toast] {
+  display: none !important;
+}
+
