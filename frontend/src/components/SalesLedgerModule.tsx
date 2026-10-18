@@ -328,11 +328,7 @@ export const SalesLedgerModule: React.FC = () => {
       <div className="flex flex-wrap items-center justify-between gap-2.5">
         <div>
           <h2 className="text-lg sm:text-xl font-black text-[#162709] tracking-tight">
-            {language === "sw"
-              ? isOwner
-                ? "2. Mauzo ya Siku (Owner & Wafanyakazi)"
-                : "1. Mauzo ya Leo"
-              : "Daily Sales"}
+            {language === "sw" ? "Mauzo ya Siku" : "Daily Sales"}
           </h2>
           <p className="text-xs text-[#526848]">
             {formatSelectedDateTitle(selectedDate)}
@@ -502,21 +498,14 @@ export const SalesLedgerModule: React.FC = () => {
         </div>
       </div>
 
-      {/* BANNER WHEN "FUNGA MAUZO YA SIKU" IS CLICKED (DAY ENDED & SENT TO BOSS AUTOMATICALLY) */}
+      {/* BANNER WHEN "FUNGA MAUZO YA SIKU" IS CLICKED */}
       {(isDayClosed || justClosedReport) && (
-        <div className="p-4 rounded-2xl bg-emerald-950 text-[#E1FFAC] border-2 border-[#A6DF52] flex flex-col lg:flex-row lg:items-center justify-between gap-3 text-xs shadow-md">
-          <div className="space-y-1">
-            <div className="font-black text-sm flex items-center gap-2">
-              <CheckCircle2 className="w-4 h-4 text-[#A6DF52]" />
-              <span>
-                SIKU IMEFUNGWA ({todayStr}) — HESABU IMETUMWA KWA BOSS AUTOMATICALLY!
-              </span>
-            </div>
-            <p className="text-emerald-100/90">
-              Muhtasari uliotumwa kwa Mwenye Duka: <strong>Mauzo ya Leo: TZS {todaySalesTotal.toLocaleString()}</strong> |{" "}
-              <strong>Matumizi ya Leo: TZS {todayExpensesTotal.toLocaleString()}</strong> |{" "}
-              <strong>Stoo Iliyobaki: {totalStoreStockRemaining} pcs</strong>. Ukianzisha siku mpya, mauzo haya yatahifadhiwa kwenye tarehe ya Jana kwenye kalenda.
-            </p>
+        <div className="p-3.5 rounded-2xl bg-emerald-950 text-[#E1FFAC] border-2 border-[#A6DF52] flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs shadow-md">
+          <div className="flex items-center gap-2 font-bold">
+            <CheckCircle2 className="w-4 h-4 text-[#A6DF52] shrink-0" />
+            <span>
+              Siku Imefungwa ({todayStr}) — Mauzo: TZS {todaySalesTotal.toLocaleString()} | Matumizi: TZS {todayExpensesTotal.toLocaleString()} | Stoo: {totalStoreStockRemaining} pcs
+            </span>
           </div>
           <button
             onClick={() => {
@@ -524,9 +513,9 @@ export const SalesLedgerModule: React.FC = () => {
               handleSelectCalendarDate(todayStr);
               setJustClosedReport(false);
             }}
-            className="px-4 py-2 rounded-xl bg-[#E1FFAC] text-[#162708] font-black text-xs shrink-0 hover:bg-white transition cursor-pointer"
+            className="px-3.5 py-1.5 rounded-xl bg-[#E1FFAC] text-[#162708] font-black text-xs shrink-0 hover:bg-white transition cursor-pointer"
           >
-            Anza Siku Mpya (Leo Ianze 0, Haya Yaende Jana)
+            Anza Siku Mpya
           </button>
         </div>
       )}
@@ -541,44 +530,35 @@ export const SalesLedgerModule: React.FC = () => {
             TZS {totalSalesAmount.toLocaleString()}
           </p>
           <span className="text-[11px] text-emerald-700 font-bold">
-            Vipande {totalUnitsSold} vimeuzwa ({selectedDateSales.length} mauzo)
+            {totalUnitsSold} pcs ({selectedDateSales.length} mauzo)
           </span>
         </div>
 
         <div className="p-3.5 rounded-2xl bg-white border border-[#D8E6CC] shadow-xs">
           <span className="text-xs font-bold text-[#566E49] block">
-            Mauzo ya Cash (Taslimu)
+            Mauzo ya Cash
           </span>
           <p className="text-xl font-black text-[#162709] mt-0.5">
             TZS {totalCashSales.toLocaleString()}
           </p>
-          <span className="text-[11px] text-[#69825B] font-bold">
-            Pesa taslimu kwa tarehe {selectedDate}
-          </span>
         </div>
 
         <div className="p-3.5 rounded-2xl bg-white border border-[#D8E6CC] shadow-xs">
           <span className="text-xs font-bold text-[#566E49] block">
-            Mauzo ya Simu (M-Pesa / Airtel)
+            Mauzo ya Simu (M-Pesa)
           </span>
           <p className="text-xl font-black text-[#162709] mt-0.5">
             TZS {totalMobileSales.toLocaleString()}
           </p>
-          <span className="text-[11px] text-[#69825B] font-bold">
-            Malipo ya Lipa Namba / Simu
-          </span>
         </div>
 
         <div className="p-3.5 rounded-2xl bg-white border border-[#D8E6CC] shadow-xs">
           <span className="text-xs font-bold text-[#566E49] block">
-            Mauzo ya Mkopo (Madeni)
+            Mauzo ya Mkopo
           </span>
           <p className="text-xl font-black text-amber-700 mt-0.5">
             TZS {totalCreditSales.toLocaleString()}
           </p>
-          <span className="text-[11px] text-amber-800 font-bold">
-            Inaingia kwenye Wateja & Madeni auto
-          </span>
         </div>
       </div>
 
@@ -755,7 +735,7 @@ export const SalesLedgerModule: React.FC = () => {
                 {filteredSales.length === 0 ? (
                   <tr>
                     <td colSpan={8} className="py-8 text-center text-gray-400">
-                      Hakuna mauzo yaliyoandikwa kwenye tarehe hii ({selectedDate}). Sogeza kalenda (&lt; / &gt;) na bonyeza tarehe nyingine kuona mauzo yake.
+                      Hakuna mauzo ({selectedDate}).
                     </td>
                   </tr>
                 ) : (

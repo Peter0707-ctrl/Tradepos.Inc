@@ -133,63 +133,46 @@ export const OnlineStoreDeliveriesModule: React.FC = () => {
   return (
     <div className="flex-1 flex flex-col h-full p-4 lg:p-6 overflow-hidden gap-4">
       {/* Top Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2">
-            <h2 className="text-xl font-black text-[#162709] tracking-tight flex items-center gap-2">
-              <Truck className="w-5 h-5 text-[#243d12]" />
-              <span>{t.deliveries.title}</span>
-            </h2>
-            <span className="text-xs px-2.5 py-0.5 rounded-full bg-[#E1FFAC] text-[#1b2d0b] font-bold border border-[#aae056]">
-              {language === "sw" ? "Ulinzi Dhidi ya Wizi" : "Anti-Theft Dispatch"}
-            </span>
-          </div>
-          <p className="text-xs text-[#52654c] mt-0.5">
-            {t.deliveries.subtitle}
-          </p>
-        </div>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h2 className="text-lg sm:text-xl font-black text-[#162709] tracking-tight flex items-center gap-2">
+          <Truck className="w-5 h-5 text-[#243d12]" />
+          <span>{language === "sw" ? "Kutrack Delivery" : "Deliveries"}</span>
+        </h2>
 
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => setIsModalOpen(true)}
-            className="px-4 py-2.5 rounded-xl neu-btn text-xs font-black flex items-center gap-1.5 shadow-neu-flat"
-          >
-            <Plus className="w-4 h-4 text-[#1a3109]" />
-            <span>+ {t.deliveries.newDelivery}</span>
-          </button>
-        </div>
+        <button
+          onClick={() => setIsModalOpen(true)}
+          className="px-3.5 py-2 rounded-xl neu-btn text-xs font-black flex items-center gap-1.5 shadow-neu-flat cursor-pointer"
+        >
+          <Plus className="w-4 h-4 text-[#1a3109]" />
+          <span>+ {t.deliveries.newDelivery}</span>
+        </button>
       </div>
 
       {/* KPI Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
         <div className="p-3.5 rounded-2xl bg-white border border-[#D8E6CC] shadow-xs">
-          <span className="text-[10px] font-bold text-[#5e7454] block uppercase">{language === "sw" ? "Oda Zote" : "Total Orders"}</span>
-          <p className="text-xl font-black text-[#162709] mt-0.5">{totalCount} {language === "sw" ? "Oda" : "Orders"}</p>
-          <span className="text-[10px] text-[#55694c]">{language === "sw" ? "Mizigo yote ya delivery" : "All dispatch parcels"}</span>
+          <span className="text-[10px] font-bold text-[#5e7454] block uppercase">{language === "sw" ? "Oda Zote" : "Total"}</span>
+          <p className="text-xl font-black text-[#162709] mt-0.5">{totalCount}</p>
         </div>
 
         <div className="p-3.5 rounded-2xl bg-amber-50/70 border border-amber-200 shadow-xs">
           <span className="text-[10px] font-bold text-amber-800 block uppercase">{t.deliveries.pending}</span>
-          <p className="text-xl font-black text-amber-950 mt-0.5">{pendingCount} {language === "sw" ? "Oda" : "Orders"}</p>
-          <span className="text-[10px] text-amber-800">{language === "sw" ? "Dukani / Inafungwa" : "In Shop / Packing"}</span>
+          <p className="text-xl font-black text-amber-950 mt-0.5">{pendingCount}</p>
         </div>
 
         <div className="p-3.5 rounded-2xl bg-blue-50/70 border border-blue-200 shadow-xs">
           <span className="text-[10px] font-bold text-blue-800 block uppercase">{t.deliveries.inTransit}</span>
-          <p className="text-xl font-black text-blue-950 mt-0.5">{onTheWayCount} {language === "sw" ? "Oda" : "Orders"}</p>
-          <span className="text-[10px] text-blue-700">{language === "sw" ? "Bodaboda anasafirisha" : "Driver on the way"}</span>
+          <p className="text-xl font-black text-blue-950 mt-0.5">{onTheWayCount}</p>
         </div>
 
         <div className="p-3.5 rounded-2xl bg-emerald-50/70 border border-emerald-200 shadow-xs">
           <span className="text-[10px] font-bold text-emerald-800 block uppercase">{t.deliveries.delivered}</span>
-          <p className="text-xl font-black text-emerald-950 mt-0.5">{deliveredCount} {language === "sw" ? "Oda" : "Orders"}</p>
-          <span className="text-[10px] text-emerald-700">{language === "sw" ? "Imepokelewa na mteja" : "Received by customer"}</span>
+          <p className="text-xl font-black text-emerald-950 mt-0.5">{deliveredCount}</p>
         </div>
 
         <div className="p-3.5 rounded-2xl bg-rose-50/70 border border-rose-200 shadow-xs">
           <span className="text-[10px] font-bold text-rose-800 block uppercase">{t.deliveries.cancelled}</span>
-          <p className="text-xl font-black text-rose-950 mt-0.5">{issueCount} {language === "sw" ? "Oda" : "Orders"}</p>
-          <span className="text-[10px] text-rose-700 font-bold">{language === "sw" ? "Imelindwa na rekodi" : "Audit trail saved"}</span>
+          <p className="text-xl font-black text-rose-950 mt-0.5">{issueCount}</p>
         </div>
       </div>
 

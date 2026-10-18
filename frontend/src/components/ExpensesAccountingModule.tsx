@@ -214,11 +214,7 @@ export const ExpensesAccountingModule: React.FC = () => {
       <div className="flex flex-wrap items-center justify-between gap-2.5">
         <div>
           <h2 className="text-lg sm:text-xl font-black text-[#172709] tracking-tight">
-            {language === "sw"
-              ? isOwner
-                ? "3. Matumizi ya Siku"
-                : "2. Matumizi ya Leo Dukani"
-              : "Daily Shop Expenses"}
+            {language === "sw" ? "Matumizi ya Siku" : "Daily Expenses"}
           </h2>
           <p className="text-xs text-[#52654c]">
             {formatSelectedDateTitle(selectedDate)}
@@ -395,32 +391,29 @@ export const ExpensesAccountingModule: React.FC = () => {
             TZS {totalExpenses.toLocaleString()}
           </p>
           <span className="text-[11px] text-[#6d8065] font-bold">
-            Rekodi {selectedDateExpenses.length} za matumizi
+            Rekodi {selectedDateExpenses.length}
           </span>
         </div>
 
         <div className="p-3.5 rounded-2xl bg-white border border-[#d6e5c5] shadow-xs">
           <span className="text-xs font-bold text-[#5c7054] block">
-            Matumizi ya Cash vs Simu
+            Cash vs Simu
           </span>
           <p className="text-xl font-black text-[#17280a] mt-0.5">
             Cash: TZS {cashExpenses.toLocaleString()}
           </p>
           <span className="text-[11px] text-[#6d8065] font-bold">
-            Simu (M-Pesa): TZS {mobileExpenses.toLocaleString()}
+            Simu: TZS {mobileExpenses.toLocaleString()}
           </span>
         </div>
 
         <div className="p-3.5 rounded-2xl bg-white border border-[#d6e5c5] shadow-xs">
           <span className="text-xs font-bold text-[#5c7054] block">
-            Mauzo Ukitoa Matumizi ({selectedDate})
+            Salio Baada ya Matumizi
           </span>
           <p className="text-xl font-black text-emerald-800 mt-0.5">
             TZS {remainingAfterExpenses.toLocaleString()}
           </p>
-          <span className="text-[11px] text-emerald-700 font-bold">
-            Mauzo (TZS {selectedDateSalesTotal.toLocaleString()}) - Matumizi (TZS {totalExpenses.toLocaleString()})
-          </span>
         </div>
       </div>
 
@@ -529,7 +522,7 @@ export const ExpensesAccountingModule: React.FC = () => {
                 {selectedDateExpenses.length === 0 ? (
                   <tr>
                     <td colSpan={6} className="py-8 text-center text-gray-400">
-                      Hakuna matumizi yaliyoandikwa kwenye tarehe hii ({selectedDate}). Sogeza kalenda (&lt; / &gt;) na bonyeza tarehe nyingine kuona matumizi yake.
+                      Hakuna matumizi ({selectedDate}).
                     </td>
                   </tr>
                 ) : (
