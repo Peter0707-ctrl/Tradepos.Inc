@@ -53,7 +53,7 @@ interface AppContextType {
   loginUser: (emailOrPhone: string, role?: string) => boolean;
   logoutUser: () => void;
   registerBusiness: (accountData: any, businessData: any, plan: any) => void;
-  addProduct: (product: Omit<Product, "id" | "tenantId">) => void;
+  addProduct: (product: Omit<Product, "id" | "tenantId">) => Product | undefined;
   updateProduct: (product: Product) => void;
   deleteProduct: (id: string) => void;
   processSale: (saleData: Omit<Sale, "id" | "tenantId" | "createdAt" | "saleNumber">) => Sale;
@@ -61,6 +61,8 @@ interface AppContextType {
   recordStockMovement: (movement: Omit<StockMovement, "id" | "tenantId" | "createdAt">) => void;
   addExpense: (expense: Omit<Expense, "id" | "tenantId">) => void;
   addCustomer: (customer: Omit<Customer, "id" | "tenantId" | "totalSpent" | "debtBalance" | "loyaltyPoints">) => void;
+  payCustomerDebt: (customerId: string, amount: number, method?: string) => void;
+  addCustomerDebt: (customerId: string, amount: number) => void;
   addSupplier: (supplier: Omit<Supplier, "id" | "tenantId" | "totalPurchased" | "amountOwed">) => void;
   createPurchaseOrder: (po: Omit<PurchaseOrder, "id" | "tenantId" | "createdAt" | "orderNumber">) => void;
   createOnlineOrder: (order: Omit<OnlineOrder, "id" | "tenantId" | "createdAt" | "orderNumber">) => OnlineOrder;
@@ -674,6 +676,44 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [cashRegister, setCashRegister] = useState<CashRegister>(initialCashRegister);
   const [stockMovements, setStockMovements] = useState<StockMovement[]>(initialStockMovements);
   const [notifications, setNotifications] = useState<AppNotification[]>(initialNotifications);
+  const [isHydrated, setIsHydrated] = useState<boolean>(false);
+
+  // Restore persisted store data from localStorage on mount
+  useEffect(() => {
+    try {
+      const savedStore = localStorage.getItem("tradepos_store_data_v1");
+      if (savedStore) {
+        const parsed = JSON.parse(savedStore);
+        if (Array.isArray(parsed.products) && parsed.products.length > 0) setProducts(parsed.products);
+        if (Array.isArray(parsed.sales)) setSales(parsed.sales);
+        if (Array.isArray(parsed.customers)) setCustomers(parsed.customers);
+        if (Array.isArray(parsed.expenses)) setExpenses(parsed.expenses);
+        if (Array.isArray(parsed.onlineOrders)) setOnlineOrders(parsed.onlineOrders);
+        if (parsed.cashRegister) setCashRegister(parsed.cashRegister);
+        if (Array.isArray(parsed.stockMovements)) setStockMovements(parsed.stockMovements);
+      }
+    } catch (e) {}
+    setIsHydrated(true);
+  }, []);
+
+  // Automatically persist store data to localStorage whenever records change
+  useEffect(() => {
+    if (!isHydrated) return;
+    try {
+      localStorage.setItem(
+        "tradepos_store_data_v1",
+        JSON.stringify({
+          products,
+          sales,
+          customers,
+          expenses,
+          onlineOrders,
+          cashRegister,
+          stockMovements,
+        })
+      );
+    } catch (e) {}
+  }, [isHydrated, products, sales, customers, expenses, onlineOrders, cashRegister, stockMovements]);
   
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>([
     {
@@ -856,13 +896,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   };
 
   const addProduct = (prodData: Omit<Product, "id" | "tenantId">) => {
-    if (!business) return;
+    if (!business) return undefined;
     const newProduct: Product = {
       ...prodData,
       id: "prod-" + Date.now(),
       tenantId: business.id,
     };
     setProducts((prev) => [newProduct, ...prev]);
+    return newProduct;
   };
 
   const updateProduct = (updated: Product) => {
@@ -923,6 +964,47 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       }));
     }
 
+    // Update Customer spending & credit/debt balance automatically
+    if (saleData.customerName && saleData.customerName.trim() !== "") {
+      const custNameClean = saleData.customerName.trim();
+      const debtAdded =
+        saleData.paymentMethod === "CREDIT"
+          ? Math.max(0, saleData.total - (saleData.paidAmount || 0))
+          : 0;
+
+      setCustomers((prev) => {
+        const exists = prev.some(
+          (c) => c.name.toLowerCase() === custNameClean.toLowerCase()
+        );
+        if (exists) {
+          return prev.map((c) => {
+            if (c.name.toLowerCase() === custNameClean.toLowerCase()) {
+              return {
+                ...c,
+                totalSpent: c.totalSpent + saleData.total,
+                debtBalance: c.debtBalance + debtAdded,
+                loyaltyPoints: c.loyaltyPoints + Math.max(1, Math.floor(saleData.total / 10000)),
+                lastPurchaseDate: new Date().toISOString().split("T")[0],
+              };
+            }
+            return c;
+          });
+        } else {
+          const autoCust: Customer = {
+            id: "cust-" + Date.now(),
+            tenantId: business.id,
+            name: custNameClean,
+            phone: "+255 700 000 000",
+            totalSpent: saleData.total,
+            debtBalance: debtAdded,
+            loyaltyPoints: Math.max(1, Math.floor(saleData.total / 10000)),
+            lastPurchaseDate: new Date().toISOString().split("T")[0],
+          };
+          return [autoCust, ...prev];
+        }
+      });
+    }
+
     setSales((prev) => [newSale, ...prev]);
     return newSale;
   };
@@ -978,6 +1060,46 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       lastPurchaseDate: new Date().toISOString().split("T")[0],
     };
     setCustomers((prev) => [newCust, ...prev]);
+  };
+
+  const payCustomerDebt = (customerId: string, amount: number, method = "CASH") => {
+    if (!amount || amount <= 0) return;
+    setCustomers((prev) =>
+      prev.map((c) => {
+        if (c.id === customerId) {
+          return {
+            ...c,
+            debtBalance: Math.max(0, c.debtBalance - amount),
+            lastPurchaseDate: new Date().toISOString().split("T")[0],
+          };
+        }
+        return c;
+      })
+    );
+    if (method === "CASH") {
+      setCashRegister((prev) => ({
+        ...prev,
+        cashSales: prev.cashSales + amount,
+        actualCash: prev.actualCash + amount,
+      }));
+    }
+  };
+
+  const addCustomerDebt = (customerId: string, amount: number) => {
+    if (!amount || amount <= 0) return;
+    setCustomers((prev) =>
+      prev.map((c) => {
+        if (c.id === customerId) {
+          return {
+            ...c,
+            debtBalance: c.debtBalance + amount,
+            totalSpent: c.totalSpent + amount,
+            lastPurchaseDate: new Date().toISOString().split("T")[0],
+          };
+        }
+        return c;
+      })
+    );
   };
 
   const addSupplier = (supplierData: Omit<Supplier, "id" | "tenantId" | "totalPurchased" | "amountOwed">) => {
@@ -1106,6 +1228,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         recordStockMovement,
         addExpense,
         addCustomer,
+        payCustomerDebt,
+        addCustomerDebt,
         addSupplier,
         createPurchaseOrder,
         createOnlineOrder,

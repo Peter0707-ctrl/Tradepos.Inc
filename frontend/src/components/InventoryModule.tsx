@@ -138,7 +138,7 @@ export const InventoryModule: React.FC = () => {
     });
 
     // Also record initial stock movement IN
-    if (initialQty > 0) {
+    if (initialQty > 0 && newProd) {
       recordStockMovement({
         branchId: "br-01",
         productId: newProd.id,

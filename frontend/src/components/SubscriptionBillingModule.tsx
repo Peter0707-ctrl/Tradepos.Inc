@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 
 export const SubscriptionBillingModule: React.FC = () => {
-  const { business, renewSubscription } = useApp();
+  const { business, renewSubscription, language } = useApp();
   const [selectedPlan, setSelectedPlan] = useState(business?.subscriptionPlan || "PROFESSIONAL");
   const [isProcessing, setIsProcessing] = useState(false);
 
@@ -23,7 +23,11 @@ export const SubscriptionBillingModule: React.FC = () => {
     setTimeout(() => {
       renewSubscription();
       setIsProcessing(false);
-      alert("Subscription renewed successfully for another 30 calendar days!");
+      alert(
+        language === "sw"
+          ? "Kifurushi chako kimehuishwa kikamilifu kwa siku 30 zijazo!"
+          : "Subscription renewed successfully for another 30 calendar days!"
+      );
     }, 1000);
   };
 
@@ -47,8 +51,8 @@ export const SubscriptionBillingModule: React.FC = () => {
     {
       invoice: "SUB-INV-2026-07",
       date: "2026-08-08",
-      amount: "TZS 75,000",
-      plan: "STARTER",
+      amount: "TZS 150,000",
+      plan: "PROFESSIONAL",
       method: "Airtel Money",
       status: "SUCCESSFUL",
     },
@@ -59,10 +63,12 @@ export const SubscriptionBillingModule: React.FC = () => {
       {/* Header */}
       <div>
         <h2 className="text-xl font-black text-[#162709] tracking-tight">
-          Subscription, Billing & License Management
+          {language === "sw" ? "Malipo ya Mfumo & Leseni (Subscription)" : "Subscription, Billing & License Management"}
         </h2>
         <p className="text-xs text-[#526848]">
-          Review your tenant tier, renewal dates, automated mobile money receipts, and multi-branch feature quotas.
+          {language === "sw"
+            ? "Kagua kifurushi chako, tarehe ya kuhuisha na risiti za malipo ya M-Pesa / Airtel Money."
+            : "Review your tenant tier, renewal dates, automated mobile money receipts, and multi-branch feature quotas."}
         </p>
       </div>
 

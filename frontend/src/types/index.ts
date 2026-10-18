@@ -224,9 +224,9 @@ export interface StockMovement {
   productName: string;
   type: 'IN' | 'OUT';
   quantity: number;
-  reason: 'PURCHASE' | 'SALE' | 'DAMAGE' | 'EXPIRY' | 'ADJUSTMENT' | 'INTERNAL_USE' | 'QUICK_CASH_SALE';
+  reason: string;
   unitCost?: number;
-  totalValue?: number;
+  totalValue: number;
   recordedBy: string;
   notes?: string;
   createdAt: string;

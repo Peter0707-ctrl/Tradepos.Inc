@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 
 export const BusinessSettingsModule: React.FC = () => {
-  const { business, currentBranch, language, changeLanguage, t } = useApp();
+  const { business, currentBranch, language, setLanguage, t } = useApp();
 
   const [bizName, setBizName] = useState(business?.name || "Peter Cosmetics & Beauty");
   const [bizType, setBizType] = useState(business?.businessType || "Cosmetics & Retail");
@@ -57,7 +57,7 @@ export const BusinessSettingsModule: React.FC = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <button
               type="button"
-              onClick={() => changeLanguage("sw")}
+              onClick={() => setLanguage("sw")}
               className={`p-3.5 rounded-xl border flex items-center justify-between text-left transition ${
                 language === "sw"
                   ? "bg-[#E1FFAC] border-[#91D923] text-[#142907] shadow-xs"
@@ -73,7 +73,7 @@ export const BusinessSettingsModule: React.FC = () => {
 
             <button
               type="button"
-              onClick={() => changeLanguage("en")}
+              onClick={() => setLanguage("en")}
               className={`p-3.5 rounded-xl border flex items-center justify-between text-left transition ${
                 language === "en"
                   ? "bg-[#E1FFAC] border-[#91D923] text-[#142907] shadow-xs"

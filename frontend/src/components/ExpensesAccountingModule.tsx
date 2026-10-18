@@ -15,7 +15,7 @@ import {
 import { Expense } from "@/types";
 
 export const ExpensesAccountingModule: React.FC = () => {
-  const { expenses, addExpense, sales, language, t } = useApp();
+  const { expenses, addExpense, sales, products, language, t } = useApp();
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   const [title, setTitle] = useState("");
@@ -43,11 +43,24 @@ export const ExpensesAccountingModule: React.FC = () => {
     setNotes("");
   };
 
-  // Financial calculations
-  const totalRevenue = sales.reduce((a, b) => a + b.total, 0);
+  // Financial calculations (excluding refunded sales)
+  const completedSales = sales.filter((s) => s.status !== "REFUNDED");
+  const totalRevenue = completedSales.reduce((a, b) => a + b.total, 0);
   const totalExpenses = expenses.reduce((a, b) => a + b.amount, 0);
-  // Approximate COGS at 70% of sales
-  const cogs = Math.round(totalRevenue * 0.7);
+
+  // Calculate exact COGS using product buyingPrice (fallback 70% for quick-cash items without product catalog entry)
+  const cogs = Math.round(
+    completedSales.reduce((accSale, s) => {
+      const saleCost = s.items.reduce((accItem, it) => {
+        const matchedProd = products.find((p) => p.id === it.productId);
+        if (matchedProd && matchedProd.buyingPrice > 0) {
+          return accItem + matchedProd.buyingPrice * it.quantity;
+        }
+        return accItem + it.total * 0.7;
+      }, 0);
+      return accSale + saleCost;
+    }, 0)
+  );
   const grossProfit = totalRevenue - cogs;
   const netProfit = grossProfit - totalExpenses;
 

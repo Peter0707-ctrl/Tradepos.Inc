@@ -37,36 +37,90 @@ interface SidebarProps {
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({ activeModule, setActiveModule, onLogout }) => {
-  const { user, t, language } = useApp();
+  const { user, t, language, setIsAiModalOpen, unreadNotificationCount } = useApp();
   const [collapsed, setCollapsed] = useState(false);
 
   const isSuperAdmin = user?.role === "SUPER_ADMIN";
 
-  const primaryNav = [
-    { id: "dashboard", label: t.nav.dashboard, icon: Store },
+  // 1. MOST USED (Every Minute / Every Hour - Daily Shop Operations)
+  const highUsageNav: { id: string; label: string; icon: any; badge?: string }[] = [
     { id: "pos", label: t.nav.pos, icon: ShoppingBag, badge: "FAST" },
+    { id: "dashboard", label: t.nav.dashboard, icon: Store },
     { id: "sales", label: t.nav.sales, icon: Receipt },
     { id: "inventory", label: t.nav.inventory, icon: Layers },
-    { id: "deliveries", label: t.nav.deliveries, icon: Truck },
-    { id: "cash-register", label: t.nav.cashRegister, icon: Calculator },
     { id: "customers", label: t.nav.customers, icon: Users },
-    { id: "expenses", label: t.nav.expenses, icon: DollarSign },
-    { id: "accounting", label: t.nav.accounting, icon: Receipt },
-    { id: "employees", label: t.nav.employees, icon: UserCheck },
-    { id: "reports", label: t.nav.reports, icon: BarChart3 },
-    { id: "ai-assistant", label: t.nav.aiAssistant, icon: Sparkles, badge: "COPETRA" },
-    { id: "notifications", label: t.nav.notifications, icon: Bell },
+    { id: "deliveries", label: t.nav.deliveries, icon: Truck },
   ];
 
-  const secondaryNav = [
+  // 2. MEDIUM USAGE (Daily Closing, Profit/Loss & Analytics)
+  const dailyFinanceNav: { id: string; label: string; icon: any; badge?: string }[] = [
+    { id: "cash-register", label: t.nav.cashRegister, icon: Calculator },
+    {
+      id: "expenses",
+      label: language === "sw" ? "Matumizi & Faida" : "Expenses & Profit",
+      icon: DollarSign,
+    },
+    { id: "reports", label: t.nav.reports, icon: BarChart3 },
+    { id: "ai-assistant", label: t.nav.aiAssistant, icon: Sparkles, badge: "COPETRA" },
+  ];
+
+  // 3. LEAST USED (Staff, Alerts, Settings & Subscription)
+  const lowUsageNav: { id: string; label: string; icon: any; badge?: string }[] = [
+    { id: "employees", label: t.nav.employees, icon: UserCheck },
+    {
+      id: "notifications",
+      label: t.nav.notifications,
+      icon: Bell,
+      badge: unreadNotificationCount > 0 ? String(unreadNotificationCount) : undefined,
+    },
     { id: "settings", label: t.nav.settings, icon: Settings },
-    { id: "help", label: t.nav.help, icon: HelpCircle },
     { id: "subscription", label: t.nav.subscription, icon: CreditCard },
+    { id: "help", label: t.nav.help, icon: HelpCircle },
   ];
 
   if (isSuperAdmin) {
-    primaryNav.unshift({ id: "super-admin", label: t.nav.superAdmin, icon: ShieldAlert, badge: "ROOT" });
+    highUsageNav.unshift({ id: "super-admin", label: t.nav.superAdmin, icon: ShieldAlert, badge: "ROOT" });
   }
+
+  const handleNavClick = (id: string) => {
+    if (id === "ai-assistant") {
+      setIsAiModalOpen(true);
+      return;
+    }
+    setActiveModule(id);
+  };
+
+  const renderNavItem = (item: { id: string; label: string; icon: any; badge?: string }) => {
+    const Icon = item.icon;
+    const isActive =
+      activeModule === item.id ||
+      (item.id === "expenses" && activeModule === "accounting") ||
+      (item.id === "inventory" && activeModule === "products");
+    return (
+      <button
+        key={item.id}
+        onClick={() => handleNavClick(item.id)}
+        title={collapsed ? item.label : undefined}
+        className={`w-full flex items-center ${
+          collapsed ? "justify-center px-2" : "justify-between px-3"
+        } py-2 rounded-xl text-xs font-bold transition duration-150 ${
+          isActive
+            ? "bg-[#E1FFAC] text-[#162708] border border-[#A6DF52] shadow-xs font-black"
+            : "text-[#3D5233] hover:bg-white/80 hover:text-[#182A0B]"
+        }`}
+      >
+        <div className="flex items-center gap-2.5 min-w-0">
+          <Icon className={`w-4 h-4 shrink-0 ${isActive ? "text-[#1C3308]" : "text-[#556D49]"}`} />
+          {!collapsed && <span className="truncate">{item.label}</span>}
+        </div>
+        {!collapsed && item.badge && (
+          <span className="text-[9px] font-black px-1.5 py-0.5 rounded-md bg-[#22390C] text-[#E1FFAC] shrink-0">
+            {item.badge}
+          </span>
+        )}
+      </button>
+    );
+  };
 
   return (
     <aside
@@ -104,68 +158,25 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeModule, setActiveModule,
           </button>
         </div>
 
-        {/* Scrollable Navigation Items */}
-        <div className="overflow-y-auto max-h-[calc(100vh-210px)] p-2.5 space-y-1">
-          <div className="px-2 py-1 text-[10px] font-extrabold text-[#6E8560] uppercase tracking-wider">
-            {!collapsed ? "Business Modules" : "•"}
+        {/* Scrollable Navigation Items (Ordered Most Used -> Least Used) */}
+        <div className="overflow-y-auto max-h-[calc(100vh-145px)] p-2.5 space-y-1">
+          {/* TIER 1: HIGH USAGE */}
+          <div className="px-2 py-1 text-[10px] font-extrabold text-[#4E683D] uppercase tracking-wider">
+            {!collapsed ? (language === "sw" ? "🔥 Kazi za Kila Saa" : "🔥 Daily Core") : "•"}
           </div>
+          {highUsageNav.map(renderNavItem)}
 
-          {primaryNav.map((item) => {
-            const Icon = item.icon;
-            const isActive = activeModule === item.id;
-            return (
-              <button
-                key={item.id}
-                onClick={() => setActiveModule(item.id)}
-                title={collapsed ? item.label : undefined}
-                className={`w-full flex items-center ${
-                  collapsed ? "justify-center px-2" : "justify-between px-3"
-                } py-2 rounded-xl text-xs font-bold transition duration-150 ${
-                  isActive
-                    ? "bg-[#E1FFAC] text-[#162708] border border-[#A6DF52] shadow-xs font-black"
-                    : "text-[#3D5233] hover:bg-white/80 hover:text-[#182A0B]"
-                }`}
-              >
-                <div className="flex items-center gap-2.5">
-                  <Icon className={`w-4 h-4 ${isActive ? "text-[#1C3308]" : "text-[#556D49]"}`} />
-                  {!collapsed && <span className="truncate">{item.label}</span>}
-                </div>
-                {!collapsed && item.badge && (
-                  <span className="text-[9px] font-black px-1.5 py-0.5 rounded-md bg-[#22390C] text-[#E1FFAC]">
-                    {item.badge}
-                  </span>
-                )}
-              </button>
-            );
-          })}
+          {/* TIER 2: DAILY CLOSING & FINANCE */}
+          <div className="pt-2 px-2 pb-1 text-[10px] font-extrabold text-[#5F7750] uppercase tracking-wider border-t border-[#DDE9D1] mt-2">
+            {!collapsed ? (language === "sw" ? "📊 Hesabu & Faida" : "📊 Daily Finance") : "•"}
+          </div>
+          {dailyFinanceNav.map(renderNavItem)}
 
+          {/* TIER 3: LOW USAGE / ADMIN & SETTINGS */}
           <div className="pt-2 px-2 pb-1 text-[10px] font-extrabold text-[#6E8560] uppercase tracking-wider border-t border-[#DDE9D1] mt-2">
-            {!collapsed ? (language === "sw" ? "Usimamizi" : "Management") : "•"}
+            {!collapsed ? (language === "sw" ? "⚙️ Usimamizi & Mipangilio" : "⚙️ Management & Setup") : "•"}
           </div>
-
-          {secondaryNav.map((item) => {
-            const Icon = item.icon;
-            const isActive = activeModule === item.id;
-            return (
-              <button
-                key={item.id}
-                onClick={() => setActiveModule(item.id)}
-                title={collapsed ? item.label : undefined}
-                className={`w-full flex items-center ${
-                  collapsed ? "justify-center px-2" : "justify-between px-3"
-                } py-2 rounded-xl text-xs font-bold transition duration-150 ${
-                  isActive
-                    ? "bg-[#E1FFAC] text-[#162708] border border-[#A6DF52] shadow-xs font-black"
-                    : "text-[#3D5233] hover:bg-white/80 hover:text-[#182A0B]"
-                }`}
-              >
-                <div className="flex items-center gap-2.5">
-                  <Icon className={`w-4 h-4 ${isActive ? "text-[#1C3308]" : "text-[#556D49]"}`} />
-                  {!collapsed && <span className="truncate">{item.label}</span>}
-                </div>
-              </button>
-            );
-          })}
+          {lowUsageNav.map(renderNavItem)}
         </div>
       </div>
 

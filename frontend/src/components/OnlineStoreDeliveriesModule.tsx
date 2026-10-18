@@ -141,7 +141,7 @@ export const OnlineStoreDeliveriesModule: React.FC = () => {
               <span>{t.deliveries.title}</span>
             </h2>
             <span className="text-xs px-2.5 py-0.5 rounded-full bg-[#E1FFAC] text-[#1b2d0b] font-bold border border-[#aae056]">
-              {t.deliveries.badge}
+              {language === "sw" ? "Ulinzi Dhidi ya Wizi" : "Anti-Theft Dispatch"}
             </span>
           </div>
           <p className="text-xs text-[#52654c] mt-0.5">
@@ -155,7 +155,7 @@ export const OnlineStoreDeliveriesModule: React.FC = () => {
             className="px-4 py-2.5 rounded-xl neu-btn text-xs font-black flex items-center gap-1.5 shadow-neu-flat"
           >
             <Plus className="w-4 h-4 text-[#1a3109]" />
-            <span>+ {t.deliveries.newDeliveryBtn}</span>
+            <span>+ {t.deliveries.newDelivery}</span>
           </button>
         </div>
       </div>
@@ -163,19 +163,19 @@ export const OnlineStoreDeliveriesModule: React.FC = () => {
       {/* KPI Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
         <div className="p-3.5 rounded-2xl bg-white border border-[#D8E6CC] shadow-xs">
-          <span className="text-[10px] font-bold text-[#5e7454] block uppercase">{t.deliveries.totalOrders}</span>
+          <span className="text-[10px] font-bold text-[#5e7454] block uppercase">{language === "sw" ? "Oda Zote" : "Total Orders"}</span>
           <p className="text-xl font-black text-[#162709] mt-0.5">{totalCount} {language === "sw" ? "Oda" : "Orders"}</p>
           <span className="text-[10px] text-[#55694c]">{language === "sw" ? "Mizigo yote ya delivery" : "All dispatch parcels"}</span>
         </div>
 
         <div className="p-3.5 rounded-2xl bg-amber-50/70 border border-amber-200 shadow-xs">
-          <span className="text-[10px] font-bold text-amber-800 block uppercase">{t.deliveries.preparing}</span>
+          <span className="text-[10px] font-bold text-amber-800 block uppercase">{t.deliveries.pending}</span>
           <p className="text-xl font-black text-amber-950 mt-0.5">{pendingCount} {language === "sw" ? "Oda" : "Orders"}</p>
           <span className="text-[10px] text-amber-800">{language === "sw" ? "Dukani / Inafungwa" : "In Shop / Packing"}</span>
         </div>
 
         <div className="p-3.5 rounded-2xl bg-blue-50/70 border border-blue-200 shadow-xs">
-          <span className="text-[10px] font-bold text-blue-800 block uppercase">{t.deliveries.onTheWay}</span>
+          <span className="text-[10px] font-bold text-blue-800 block uppercase">{t.deliveries.inTransit}</span>
           <p className="text-xl font-black text-blue-950 mt-0.5">{onTheWayCount} {language === "sw" ? "Oda" : "Orders"}</p>
           <span className="text-[10px] text-blue-700">{language === "sw" ? "Bodaboda anasafirisha" : "Driver on the way"}</span>
         </div>
@@ -187,7 +187,7 @@ export const OnlineStoreDeliveriesModule: React.FC = () => {
         </div>
 
         <div className="p-3.5 rounded-2xl bg-rose-50/70 border border-rose-200 shadow-xs">
-          <span className="text-[10px] font-bold text-rose-800 block uppercase">{t.deliveries.issues}</span>
+          <span className="text-[10px] font-bold text-rose-800 block uppercase">{t.deliveries.cancelled}</span>
           <p className="text-xl font-black text-rose-950 mt-0.5">{issueCount} {language === "sw" ? "Oda" : "Orders"}</p>
           <span className="text-[10px] text-rose-700 font-bold">{language === "sw" ? "Imelindwa na rekodi" : "Audit trail saved"}</span>
         </div>

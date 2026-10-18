@@ -186,7 +186,9 @@ function MainApp() {
 
             {/* CENTER BUSINESS WORKSPACE */}
             <main className="flex-1 overflow-hidden relative">
-              {activeModule === "dashboard" && <DashboardOverview onNavigate={(m) => setActiveModule(m)} />}
+              {(activeModule === "dashboard" || activeModule === "ai-assistant") && (
+                <DashboardOverview onNavigate={(m) => setActiveModule(m)} />
+              )}
               {activeModule === "pos" && <PosTerminal />}
               {activeModule === "sales" && <SalesLedgerModule />}
               {(activeModule === "products" || activeModule === "inventory") && <InventoryModule />}
@@ -218,22 +220,12 @@ function MainApp() {
               <span>✨ Ask AI</span>
             </button>
 
-            {/* MOBILE BOTTOM NAVIGATION BAR */}
+            {/* MOBILE BOTTOM NAVIGATION BAR (ORDERED BY HIGHEST DAILY USAGE) */}
             <div className="md:hidden h-14 bg-white border-t border-[#D8E6CC] px-2 flex items-center justify-around z-30 shrink-0">
-              <button
-                onClick={() => setActiveModule("dashboard")}
-                className={`flex flex-col items-center text-[10px] font-bold ${
-                  activeModule === "dashboard" ? "text-[#1C350A]" : "text-[#627956]"
-                }`}
-              >
-                <Store className="w-4 h-4" />
-                <span>{t.nav.dashboard}</span>
-              </button>
-
               <button
                 onClick={() => setActiveModule("pos")}
                 className={`flex flex-col items-center text-[10px] font-bold ${
-                  activeModule === "pos" ? "text-[#1C350A]" : "text-[#627956]"
+                  activeModule === "pos" ? "text-[#1C350A] font-black" : "text-[#627956]"
                 }`}
               >
                 <ShoppingBag className="w-4 h-4" />
@@ -241,23 +233,33 @@ function MainApp() {
               </button>
 
               <button
-                onClick={() => setActiveModule("sales")}
+                onClick={() => setActiveModule("dashboard")}
                 className={`flex flex-col items-center text-[10px] font-bold ${
-                  activeModule === "sales" ? "text-[#1C350A]" : "text-[#627956]"
+                  activeModule === "dashboard" ? "text-[#1C350A] font-black" : "text-[#627956]"
                 }`}
               >
-                <Receipt className="w-4 h-4" />
-                <span>{t.nav.sales}</span>
+                <Store className="w-4 h-4" />
+                <span>{t.nav.dashboard}</span>
               </button>
 
               <button
                 onClick={() => setActiveModule("inventory")}
                 className={`flex flex-col items-center text-[10px] font-bold ${
-                  activeModule === "inventory" || activeModule === "products" ? "text-[#1C350A]" : "text-[#627956]"
+                  activeModule === "inventory" || activeModule === "products" ? "text-[#1C350A] font-black" : "text-[#627956]"
                 }`}
               >
                 <Layers className="w-4 h-4" />
                 <span>{t.nav.inventory}</span>
+              </button>
+
+              <button
+                onClick={() => setActiveModule("customers")}
+                className={`flex flex-col items-center text-[10px] font-bold ${
+                  activeModule === "customers" ? "text-[#1C350A] font-black" : "text-[#627956]"
+                }`}
+              >
+                <Users className="w-4 h-4" />
+                <span>{t.nav.customers}</span>
               </button>
 
               <button
@@ -270,7 +272,7 @@ function MainApp() {
             </div>
           </div>
 
-          {/* MOBILE "MORE" DRAWER MODAL */}
+          {/* MOBILE "MORE" DRAWER MODAL (ORDERED BY USAGE FREQUENCY) */}
           {isMobileMoreOpen && (
             <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 backdrop-blur-xs md:hidden">
               <div className="w-full bg-white rounded-t-3xl p-5 border-t-2 border-[#BFE973] shadow-2xl max-h-[75vh] overflow-y-auto animate-slide-up">
@@ -286,13 +288,18 @@ function MainApp() {
 
                 <div className="grid grid-cols-3 gap-2.5 text-center">
                   {[
+                    { id: "sales", label: t.nav.sales, icon: Receipt },
                     { id: "deliveries", label: t.nav.deliveries, icon: Truck },
                     { id: "cash-register", label: t.nav.cashRegister, icon: Calculator },
-                    { id: "customers", label: t.nav.customers, icon: Users },
-                    { id: "expenses", label: t.nav.expenses, icon: DollarSign },
-                    { id: "accounting", label: t.nav.accounting, icon: Receipt },
-                    { id: "employees", label: t.nav.employees, icon: UserCheck },
+                    {
+                      id: "expenses",
+                      label: language === "sw" ? "Matumizi & Faida" : "Expenses & Profit",
+                      icon: DollarSign,
+                    },
                     { id: "reports", label: t.nav.reports, icon: BarChart3 },
+                    { id: "ai-assistant", label: t.nav.aiAssistant, icon: Sparkles },
+                    { id: "employees", label: t.nav.employees, icon: UserCheck },
+                    { id: "notifications", label: t.nav.notifications, icon: Bell },
                     { id: "settings", label: t.nav.settings, icon: Settings },
                     { id: "subscription", label: t.nav.subscription, icon: CreditCard },
                     { id: "help", label: t.nav.help, icon: HelpCircle },
@@ -302,8 +309,12 @@ function MainApp() {
                       <button
                         key={it.id}
                         onClick={() => {
-                          setActiveModule(it.id);
                           setIsMobileMoreOpen(false);
+                          if (it.id === "ai-assistant") {
+                            setIsAiModalOpen(true);
+                          } else {
+                            setActiveModule(it.id);
+                          }
                         }}
                         className="p-3 rounded-2xl bg-[#F8FAF4] hover:bg-[#E1FFAC] border border-[#D8E6CC] flex flex-col items-center gap-1.5 transition text-xs font-bold text-[#1C320A] active:scale-95"
                       >
