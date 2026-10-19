@@ -47,6 +47,59 @@ interface InvoiceRecord {
   payerEmail?: string;
 }
 
+type MobileCarrier = "mpesa" | "tigopesa" | "airtel" | "halopesa";
+
+const detectCarrier = (phoneStr: string): MobileCarrier => {
+  const clean = phoneStr.replace(/\D/g, "");
+  let p = clean;
+  if (p.startsWith("255")) {
+    p = "0" + p.slice(3);
+  }
+  const prefix = p.substring(0, 3);
+  if (["074", "075", "076"].includes(prefix)) return "mpesa";
+  if (["071", "065", "067", "077"].includes(prefix)) return "tigopesa";
+  if (["078", "068", "069"].includes(prefix)) return "airtel";
+  if (["062", "061"].includes(prefix)) return "halopesa";
+  return "mpesa";
+};
+
+const CARRIERS: {
+  id: MobileCarrier;
+  name: string;
+  operator: string;
+  prefixDesc: string;
+  activeBg: string;
+}[] = [
+  {
+    id: "mpesa",
+    name: "M-Pesa",
+    operator: "Vodacom",
+    prefixDesc: "074, 075, 076",
+    activeBg: "bg-red-500 text-white",
+  },
+  {
+    id: "tigopesa",
+    name: "Tigo Pesa",
+    operator: "Tigo / Yas",
+    prefixDesc: "071, 065, 067",
+    activeBg: "bg-blue-600 text-white",
+  },
+  {
+    id: "airtel",
+    name: "Airtel Money",
+    operator: "Airtel",
+    prefixDesc: "078, 068, 069",
+    activeBg: "bg-rose-600 text-white",
+  },
+  {
+    id: "halopesa",
+    name: "HaloPesa",
+    operator: "Halotel",
+    prefixDesc: "062, 061",
+    activeBg: "bg-orange-500 text-white",
+  },
+];
+
 export const SubscriptionBillingModule: React.FC = () => {
   const { business, renewSubscription, updateBusinessProfile, auditLogs, language } = useApp();
 
@@ -68,10 +121,19 @@ export const SubscriptionBillingModule: React.FC = () => {
     staffTraining: false,
   });
 
-  // Payer details
+  // Payer details & Mobile Carrier auto-detection
   const [payerPhone, setPayerPhone] = useState(business?.phone || "0754123456");
+  const [selectedCarrier, setSelectedCarrier] = useState<MobileCarrier>(() =>
+    detectCarrier(business?.phone || "0754123456")
+  );
   const [payerEmail, setPayerEmail] = useState(business?.email || "owner@tradepos.co.tz");
   const [lipaReferenceCode, setLipaReferenceCode] = useState("");
+
+  const handlePhoneChange = (val: string) => {
+    setPayerPhone(val);
+    const detected = detectCarrier(val);
+    setSelectedCarrier(detected);
+  };
 
   // Processing & Receipt
   const [isProcessing, setIsProcessing] = useState(false);
@@ -661,20 +723,20 @@ export const SubscriptionBillingModule: React.FC = () => {
         </div>
       </div>
 
-      {/* CHECKOUT MODAL */}
+      {/* CHECKOUT MODAL (CLEAN, NO FRAME, AUTO-SELECTING CARRIER BADGES) */}
       {isCheckoutOpen && (
-        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-3 lg:p-6 overflow-y-auto">
-          <div className="bg-white rounded-3xl max-w-2xl w-full border border-[#C5D8B2] shadow-2xl overflow-hidden flex flex-col my-auto max-h-[92vh]">
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 lg:p-6 overflow-y-auto">
+          <div className="bg-white rounded-3xl max-w-xl w-full shadow-2xl overflow-hidden flex flex-col my-auto max-h-[92vh]">
             {/* Modal Header */}
-            <div className="p-5 border-b border-[#E3EDD9] flex items-center justify-between bg-[#F8FAF4]">
+            <div className="p-5 flex items-center justify-between bg-[#F8FAF4]">
               <div>
                 <h3 className="text-base font-black text-[#162709]">
                   {isSw ? "Malipo ya Leseni ya TradePOS" : "TradePOS License Checkout"}
                 </h3>
                 <p className="text-xs text-[#526848]">
                   {isSw
-                    ? "Chagua mpangilio wa kifurushi na ukamilishe malipo kwa Pesapal au Lipa Namba."
-                    : "Configure subscription options and complete checkout via Pesapal or Lipa Namba."}
+                    ? "Chagua kifurushi, weka namba yako ya simu na ukamilishe malipo."
+                    : "Select your plan, enter mobile payment number and complete renewal."}
                 </p>
               </div>
               <button
@@ -690,44 +752,47 @@ export const SubscriptionBillingModule: React.FC = () => {
 
             <div className="p-5 lg:p-6 overflow-y-auto space-y-5">
               {errorMessage && (
-                <div className="p-3 rounded-xl bg-red-50 border border-red-200 text-red-800 text-xs font-semibold flex items-center gap-2">
+                <div className="p-3 rounded-2xl bg-red-50 text-red-800 text-xs font-semibold flex items-center gap-2">
                   <AlertTriangle className="w-4 h-4 shrink-0 text-red-600" />
                   <span>{errorMessage}</span>
                 </div>
               )}
 
-              {/* Step 1: Select Plan */}
+              {/* Step 1: Select Plan (CLEAN, NO FRAME, AUTO BACKGROUND ON SELECTION) */}
               <div>
                 <label className="block text-xs font-black text-[#1F3609] uppercase tracking-wider mb-2">
                   {isSw ? "1. Chagua Kifurushi" : "1. Select Plan"}
                 </label>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                  {(["STARTER", "PROFESSIONAL", "BUSINESS", "CUSTOM"] as PlanType[]).map((p) => (
-                    <button
-                      key={p}
-                      type="button"
-                      onClick={() => setSelectedPlan(p)}
-                      className={`p-3 rounded-2xl border text-left transition ${
-                        selectedPlan === p
-                          ? "border-2 border-[#71B51A] bg-[#F4FBEB] text-[#142608] shadow-xs"
-                          : "border-[#D6E3CD] hover:bg-[#F9FCF5] text-[#3D5230]"
-                      }`}
-                    >
-                      <div className="text-xs font-black">{p}</div>
-                      <div className="text-[11px] text-[#5C7252] mt-0.5">
-                        {p === "STARTER" && "50k / mo"}
-                        {p === "PROFESSIONAL" && "150k / mo"}
-                        {p === "BUSINESS" && "300k / mo"}
-                        {p === "CUSTOM" && (isSw ? "Maalum" : "Tailored")}
-                      </div>
-                    </button>
-                  ))}
+                  {(["STARTER", "PROFESSIONAL", "BUSINESS", "CUSTOM"] as PlanType[]).map((p) => {
+                    const isSelected = selectedPlan === p;
+                    return (
+                      <button
+                        key={p}
+                        type="button"
+                        onClick={() => setSelectedPlan(p)}
+                        className={`p-3 rounded-2xl text-left transition border-0 ${
+                          isSelected
+                            ? "bg-[#D9F4A4] text-[#142A06] font-black shadow-xs scale-[1.01]"
+                            : "bg-[#F3F6EE] text-[#4F6444] hover:bg-[#E8EFE1]"
+                        }`}
+                      >
+                        <div className="text-xs font-black">{p}</div>
+                        <div className={`text-[11px] mt-0.5 ${isSelected ? "text-[#28480C]" : "text-[#627757]"}`}>
+                          {p === "STARTER" && "50k / mo"}
+                          {p === "PROFESSIONAL" && "150k / mo"}
+                          {p === "BUSINESS" && "300k / mo"}
+                          {p === "CUSTOM" && (isSw ? "Maalum" : "Tailored")}
+                        </div>
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
 
               {/* CUSTOM PLAN CONFIGURATOR (Shown when CUSTOM is selected) */}
               {(selectedPlan === "CUSTOM" || selectedPlan === "ENTERPRISE") && (
-                <div className="p-4 rounded-2xl bg-[#F6FBF0] border border-[#CDE5B5] space-y-4">
+                <div className="p-4 rounded-2xl bg-[#F6FBF0] space-y-4">
                   <div className="flex items-center gap-2">
                     <Sliders className="w-4 h-4 text-[#2E4F10]" />
                     <h4 className="text-xs font-black text-[#1D320B] uppercase tracking-wider">
@@ -739,7 +804,7 @@ export const SubscriptionBillingModule: React.FC = () => {
                   <div>
                     <div className="flex justify-between items-center text-xs mb-1.5 font-bold text-[#2A4315]">
                       <span>{isSw ? "Idadi ya Matawi ya Biashara:" : "Number of Business Branches:"}</span>
-                      <span className="font-black text-sm bg-white px-2.5 py-0.5 rounded-lg border border-[#BBD69F]">
+                      <span className="font-black text-sm bg-white px-2.5 py-0.5 rounded-xl shadow-xs">
                         {customConfig.branches} {isSw ? "Matawi" : "Branches"}
                       </span>
                     </div>
@@ -762,21 +827,25 @@ export const SubscriptionBillingModule: React.FC = () => {
                   </div>
 
                   {/* Feature Addon Toggles */}
-                  <div className="space-y-2 pt-2 border-t border-[#D9EBCA]">
-                    <label className="flex items-center justify-between p-2.5 rounded-xl bg-white border border-[#D5E5C4] cursor-pointer hover:bg-[#FAFDF6] transition">
+                  <div className="space-y-2 pt-2">
+                    <label
+                      className={`flex items-center justify-between p-3 rounded-2xl cursor-pointer transition ${
+                        customConfig.traFiscalSync ? "bg-[#E5F7C7] text-[#142807]" : "bg-[#F3F6EE] text-[#4F6444]"
+                      }`}
+                    >
                       <div className="flex items-center gap-2.5">
                         <Building2 className="w-4 h-4 text-[#3C6416]" />
                         <div>
-                          <div className="text-xs font-bold text-[#1C310A]">
+                          <div className="text-xs font-bold">
                             {isSw ? "Uunganishaji wa TRA EFD / VFD" : "TRA EFD / VFD Fiscal Integration"}
                           </div>
-                          <div className="text-[11px] text-[#556D48]">
+                          <div className="text-[11px] opacity-80">
                             {isSw ? "Utoaji wa risiti za kiotomatiki za TRA" : "Automated fiscal signature & TRA receipts"}
                           </div>
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
-                        <span className="text-[11px] font-black text-[#22390C]">+50k/mo</span>
+                        <span className="text-[11px] font-black">+50k/mo</span>
                         <input
                           type="checkbox"
                           checked={customConfig.traFiscalSync}
@@ -788,20 +857,24 @@ export const SubscriptionBillingModule: React.FC = () => {
                       </div>
                     </label>
 
-                    <label className="flex items-center justify-between p-2.5 rounded-xl bg-white border border-[#D5E5C4] cursor-pointer hover:bg-[#FAFDF6] transition">
+                    <label
+                      className={`flex items-center justify-between p-3 rounded-2xl cursor-pointer transition ${
+                        customConfig.dedicatedDb ? "bg-[#E5F7C7] text-[#142807]" : "bg-[#F3F6EE] text-[#4F6444]"
+                      }`}
+                    >
                       <div className="flex items-center gap-2.5">
                         <Server className="w-4 h-4 text-[#3C6416]" />
                         <div>
-                          <div className="text-xs font-bold text-[#1C310A]">
+                          <div className="text-xs font-bold">
                             {isSw ? "Database Binafsi & Backup Maalum" : "Dedicated Database & Backup Partition"}
                           </div>
-                          <div className="text-[11px] text-[#556D48]">
+                          <div className="text-[11px] opacity-80">
                             {isSw ? "Ulinzi wa juu na seva inayojitegemea" : "Isolated server partition with 99.99% SLA"}
                           </div>
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
-                        <span className="text-[11px] font-black text-[#22390C]">+50k/mo</span>
+                        <span className="text-[11px] font-black">+50k/mo</span>
                         <input
                           type="checkbox"
                           checked={customConfig.dedicatedDb}
@@ -813,20 +886,24 @@ export const SubscriptionBillingModule: React.FC = () => {
                       </div>
                     </label>
 
-                    <label className="flex items-center justify-between p-2.5 rounded-xl bg-white border border-[#D5E5C4] cursor-pointer hover:bg-[#FAFDF6] transition">
+                    <label
+                      className={`flex items-center justify-between p-3 rounded-2xl cursor-pointer transition ${
+                        customConfig.staffTraining ? "bg-[#E5F7C7] text-[#142807]" : "bg-[#F3F6EE] text-[#4F6444]"
+                      }`}
+                    >
                       <div className="flex items-center gap-2.5">
                         <BookOpen className="w-4 h-4 text-[#3C6416]" />
                         <div>
-                          <div className="text-xs font-bold text-[#1C310A]">
+                          <div className="text-xs font-bold">
                             {isSw ? "Mafunzo ya Wafanyakazi Dukani" : "On-Site Staff Setup & Training"}
                           </div>
-                          <div className="text-[11px] text-[#556D48]">
+                          <div className="text-[11px] opacity-80">
                             {isSw ? "Mtaalamu anakuja kutoa mafunzo kwa timu" : "Engineer on-site training for cashier team"}
                           </div>
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
-                        <span className="text-[11px] font-black text-[#22390C]">+100k (mara 1)</span>
+                        <span className="text-[11px] font-black">+100k (mara 1)</span>
                         <input
                           type="checkbox"
                           checked={customConfig.staffTraining}
@@ -841,7 +918,7 @@ export const SubscriptionBillingModule: React.FC = () => {
                 </div>
               )}
 
-              {/* Step 2: Select Duration / Cycle */}
+              {/* Step 2: Select Duration / Cycle (CLEAN, NO FRAME, AUTO BACKGROUND ON SELECTION) */}
               <div>
                 <label className="block text-xs font-black text-[#1F3609] uppercase tracking-wider mb-2">
                   {isSw ? "2. Muda wa Leseni (Billing Period)" : "2. Billing Period"}
@@ -851,58 +928,94 @@ export const SubscriptionBillingModule: React.FC = () => {
                     { cycle: 1 as BillingCycle, label: isSw ? "Mwezi 1" : "1 Month", discount: "" },
                     { cycle: 6 as BillingCycle, label: isSw ? "Miezi 6" : "6 Months", discount: "10% Punguzo" },
                     { cycle: 12 as BillingCycle, label: isSw ? "Mwaka 1 (Miezi 12)" : "1 Year (12 Mo)", discount: "20% Punguzo" },
-                  ].map((item) => (
-                    <button
-                      key={item.cycle}
-                      type="button"
-                      onClick={() => setBillingCycle(item.cycle)}
-                      className={`p-3 rounded-2xl border text-center transition ${
-                        billingCycle === item.cycle
-                          ? "border-2 border-[#71B51A] bg-[#F4FBEB] text-[#142608] shadow-xs"
-                          : "border-[#D6E3CD] hover:bg-[#F9FCF5] text-[#3D5230]"
-                      }`}
-                    >
-                      <div className="text-xs font-black">{item.label}</div>
-                      {item.discount && (
-                        <div className="text-[10px] font-bold text-emerald-800 bg-emerald-100/60 rounded px-1.5 py-0.5 mt-1 inline-block">
-                          {item.discount}
-                        </div>
-                      )}
-                    </button>
-                  ))}
+                  ].map((item) => {
+                    const isSelected = billingCycle === item.cycle;
+                    return (
+                      <button
+                        key={item.cycle}
+                        type="button"
+                        onClick={() => setBillingCycle(item.cycle)}
+                        className={`p-3 rounded-2xl text-center transition border-0 ${
+                          isSelected
+                            ? "bg-[#D9F4A4] text-[#142A06] font-black shadow-xs scale-[1.01]"
+                            : "bg-[#F3F6EE] text-[#4F6444] hover:bg-[#E8EFE1]"
+                        }`}
+                      >
+                        <div className="text-xs font-black">{item.label}</div>
+                        {item.discount && (
+                          <div className="text-[10px] font-bold text-emerald-800 bg-white/70 rounded-full px-2 py-0.5 mt-1 inline-block">
+                            {item.discount}
+                          </div>
+                        )}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
 
-              {/* Payer Details Form */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-[11px] font-bold text-[#2A4315] mb-1">
-                    {isSw ? "Nambari ya Simu ya Malipo:" : "Billing Phone Number:"}
+              {/* Step 3: Payment Phone & Carrier Detection (CLEAN, NO FRAME, AUTO DETECT) */}
+              <div className="space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <label className="block text-xs font-black text-[#1F3609] uppercase tracking-wider">
+                    {isSw ? "3. Nambari ya Simu ya Malipo" : "3. Mobile Payment Number"}
                   </label>
+                  <span className="text-[11px] text-[#556D48] font-semibold">
+                    {isSw ? "Inatambua mtandao kiotomatiki" : "Auto-detects carrier"}
+                  </span>
+                </div>
+
+                <div className="relative">
                   <input
                     type="tel"
                     value={payerPhone}
-                    onChange={(e) => setPayerPhone(e.target.value)}
+                    onChange={(e) => handlePhoneChange(e.target.value)}
                     placeholder="0754123456"
-                    className="w-full px-3 py-2 rounded-xl border border-[#C5D8B2] text-xs font-bold text-[#192E08] focus:outline-hidden focus:ring-2 focus:ring-[#71B51A]"
+                    className="w-full bg-[#F3F6EE] rounded-2xl px-4 py-3.5 text-sm font-bold text-[#142807] focus:outline-hidden focus:bg-[#EBF2E2] transition border-0"
                   />
+                  <div className="absolute right-3.5 top-1/2 -translate-y-1/2 flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-xs font-black bg-white shadow-xs">
+                    <Check className="w-3.5 h-3.5 text-[#3E6517]" />
+                    <span>
+                      {selectedCarrier === "mpesa" && "Vodacom M-Pesa"}
+                      {selectedCarrier === "tigopesa" && "Tigo Pesa"}
+                      {selectedCarrier === "airtel" && "Airtel Money"}
+                      {selectedCarrier === "halopesa" && "HaloPesa"}
+                    </span>
+                  </div>
                 </div>
-                <div>
-                  <label className="block text-[11px] font-bold text-[#2A4315] mb-1">
-                    {isSw ? "Barua Pepe ya Risiti (Email):" : "Invoice Email Address:"}
-                  </label>
-                  <input
-                    type="email"
-                    value={payerEmail}
-                    onChange={(e) => setPayerEmail(e.target.value)}
-                    placeholder="owner@domain.com"
-                    className="w-full px-3 py-2 rounded-xl border border-[#C5D8B2] text-xs font-bold text-[#192E08] focus:outline-hidden focus:ring-2 focus:ring-[#71B51A]"
-                  />
+
+                {/* 4 Carrier Boxes with clean background colors and NO frame */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1">
+                  {CARRIERS.map((carrier) => {
+                    const isSelected = selectedCarrier === carrier.id;
+                    return (
+                      <button
+                        key={carrier.id}
+                        type="button"
+                        onClick={() => setSelectedCarrier(carrier.id)}
+                        className={`p-3 rounded-2xl text-left transition border-0 ${
+                          isSelected
+                            ? `${carrier.activeBg} font-black shadow-xs scale-[1.02]`
+                            : "bg-[#F3F6EE] text-[#4F6444] hover:bg-[#EAEFE4]"
+                        }`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-black">{carrier.name}</span>
+                          {isSelected && <Check className="w-3.5 h-3.5 shrink-0" />}
+                        </div>
+                        <div className={`text-[10px] mt-0.5 ${isSelected ? "text-white/90" : "text-[#718667]"}`}>
+                          {carrier.operator}
+                        </div>
+                        <div className={`text-[9px] mt-1 font-mono ${isSelected ? "text-white/80" : "text-[#83977A]"}`}>
+                          {carrier.prefixDesc}
+                        </div>
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
 
-              {/* Cost Summary Breakdown */}
-              <div className="p-4 rounded-2xl bg-[#F8FAF4] border border-[#DCE8D1] space-y-2 text-xs">
+              {/* Cost Summary Breakdown (Clean, Frameless) */}
+              <div className="p-4 rounded-2xl bg-[#F6F9F0] space-y-2 text-xs">
                 <div className="flex justify-between text-[#516744]">
                   <span>
                     {isSw ? "Ada ya mwezi:" : "Monthly rate:"} ({selectedPlan})
@@ -912,7 +1025,7 @@ export const SubscriptionBillingModule: React.FC = () => {
                 {billingCycle > 1 && (
                   <div className="flex justify-between text-[#516744]">
                     <span>
-                      {isSw ? "Jumla kabla ya punguzo:" : "Subtotal before discount:"} ({billingCycle}{" "}
+                      {isSw ? "Jumla ya miezi:" : "Period subtotal:"} ({billingCycle}{" "}
                       {isSw ? "miezi" : "mo"})
                     </span>
                     <span className="font-bold text-[#1A2E0A]">TZS {subtotalBeforeDiscount.toLocaleString()}</span>
@@ -932,180 +1045,136 @@ export const SubscriptionBillingModule: React.FC = () => {
                     <span className="font-bold text-[#1A2E0A]">TZS {oneTimeTrainingFee.toLocaleString()}</span>
                   </div>
                 )}
-                <div className="pt-2 border-t border-[#D5E4C8] flex justify-between items-center text-sm font-black text-[#152709]">
+                <div className="pt-2 border-t border-[#E3EDD9] flex justify-between items-center text-sm font-black text-[#152709]">
                   <span>{isSw ? "Jumla Kuu ya Kulipa (VAT Inclusive):" : "Total Payable (VAT Inclusive):"}</span>
                   <span className="text-lg text-[#1F3908]">TZS {finalTotal.toLocaleString()}</span>
                 </div>
-                <div className="text-[10px] text-[#69805F] text-right">
-                  {isSw
-                    ? `Kodi ya VAT 18% (TZS ${vatAmount.toLocaleString()}) imejumuishwa kwenye ankara.`
-                    : `VAT 18% (TZS ${vatAmount.toLocaleString()}) included in the tax invoice.`}
-                </div>
               </div>
 
-              {/* Step 3: Choose Payment Gateway Tab */}
-              <div>
-                <label className="block text-xs font-black text-[#1F3609] uppercase tracking-wider mb-2">
-                  {isSw ? "3. Chagua Lango la Malipo" : "3. Choose Payment Gateway"}
-                </label>
-                <div className="flex rounded-2xl bg-[#EBF3E3] p-1 border border-[#D5E3CA]">
+              {/* Payment Processing Flow */}
+              {pesapalSimulationStep === "idle" ? (
+                <div className="space-y-2.5">
                   <button
                     type="button"
-                    onClick={() => {
-                      setPaymentTab("pesapal");
-                      setPesapalSimulationStep("idle");
-                    }}
-                    className={`flex-1 py-2 text-xs font-black rounded-xl transition flex items-center justify-center gap-2 ${
-                      paymentTab === "pesapal"
-                        ? "bg-white text-[#192E08] shadow-xs"
-                        : "text-[#536B46] hover:text-[#192E08]"
-                    }`}
+                    onClick={handleInitiatePesapalPayment}
+                    disabled={isProcessing}
+                    className="w-full py-3.5 rounded-2xl neu-btn text-xs font-black shadow-xs flex items-center justify-center gap-2 transition"
                   >
-                    <Smartphone className="w-4 h-4" />
-                    <span>Pesapal (M-Pesa / Tigo / Airtel / Card)</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setPaymentTab("lipa_namba")}
-                    className={`flex-1 py-2 text-xs font-black rounded-xl transition flex items-center justify-center gap-2 ${
-                      paymentTab === "lipa_namba"
-                        ? "bg-white text-[#192E08] shadow-xs"
-                        : "text-[#536B46] hover:text-[#192E08]"
-                    }`}
-                  >
-                    <CreditCard className="w-4 h-4" />
-                    <span>Lipa Namba Till (5542109)</span>
-                  </button>
-                </div>
-
-                {/* PESAPAL TAB CONTENT */}
-                {paymentTab === "pesapal" && (
-                  <div className="mt-3 p-4 rounded-2xl bg-white border border-[#D8E6CC] space-y-3">
-                    <div className="text-xs text-[#4F6742] leading-relaxed">
-                      {isSw
-                        ? "Pesapal inasaidia malipo ya haraka ya simu (Vodacom M-Pesa, Tigo Pesa, Airtel Money, HaloPesa) na kadi za benki (Visa / Mastercard)."
-                        : "Pesapal processes automated mobile money transactions (M-Pesa, Tigo Pesa, Airtel Money, HaloPesa) and Visa/Mastercard."}
-                    </div>
-
-                    {pesapalSimulationStep === "idle" && (
-                      <button
-                        type="button"
-                        onClick={handleInitiatePesapalPayment}
-                        disabled={isProcessing}
-                        className="w-full py-3 rounded-2xl neu-btn text-xs font-black shadow-xs flex items-center justify-center gap-2 transition"
-                      >
-                        {isProcessing ? (
-                          <RefreshCw className="w-4 h-4 animate-spin" />
-                        ) : (
-                          <ExternalLink className="w-4 h-4" />
-                        )}
-                        <span>
-                          {isProcessing
-                            ? isSw
-                              ? "Inaunganisha na Pesapal..."
-                              : "Connecting to Pesapal Gateway..."
-                            : isSw
-                            ? `Lipa TZS ${finalTotal.toLocaleString()} Kupitia Pesapal`
-                            : `Pay TZS ${finalTotal.toLocaleString()} with Pesapal`}
-                        </span>
-                      </button>
+                    {isProcessing ? (
+                      <RefreshCw className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Smartphone className="w-4 h-4" />
                     )}
+                    <span>
+                      {isProcessing
+                        ? isSw
+                          ? "Inaunganisha na Pesapal..."
+                          : "Connecting to Pesapal Gateway..."
+                        : isSw
+                        ? `Lipa TZS ${finalTotal.toLocaleString()} (${
+                            selectedCarrier === "mpesa"
+                              ? "Vodacom M-Pesa"
+                              : selectedCarrier === "tigopesa"
+                              ? "Tigo Pesa"
+                              : selectedCarrier === "airtel"
+                              ? "Airtel Money"
+                              : "HaloPesa"
+                          })`
+                        : `Pay TZS ${finalTotal.toLocaleString()} (${
+                            selectedCarrier === "mpesa"
+                              ? "Vodacom M-Pesa"
+                              : selectedCarrier === "tigopesa"
+                              ? "Tigo Pesa"
+                              : selectedCarrier === "airtel"
+                              ? "Airtel Money"
+                              : "HaloPesa"
+                          })`}
+                    </span>
+                  </button>
 
-                    {pesapalSimulationStep === "awaiting_pin" && (
-                      <div className="p-4 rounded-xl bg-[#F6FBF1] border border-[#BDE388] text-center space-y-3">
-                        <div className="inline-flex p-3 rounded-full bg-[#E1FFAC] text-[#1E370A]">
-                          <Smartphone className="w-6 h-6 animate-pulse" />
-                        </div>
-                        <h4 className="text-xs font-black text-[#152709]">
-                          {isSw ? "Orodha ya Malipo Imetumwa Kwenye Simu!" : "Push Notification Sent to Phone!"}
-                        </h4>
-                        <p className="text-[11px] text-[#4F6742]">
-                          {isSw
-                            ? `Ombi la malipo la TZS ${finalTotal.toLocaleString()} limetumwa kwenda ${payerPhone}. Tafadhali weka PIN yako kwenye simu kukamilisha.`
-                            : `STK push request for TZS ${finalTotal.toLocaleString()} was dispatched to ${payerPhone}. Enter PIN on your phone.`}
-                        </p>
-                        <div className="pt-2 flex flex-col sm:flex-row gap-2 justify-center">
-                          <button
-                            type="button"
-                            onClick={() =>
-                              handleConfirmSuccessfulPayment(
-                                "Pesapal Mobile Money",
-                                `PESA-${Date.now().toString().slice(-6)}`
-                              )
-                            }
-                            disabled={isProcessing}
-                            className="px-5 py-2.5 rounded-xl bg-[#233C0D] text-white text-xs font-black hover:bg-[#182C08] transition flex items-center justify-center gap-2"
-                          >
-                            <Check className="w-4 h-4" />
-                            <span>
-                              {isSw ? "Thibitisha Malipo Yamekamilika" : "Confirm Payment Received"}
-                            </span>
-                          </button>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {/* LIPA NAMBA TAB CONTENT */}
-                {paymentTab === "lipa_namba" && (
-                  <div className="mt-3 p-4 rounded-2xl bg-white border border-[#D8E6CC] space-y-4">
-                    <div className="p-3.5 rounded-xl bg-[#F8FAF4] border border-[#DEE9D4] space-y-1.5 text-xs">
-                      <div className="flex justify-between">
-                        <span className="text-[#516744]">{isSw ? "Njia ya Malipo:" : "Channel:"}</span>
-                        <strong className="text-[#192E08]">Lipa kwa Simu / Till Number</strong>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-[#516744]">{isSw ? "Nambari ya Till:" : "Till Number:"}</span>
-                        <strong className="text-base font-black font-mono text-[#192E08]">5542109</strong>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-[#516744]">{isSw ? "Jina la Biashara:" : "Registered Name:"}</span>
-                        <strong className="text-[#192E08]">TradePOS Technologies Tanzania</strong>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-[#516744]">{isSw ? "Kiasi Sahihi:" : "Exact Amount:"}</span>
-                        <strong className="text-sm font-black text-[#192E08]">
-                          TZS {finalTotal.toLocaleString()}
-                        </strong>
-                      </div>
-                    </div>
-
-                    <div className="space-y-1.5">
-                      <label className="block text-[11px] font-bold text-[#2A4315]">
-                        {isSw
-                          ? "Weka Nambari ya Muamala ya SMS (Transaction Code kutoka M-Pesa / Tigo / Airtel):"
-                          : "Enter SMS Transaction Code (from Vodacom / Tigo / Airtel message):"}
-                      </label>
-                      <input
-                        type="text"
-                        value={lipaReferenceCode}
-                        onChange={(e) => setLipaReferenceCode(e.target.value)}
-                        placeholder="Mfano: 9KT564819P au 8AY82910"
-                        className="w-full px-3 py-2.5 rounded-xl border border-[#C5D8B2] text-xs font-mono font-bold text-[#192E08] uppercase focus:outline-hidden focus:ring-2 focus:ring-[#71B51A]"
-                      />
-                    </div>
-
+                  <div className="flex items-center justify-between text-[11px] text-[#556D48] pt-1">
                     <button
                       type="button"
-                      onClick={handleVerifyLipaCode}
-                      disabled={isProcessing}
-                      className="w-full py-3 rounded-2xl neu-btn text-xs font-black shadow-xs flex items-center justify-center gap-2 transition"
+                      onClick={() => setPaymentTab(paymentTab === "lipa_namba" ? "pesapal" : "lipa_namba")}
+                      className="hover:underline font-bold text-[#233C0D]"
                     >
-                      {isProcessing ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
-                      <span>
-                        {isProcessing
-                          ? isSw
-                            ? "Inathibitisha muamala..."
-                            : "Verifying code..."
-                          : isSw
-                          ? "Thibitisha Malipo & Washa Leseni"
-                          : "Verify Code & Activate License"}
-                      </span>
+                      {paymentTab === "lipa_namba"
+                        ? isSw
+                          ? "Tumia Malipo ya Simu (Pesapal Push)"
+                          : "Use Mobile Push (Pesapal)"
+                        : isSw
+                        ? "Lipa kwa Namba ya Till (5542109)"
+                        : "Pay via Till Number (5542109)"}
+                    </button>
+                    <span>Lango Rasmi la Pesapal</span>
+                  </div>
+
+                  {paymentTab === "lipa_namba" && (
+                    <div className="p-4 rounded-2xl bg-[#F6F9F0] space-y-3 mt-2">
+                      <div className="text-xs text-[#3E5533]">
+                        {isSw
+                          ? "Tuma TZS " + finalTotal.toLocaleString() + " kwenda Till 5542109 (TradePOS Technologies), kisha weka nambari ya SMS ya muamala hapa chini:"
+                          : "Send TZS " + finalTotal.toLocaleString() + " to Till 5542109 (TradePOS Technologies), then enter the SMS transaction code below:"}
+                      </div>
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          value={lipaReferenceCode}
+                          onChange={(e) => setLipaReferenceCode(e.target.value)}
+                          placeholder="Mfano: 9KT564819P"
+                          className="flex-1 bg-white rounded-xl px-3 py-2 text-xs font-mono font-bold text-[#142807] uppercase border-0 focus:ring-2 focus:ring-[#77B822]"
+                        />
+                        <button
+                          type="button"
+                          onClick={handleVerifyLipaCode}
+                          disabled={isProcessing}
+                          className="px-4 py-2 rounded-xl bg-[#233C0D] text-white text-xs font-black hover:bg-[#182C08] transition"
+                        >
+                          {isSw ? "Thibitisha" : "Verify"}
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="p-5 rounded-2xl bg-[#F6FBF1] text-center space-y-3">
+                  <div className="inline-flex p-3 rounded-full bg-[#E1FFAC] text-[#1E370A]">
+                    <Smartphone className="w-6 h-6 animate-pulse" />
+                  </div>
+                  <h4 className="text-xs font-black text-[#152709]">
+                    {isSw ? "Ombi la Malipo Limetumwa Kwenye Simu Yako!" : "Push Notification Sent to Phone!"}
+                  </h4>
+                  <p className="text-[11px] text-[#4F6742]">
+                    {isSw
+                      ? `Ombi la malipo la TZS ${finalTotal.toLocaleString()} limetumwa kwenda ${payerPhone} (${
+                          selectedCarrier === "mpesa"
+                            ? "M-Pesa"
+                            : selectedCarrier === "tigopesa"
+                            ? "Tigo Pesa"
+                            : selectedCarrier === "airtel"
+                            ? "Airtel Money"
+                            : "HaloPesa"
+                        }). Weka PIN yako kukamilisha.`
+                      : `STK push request for TZS ${finalTotal.toLocaleString()} was dispatched to ${payerPhone}. Enter PIN on your phone.`}
+                  </p>
+                  <div className="pt-2 flex flex-col sm:flex-row gap-2 justify-center">
+                    <button
+                      type="button"
+                      onClick={() =>
+                        handleConfirmSuccessfulPayment(
+                          `Pesapal (${selectedCarrier.toUpperCase()})`,
+                          `PESA-${Date.now().toString().slice(-6)}`
+                        )
+                      }
+                      disabled={isProcessing}
+                      className="px-5 py-2.5 rounded-xl bg-[#233C0D] text-white text-xs font-black hover:bg-[#182C08] transition flex items-center justify-center gap-2"
+                    >
+                      <Check className="w-4 h-4" />
+                      <span>{isSw ? "Thibitisha Malipo Yamekamilika" : "Confirm Payment Received"}</span>
                     </button>
                   </div>
-                )}
-              </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
