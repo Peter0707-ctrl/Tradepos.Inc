@@ -106,46 +106,46 @@ export const AdminUsersModule: React.FC = () => {
   return (
     <div className="flex-1 flex flex-col h-full p-4 lg:p-6 overflow-hidden bg-[#F4F7EE]/95">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-5 shrink-0">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4 shrink-0">
         <div>
           <div className="flex items-center gap-2.5">
             <h2 className="text-xl font-black text-[#172709] tracking-tight">
-              Watumiaji Wote wa Mfumo (All Users & Staff Directory)
+              Watumiaji & Staff
             </h2>
             <span className="px-2.5 py-0.5 rounded-full bg-[#1b2f09] text-[#E1FFAC] text-[10px] font-black tracking-wider uppercase">
-              USER DIRECTORY
+              USERS
             </span>
           </div>
           <p className="text-xs text-[#52654c] mt-0.5">
-            Kagua watumiaji wote, weka upya nenosiri au PIN za POS, na dhibiti hali ya akaunti zao.
+            Kagua watumiaji wote, weka upya nenosiri au PIN za POS.
           </p>
         </div>
       </div>
 
       {/* Metrics */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-3.5 mb-5 shrink-0">
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-3.5 mb-4 shrink-0">
         <div className="p-3.5 rounded-2xl bg-white border border-[#d6e5c5] shadow-neu-card">
           <span className="text-[11px] font-bold text-[#5c7054] block">Watumiaji Wote</span>
-          <p className="text-xl font-black text-[#17280a] mt-0.5">{employees.length} Akaunti</p>
-          <span className="text-[10px] text-[#6d8065]">Kwenye maduka yote</span>
+          <p className="text-xl font-black text-[#17280a] mt-0.5">{employees.length}</p>
+          <span className="text-[10px] text-[#6d8065]">Akaunti zote</span>
         </div>
 
         <div className="p-3.5 rounded-2xl bg-white border border-[#d6e5c5] shadow-neu-card">
-          <span className="text-[11px] font-bold text-[#5c7054] block">Wamiliki (Owners)</span>
+          <span className="text-[11px] font-bold text-[#5c7054] block">Wamiliki</span>
           <p className="text-xl font-black text-[#17280a] mt-0.5">{ownersCount}</p>
-          <span className="text-[10px] text-emerald-700 font-bold">Wenye maduka</span>
+          <span className="text-[10px] text-emerald-700 font-bold">Owners</span>
         </div>
 
         <div className="p-3.5 rounded-2xl bg-white border border-[#d6e5c5] shadow-neu-card">
           <span className="text-[11px] font-bold text-[#5c7054] block">Mameneja</span>
           <p className="text-xl font-black text-[#17280a] mt-0.5">{managersCount}</p>
-          <span className="text-[10px] text-[#6d8065]">Wasimamizi wa matawi</span>
+          <span className="text-[10px] text-[#6d8065]">Managers</span>
         </div>
 
         <div className="p-3.5 rounded-2xl bg-white border border-[#d6e5c5] shadow-neu-card">
-          <span className="text-[11px] font-bold text-[#5c7054] block">Wauzaji (Cashiers)</span>
+          <span className="text-[11px] font-bold text-[#5c7054] block">Wauzaji</span>
           <p className="text-xl font-black text-[#17280a] mt-0.5">{cashiersCount}</p>
-          <span className="text-[10px] text-[#6d8065]">Watumiaji wa POS</span>
+          <span className="text-[10px] text-[#6d8065]">Cashiers</span>
         </div>
 
         <div className="p-3.5 rounded-2xl bg-white border border-[#d6e5c5] shadow-neu-card">
@@ -153,7 +153,7 @@ export const AdminUsersModule: React.FC = () => {
           <p className={`text-xl font-black mt-0.5 ${suspendedCount > 0 ? "text-rose-700" : "text-emerald-700"}`}>
             {suspendedCount}
           </p>
-          <span className="text-[10px] text-[#6d8065]">Akaunti zilizositishwa</span>
+          <span className="text-[10px] text-[#6d8065]">Suspended</span>
         </div>
       </div>
 
@@ -189,8 +189,8 @@ export const AdminUsersModule: React.FC = () => {
             className="py-2 px-3 rounded-xl bg-white border border-[#d8e6cc] text-xs font-bold text-[#233519]"
           >
             <option value="ALL">Hali Zote</option>
-            <option value="Active">Akaunti Hai (Active)</option>
-            <option value="Suspended">Akaunti Zilizofungwa</option>
+            <option value="Active">Active</option>
+            <option value="Suspended">Suspended</option>
           </select>
         </div>
       </div>
@@ -200,14 +200,14 @@ export const AdminUsersModule: React.FC = () => {
         <table className="w-full text-left text-xs divide-y divide-[#e8f0df]">
           <thead className="bg-[#F8FAF4] font-bold text-[#44573d] sticky top-0 z-10">
             <tr>
-              <th className="py-3.5 px-4">Mtumiaji (Jina & Email)</th>
-              <th className="py-3.5 px-4">Namba ya Simu</th>
+              <th className="py-3.5 px-4">Mtumiaji</th>
+              <th className="py-3.5 px-4">Simu</th>
               <th className="py-3.5 px-4">Duka & Tawi</th>
-              <th className="py-3.5 px-4">Cheo (Role)</th>
-              <th className="py-3.5 px-4">PIN & Nenosiri</th>
-              <th className="py-3.5 px-4">Hali ya Akaunti</th>
-              <th className="py-3.5 px-4">Mara ya Mwisho Kuonekana</th>
-              <th className="py-3.5 px-4 text-right">Usimamizi & Usalama</th>
+              <th className="py-3.5 px-4">Cheo</th>
+              <th className="py-3.5 px-4">PIN / Password</th>
+              <th className="py-3.5 px-4">Hali</th>
+              <th className="py-3.5 px-4">Mwisho Kuonekana</th>
+              <th className="py-3.5 px-4 text-right">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-[#eff5e9] text-[#1c2c0e]">
@@ -263,13 +263,13 @@ export const AdminUsersModule: React.FC = () => {
 
                     <td className="py-3.5 px-4">
                       <span
-                        className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                        className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${
                           emp.status === "Active"
                             ? "bg-emerald-100 text-emerald-900 border border-emerald-300"
                             : "bg-rose-100 text-rose-900 border border-rose-300"
                         }`}
                       >
-                        {emp.status === "Active" ? "Inafanya Kazi" : "Imefungwa"}
+                        {emp.status === "Active" ? "Active" : "Suspended"}
                       </span>
                     </td>
 

@@ -163,18 +163,18 @@ export const AdminSupportDeskModule: React.FC = () => {
   return (
     <div className="flex-1 flex flex-col h-full p-4 lg:p-6 overflow-hidden bg-[#F4F7EE]/95">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-5 shrink-0">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4 shrink-0">
         <div>
           <div className="flex items-center gap-2.5">
             <h2 className="text-xl font-black text-[#172709] tracking-tight">
-              Desk ya Msaada & Utatuzi wa Matatizo (Support Desk)
+              Desk ya Msaada
             </h2>
             <span className="px-2.5 py-0.5 rounded-full bg-[#1b2f09] text-[#E1FFAC] text-[10px] font-black tracking-wider uppercase">
-              HELP DESK
+              SUPPORT
             </span>
           </div>
           <p className="text-xs text-[#52654c] mt-0.5">
-            Tatua matatizo ya wateja (PIN, vifurushi, malipo ya M-Pesa, printi), na sajili tiketi mpya.
+            Utatuzi wa matatizo ya wateja (PIN, vifurushi, printi).
           </p>
         </div>
 
@@ -183,36 +183,36 @@ export const AdminSupportDeskModule: React.FC = () => {
           className="px-3.5 py-2 rounded-xl bg-[#1b2f09] hover:bg-[#253f0e] text-[#E1FFAC] font-bold text-xs flex items-center gap-1.5 shadow cursor-pointer transition self-start sm:self-auto"
         >
           <Plus className="w-4 h-4" />
-          <span>Fungua Tiketi Mpya</span>
+          <span>Fungua Tiketi</span>
         </button>
       </div>
 
       {/* Metrics */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3.5 mb-5 shrink-0">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3.5 mb-4 shrink-0">
         <div className="p-3.5 rounded-2xl bg-white border border-[#d6e5c5] shadow-neu-card">
           <span className="text-[11px] font-bold text-[#5c7054] block">Tiketi Zote</span>
-          <p className="text-xl font-black text-[#17280a] mt-0.5">{supportTickets.length} Tiketi</p>
-          <span className="text-[10px] text-[#6d8065]">Jumla ya matatizo</span>
+          <p className="text-xl font-black text-[#17280a] mt-0.5">{supportTickets.length}</p>
+          <span className="text-[10px] text-[#6d8065]">Jumla</span>
         </div>
 
         <div className="p-3.5 rounded-2xl bg-white border border-[#d6e5c5] shadow-neu-card">
-          <span className="text-[11px] font-bold text-[#5c7054] block">Zinazosubiri (Open)</span>
+          <span className="text-[11px] font-bold text-[#5c7054] block">Open</span>
           <p className={`text-xl font-black mt-0.5 ${openTickets > 0 ? "text-rose-700" : "text-emerald-700"}`}>
-            {openTickets} Tiketi
+            {openTickets}
           </p>
-          <span className="text-[10px] text-rose-700 font-semibold">Zinahitaji utatuzi wa haraka</span>
+          <span className="text-[10px] text-rose-700 font-semibold">Zinazosubiri</span>
         </div>
 
         <div className="p-3.5 rounded-2xl bg-white border border-[#d6e5c5] shadow-neu-card">
-          <span className="text-[11px] font-bold text-[#5c7054] block">Zinazoshughulikiwa</span>
-          <p className="text-xl font-black text-amber-700 mt-0.5">{inProgressTickets} Tiketi</p>
-          <span className="text-[10px] text-amber-700 font-semibold">Zinaendelea kufanyiwa kazi</span>
+          <span className="text-[11px] font-bold text-[#5c7054] block">In Progress</span>
+          <p className="text-xl font-black text-amber-700 mt-0.5">{inProgressTickets}</p>
+          <span className="text-[10px] text-amber-700 font-semibold">Zinazoshughulikiwa</span>
         </div>
 
         <div className="p-3.5 rounded-2xl bg-white border border-[#d6e5c5] shadow-neu-card">
-          <span className="text-[11px] font-bold text-[#5c7054] block">Zilizotatuliwa</span>
-          <p className="text-xl font-black text-emerald-800 mt-0.5">{resolvedTickets} Tiketi</p>
-          <span className="text-[10px] text-emerald-700 font-bold">Matatizo yaliyokamilika</span>
+          <span className="text-[11px] font-bold text-[#5c7054] block">Resolved</span>
+          <p className="text-xl font-black text-emerald-800 mt-0.5">{resolvedTickets}</p>
+          <span className="text-[10px] text-emerald-700 font-bold">Zilizotatuliwa</span>
         </div>
       </div>
 
@@ -224,17 +224,17 @@ export const AdminSupportDeskModule: React.FC = () => {
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Tafuta tiketi kwa namba, duka la mteja, namba ya simu, au maelezo..."
+            placeholder="Tafuta tiketi kwa namba au duka..."
             className="w-full py-2.5 pl-10 pr-4 rounded-xl neu-input text-xs font-medium text-[#18260d]"
           />
         </div>
 
         <div className="flex items-center gap-1.5 overflow-x-auto">
           {[
-            { id: "ALL", label: "Tiketi Zote" },
-            { id: "OPEN", label: "Zinazosubiri (Open)" },
-            { id: "IN_PROGRESS", label: "Zinazoshughulikiwa" },
-            { id: "RESOLVED", label: "Zilizotatuliwa" },
+            { id: "ALL", label: "Zote" },
+            { id: "OPEN", label: "Open" },
+            { id: "IN_PROGRESS", label: "In Progress" },
+            { id: "RESOLVED", label: "Resolved" },
           ].map((f) => (
             <button
               key={f.id}
@@ -302,7 +302,7 @@ export const AdminSupportDeskModule: React.FC = () => {
                       : "bg-rose-100 text-rose-900 border border-rose-300"
                   }`}
                 >
-                  {ticket.status === "RESOLVED" ? "Imetatuliwa" : ticket.status === "IN_PROGRESS" ? "Inashughulikiwa" : "Inasubiri"}
+                  {ticket.status === "RESOLVED" ? "Resolved" : ticket.status === "IN_PROGRESS" ? "In Progress" : "Open"}
                 </span>
               </div>
 

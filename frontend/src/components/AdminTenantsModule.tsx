@@ -110,48 +110,48 @@ export const AdminTenantsModule: React.FC = () => {
   return (
     <div className="flex-1 flex flex-col h-full p-4 lg:p-6 overflow-hidden bg-[#F4F7EE]/95">
       {/* Page Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-5 shrink-0">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4 shrink-0">
         <div>
           <div className="flex items-center gap-2.5">
             <h2 className="text-xl font-black text-[#172709] tracking-tight">
-              Maduka & Usajili wa Wateja (Stores & Subscriptions)
+              Maduka & Usajili
             </h2>
             <span className="px-2.5 py-0.5 rounded-full bg-[#1b2f09] text-[#E1FFAC] text-[10px] font-black tracking-wider uppercase">
-              TENANT HUB
+              STORES
             </span>
           </div>
           <p className="text-xs text-[#52654c] mt-0.5">
-            Usimamizi wa maduka yote yaliyosajiliwa, kufuatilia walioisha muda, na kuongeza siku za vifurushi.
+            Usimamizi wa maduka, hali ya usajili, na kuongeza siku za vifurushi.
           </p>
         </div>
       </div>
 
       {/* Metric Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3.5 mb-5 shrink-0">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3.5 mb-4 shrink-0">
         <div className="p-3.5 rounded-2xl bg-white border border-[#d6e5c5] shadow-neu-card">
           <span className="text-[11px] font-bold text-[#5c7054] block">Maduka Yote</span>
-          <p className="text-xl font-black text-[#17280a] mt-0.5">{tenants.length} Maduka</p>
-          <span className="text-[10px] text-[#6d8065]">Yaliyosajiliwa kwenye mfumo</span>
+          <p className="text-xl font-black text-[#17280a] mt-0.5">{tenants.length}</p>
+          <span className="text-[10px] text-[#6d8065]">Yaliyosajiliwa</span>
         </div>
 
         <div className="p-3.5 rounded-2xl bg-white border border-[#d6e5c5] shadow-neu-card">
-          <span className="text-[11px] font-bold text-[#5c7054] block">Usajili Hai (Active)</span>
-          <p className="text-xl font-black text-emerald-800 mt-0.5">{activeSubCount} Maduka</p>
+          <span className="text-[11px] font-bold text-[#5c7054] block">Subscribed</span>
+          <p className="text-xl font-black text-emerald-800 mt-0.5">{activeSubCount}</p>
           <span className="text-[10px] text-emerald-700 font-bold">MRR: TZS {totalMrr.toLocaleString()}</span>
         </div>
 
         <div className="p-3.5 rounded-2xl bg-white border border-[#d6e5c5] shadow-neu-card">
-          <span className="text-[11px] font-bold text-[#5c7054] block">Walioisha Muda (Expired)</span>
-          <p className="text-xl font-black text-amber-700 mt-0.5">{expiredSubCount} Maduka</p>
+          <span className="text-[11px] font-bold text-[#5c7054] block">Expired</span>
+          <p className="text-xl font-black text-amber-700 mt-0.5">{expiredSubCount}</p>
           <span className="text-[10px] text-amber-700 font-semibold">{suspendedCount} wamesitishwa</span>
         </div>
 
         <div className="p-3.5 rounded-2xl bg-white border border-[#d6e5c5] shadow-neu-card">
-          <span className="text-[11px] font-bold text-[#5c7054] block">Jumla ya Matawi</span>
+          <span className="text-[11px] font-bold text-[#5c7054] block">Matawi</span>
           <p className="text-xl font-black text-[#17280a] mt-0.5">
-            {tenants.reduce((acc, t) => acc + t.branches, 0)} Matawi
+            {tenants.reduce((acc, t) => acc + t.branches, 0)}
           </p>
-          <span className="text-[10px] text-[#6d8065]">Matawi yote yanayofanya kazi</span>
+          <span className="text-[10px] text-[#6d8065]">Matawi yote</span>
         </div>
       </div>
 
@@ -163,18 +163,17 @@ export const AdminTenantsModule: React.FC = () => {
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Tafuta duka kwa jina, mmiliki, namba ya simu, au eneo..."
+            placeholder="Tafuta duka kwa jina, mmiliki, au simu..."
             className="w-full py-2.5 pl-10 pr-4 rounded-xl neu-input text-xs font-medium text-[#18260d]"
           />
         </div>
 
         <div className="flex items-center gap-1.5 overflow-x-auto">
-          <span className="text-[11px] font-bold text-[#55694f] mr-1">Hali:</span>
           {[
             { id: "ALL", label: "Wote" },
-            { id: "ACTIVE", label: "Waliosubscribe (Hai)" },
-            { id: "EXPIRED", label: "Walioisha Muda" },
-            { id: "SUSPENDED", label: "Waliositishwa" },
+            { id: "ACTIVE", label: "Subscribed" },
+            { id: "EXPIRED", label: "Expired" },
+            { id: "SUSPENDED", label: "Suspended" },
           ].map((f) => (
             <button
               key={f.id}
@@ -196,12 +195,12 @@ export const AdminTenantsModule: React.FC = () => {
         <table className="w-full text-left text-xs divide-y divide-[#e8f0df]">
           <thead className="bg-[#F8FAF4] font-bold text-[#44573d] sticky top-0 z-10">
             <tr>
-              <th className="py-3.5 px-4">Duka & Mahali</th>
-              <th className="py-3.5 px-4">Mmiliki & Mawasiliano</th>
-              <th className="py-3.5 px-4">Kifurushi (Plan)</th>
-              <th className="py-3.5 px-4">Mwisho wa Usajili</th>
-              <th className="py-3.5 px-4">Hali ya Duka</th>
-              <th className="py-3.5 px-4 text-right">Usimamizi wa Haraka (Actions)</th>
+              <th className="py-3.5 px-4">Duka</th>
+              <th className="py-3.5 px-4">Mmiliki</th>
+              <th className="py-3.5 px-4">Kifurushi</th>
+              <th className="py-3.5 px-4">Mwisho</th>
+              <th className="py-3.5 px-4">Hali</th>
+              <th className="py-3.5 px-4 text-right">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-[#eff5e9] text-[#1c2c0e]">
@@ -271,7 +270,7 @@ export const AdminTenantsModule: React.FC = () => {
                           : "bg-rose-100 text-rose-900 border border-rose-300"
                       }`}
                     >
-                      {ten.status === "ACTIVE" ? "Hai (Subscribed)" : ten.status === "EXPIRED" ? "Imeisha Muda" : "Imesitishwa"}
+                      {ten.status === "ACTIVE" ? "Subscribed" : ten.status === "EXPIRED" ? "Expired" : "Suspended"}
                     </span>
                   </td>
 

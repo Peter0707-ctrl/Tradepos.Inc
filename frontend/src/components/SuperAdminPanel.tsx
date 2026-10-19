@@ -333,13 +333,13 @@ export const SuperAdminPanel: React.FC<SuperAdminPanelProps> = ({ initialTab = "
         </div>
 
         <div className="p-3.5 rounded-2xl bg-white border border-[#d6e5c5] shadow-neu-card">
-          <span className="text-[11px] font-bold text-[#5c7054] block">Usajili Hai (Active)</span>
+          <span className="text-[11px] font-bold text-[#5c7054] block">Subscribed</span>
           <p className="text-xl font-black text-emerald-800 mt-0.5">{activeSubCount} Maduka</p>
           <span className="text-[10px] text-emerald-700 font-bold">MRR: TZS {totalMrr.toLocaleString()}</span>
         </div>
 
         <div className="p-3.5 rounded-2xl bg-white border border-[#d6e5c5] shadow-neu-card">
-          <span className="text-[11px] font-bold text-[#5c7054] block">Walioisha Muda (Expired)</span>
+          <span className="text-[11px] font-bold text-[#5c7054] block">Expired</span>
           <p className="text-xl font-black text-amber-700 mt-0.5">{expiredSubCount} Maduka</p>
           <span className="text-[10px] text-amber-700 font-semibold">{suspendedCount} wamesitishwa</span>
         </div>
@@ -370,7 +370,7 @@ export const SuperAdminPanel: React.FC<SuperAdminPanelProps> = ({ initialTab = "
           }`}
         >
           <Building2 className="w-4 h-4" />
-          <span>Maduka & Usajili (Subscriptions)</span>
+          <span>Maduka & Usajili</span>
           <span className="px-1.5 py-0.2 rounded-md bg-white/20 text-[10px] font-black">
             {tenants.length}
           </span>
@@ -385,7 +385,7 @@ export const SuperAdminPanel: React.FC<SuperAdminPanelProps> = ({ initialTab = "
           }`}
         >
           <Users className="w-4 h-4" />
-          <span>Watumiaji Wote (All Users & Staff)</span>
+          <span>Watumiaji & Staff</span>
           <span className="px-1.5 py-0.2 rounded-md bg-white/20 text-[10px] font-black">
             {employees.length}
           </span>
@@ -400,7 +400,7 @@ export const SuperAdminPanel: React.FC<SuperAdminPanelProps> = ({ initialTab = "
           }`}
         >
           <LifeBuoy className="w-4 h-4" />
-          <span>Desk ya Msaada & Matatizo (Support Desk)</span>
+          <span>Desk ya Msaada</span>
           {openTicketsCount > 0 && (
             <span className="px-1.5 py-0.2 rounded-md bg-rose-500 text-white text-[10px] font-black">
               {openTicketsCount}
@@ -417,7 +417,7 @@ export const SuperAdminPanel: React.FC<SuperAdminPanelProps> = ({ initialTab = "
           }`}
         >
           <Activity className="w-4 h-4" />
-          <span>Kumbukumbu za Usalama (Audit Logs)</span>
+          <span>Kumbukumbu za Mfumo</span>
         </button>
       </div>
 
@@ -445,12 +445,12 @@ export const SuperAdminPanel: React.FC<SuperAdminPanelProps> = ({ initialTab = "
         {/* Sub-Filters specific to current tab */}
         {activeTab === "tenants" && (
           <div className="flex items-center gap-1.5 overflow-x-auto">
-            <span className="text-[11px] font-bold text-[#55694f] mr-1">Hali ya Usajili:</span>
+            <span className="text-[11px] font-bold text-[#55694f] mr-1">Hali:</span>
             {[
               { id: "ALL", label: "Wote" },
-              { id: "ACTIVE", label: "Waliosubscribe (Hai)" },
-              { id: "EXPIRED", label: "Walioisha Muda" },
-              { id: "SUSPENDED", label: "Waliositishwa" },
+              { id: "ACTIVE", label: "Subscribed" },
+              { id: "EXPIRED", label: "Expired" },
+              { id: "SUSPENDED", label: "Suspended" },
             ].map((f) => (
               <button
                 key={f.id}
@@ -475,9 +475,9 @@ export const SuperAdminPanel: React.FC<SuperAdminPanelProps> = ({ initialTab = "
               className="py-1.5 px-3 rounded-lg bg-white border border-[#d8e6cc] text-xs font-bold text-[#233519]"
             >
               <option value="ALL">Vyeo Vyote</option>
-              <option value="OWNER">Wamiliki (Owners)</option>
-              <option value="MANAGER">Mameneja (Managers)</option>
-              <option value="CASHIER">Wauzaji (Cashiers)</option>
+              <option value="OWNER">Wamiliki</option>
+              <option value="MANAGER">Mameneja</option>
+              <option value="CASHIER">Wauzaji</option>
               <option value="STOREKEEPER">Wasimamizi Stoo</option>
             </select>
 
@@ -487,8 +487,8 @@ export const SuperAdminPanel: React.FC<SuperAdminPanelProps> = ({ initialTab = "
               className="py-1.5 px-3 rounded-lg bg-white border border-[#d8e6cc] text-xs font-bold text-[#233519]"
             >
               <option value="ALL">Hali Zote</option>
-              <option value="Active">Akaunti Hai (Active)</option>
-              <option value="Suspended">Akaunti Zilizofungwa</option>
+              <option value="Active">Active</option>
+              <option value="Suspended">Suspended</option>
             </select>
           </div>
         )}
@@ -496,10 +496,10 @@ export const SuperAdminPanel: React.FC<SuperAdminPanelProps> = ({ initialTab = "
         {activeTab === "support" && (
           <div className="flex items-center gap-1.5 overflow-x-auto">
             {[
-              { id: "ALL", label: "Tiketi Zote" },
-              { id: "OPEN", label: "Zinazosubiri (Open)" },
-              { id: "IN_PROGRESS", label: "Zinazoshughulikiwa" },
-              { id: "RESOLVED", label: "Zilizotatuliwa" },
+              { id: "ALL", label: "Zote" },
+              { id: "OPEN", label: "Open" },
+              { id: "IN_PROGRESS", label: "In Progress" },
+              { id: "RESOLVED", label: "Resolved" },
             ].map((f) => (
               <button
                 key={f.id}
@@ -598,7 +598,7 @@ export const SuperAdminPanel: React.FC<SuperAdminPanelProps> = ({ initialTab = "
                             : "bg-rose-100 text-rose-900 border border-rose-300"
                         }`}
                       >
-                        {ten.status === "ACTIVE" ? "Hai (Subscribed)" : ten.status === "EXPIRED" ? "Imeisha Muda" : "Imesitishwa"}
+                        {ten.status === "ACTIVE" ? "Subscribed" : ten.status === "EXPIRED" ? "Expired" : "Suspended"}
                       </span>
                     </td>
 
@@ -833,7 +833,7 @@ export const SuperAdminPanel: React.FC<SuperAdminPanelProps> = ({ initialTab = "
                         : "bg-rose-100 text-rose-900 border border-rose-300"
                     }`}
                   >
-                    {ticket.status === "RESOLVED" ? "Imetatuliwa" : ticket.status === "IN_PROGRESS" ? "Inashughulikiwa" : "Inasubiri"}
+                    {ticket.status === "RESOLVED" ? "Resolved" : ticket.status === "IN_PROGRESS" ? "In Progress" : "Open"}
                   </span>
                 </div>
 
