@@ -366,7 +366,7 @@ export const CashRegisterModule: React.FC = () => {
           <div className="flex items-center gap-1.5 bg-white px-2.5 py-1.5 rounded-xl border border-[#D4E4C3] shadow-xs text-xs">
             <UserCheck className="w-3.5 h-3.5 text-[#3F6315]" />
             <select
-              value={user?.id || "emp-01"}
+              value={user?.id || employees[0]?.id || ""}
               onChange={(e) => switchEmployeeAccount(e.target.value)}
               className="font-black text-[#162808] bg-transparent focus:outline-none cursor-pointer"
             >

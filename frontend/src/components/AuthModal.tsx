@@ -84,7 +84,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ initialMode, onClose, onSu
     setIsProcessingPayment(true);
     setTimeout(() => {
       registerBusiness(
-        { name: regFullName, phone: regPhone, email: regEmail, pin: regPin || "1234" },
+        { name: regFullName, phone: regPhone, email: regEmail, pin: regPin || "1234", password: regPassword },
         { name: bizName, type: bizType, location: bizLocation },
         selectedPlan
       );

@@ -80,13 +80,13 @@ export const AdminTenantsModule: React.FC = () => {
       ownerEmail: ownerEmp?.email || biz.email || "",
       plan: biz.subscriptionPlan || "PROFESSIONAL",
       status: currentStatus,
-      expiryDate: biz.subscriptionExpiry || "2026-12-31",
+      expiryDate: biz.subscriptionExpiry || "",
       daysInfo: subInfo.daysText,
       isExpired: isActuallyExpired,
       mrrAmount: currentStatus === "ACTIVE" ? planRate : 0,
       mrr: `TZS ${planRate.toLocaleString()}`,
-      branches: biz.branches?.length || 1,
-      staffCount: staffList.length || 1,
+      branches: biz.branches?.length || (biz.location ? 1 : 0),
+      staffCount: staffList.length,
     };
   });
 

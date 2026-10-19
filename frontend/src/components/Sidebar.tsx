@@ -76,13 +76,13 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeModule, setActiveModule,
       id: "super-admin",
       label: language === "sw" ? "Maduka & Usajili" : "Stores & Subscriptions",
       icon: Building2,
-      badge: String(availableBusinesses.length || 4),
+      badge: availableBusinesses.length > 0 ? String(availableBusinesses.length) : undefined,
     },
     {
       id: "admin-users",
       label: language === "sw" ? "Watumiaji & Staff" : "All Users & Staff",
       icon: Users,
-      badge: String(employees.length || 9),
+      badge: employees.length > 0 ? String(employees.length) : undefined,
     },
     {
       id: "admin-support",
@@ -225,14 +225,14 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeModule, setActiveModule,
     e.preventDefault();
     const ownerAcc = employees.find((emp) => emp.role === "OWNER");
     const expectedPin = ownerAcc?.pin || "1234";
-    if (pinInput.trim() === expectedPin) {
-      switchEmployeeAccount(ownerAcc?.id || "emp-01");
+    if (ownerAcc && pinInput.trim() === expectedPin) {
+      switchEmployeeAccount(ownerAcc.id);
       setActiveModule("dashboard");
       setIsPinModalOpen(false);
       setPinInput("");
       setPinError("");
     } else {
-      setPinError(language === "sw" ? "PIN si sahihi! Ingiza PIN ya Boss (1234)." : "Incorrect PIN! Enter Owner PIN (1234).");
+      setPinError(language === "sw" ? "PIN si sahihi! Tafadhali ingiza PIN sahihi ya Boss." : "Incorrect PIN! Please enter the correct Owner PIN.");
     }
   };
 
@@ -412,8 +412,13 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeModule, setActiveModule,
               <button
                 onClick={() => {
                   if (isOwner) {
-                    switchEmployeeAccount("emp-02");
-                    setActiveModule("sales");
+                    const firstCashier = employees.find((e) => e.role === "CASHIER");
+                    if (firstCashier) {
+                      switchEmployeeAccount(firstCashier.id);
+                      setActiveModule("sales");
+                    } else {
+                      setActiveModule("employees");
+                    }
                   } else {
                     setPinInput("");
                     setPinError("");
@@ -430,7 +435,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeModule, setActiveModule,
                 <span>
                   {isOwner
                     ? language === "sw"
-                      ? "Jaribu Akaunti ya Muuzaji"
+                      ? "Akaunti ya Muuzaji"
                       : "Switch to Seller View"
                     : language === "sw"
                     ? "Ingia Akaunti ya Boss (PIN)"
@@ -492,8 +497,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeModule, setActiveModule,
                   className="w-full py-2.5 px-3 rounded-xl neu-input text-center font-mono text-lg font-black tracking-widest"
                 />
                 <span className="block text-[10px] text-[#637B56] mt-1">
-                  {language === "sw" ? "Kwa majaribio (Demo), PIN ya Boss ni: " : "Default owner PIN is: "}
-                  <strong>1234</strong>
+                  {language === "sw" ? "Ingiza tarakimu 4 za PIN ya duka lako." : "Enter your 4-digit store owner PIN."}
                 </span>
                 {pinError && (
                   <span className="block text-[11px] font-bold text-rose-600 mt-1">

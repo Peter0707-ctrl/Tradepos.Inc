@@ -90,14 +90,14 @@ export const AdminDashboardModule: React.FC<AdminDashboardModuleProps> = ({ onNa
       owner: ownerEmp?.name || "Mmiliki Aliyejiandikisha",
       ownerPhone: ownerEmp?.phone || b.phone || "",
       ownerEmail: ownerEmp?.email || b.email || "",
-      location: b.location || "Dar es Salaam",
+      location: b.location || "Tanzania",
       plan: b.subscriptionPlan || "PROFESSIONAL",
-      expiryDate: b.subscriptionExpiry || "2026-12-31",
+      expiryDate: b.subscriptionExpiry || "-",
       daysInfo: subInfo.daysText,
       status: currentStatus,
       mrr: currentStatus === "ACTIVE" ? planRate : 0,
-      staffCount: staffCount > 0 ? staffCount : 1,
-      branches: b.branches?.length || 1,
+      staffCount: staffCount,
+      branches: b.branches?.length || (b.location ? 1 : 0),
     };
   });
 

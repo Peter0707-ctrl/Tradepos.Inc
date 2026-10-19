@@ -27,7 +27,6 @@ import {
 interface LandingPageProps {
   onGetStarted: () => void;
   onLoginClick: () => void;
-  onDemoLogin?: () => void;
 }
 
 const SW_PHRASES = [

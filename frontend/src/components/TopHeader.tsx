@@ -103,8 +103,8 @@ export const TopHeader: React.FC<TopHeaderProps> = ({ pageTitle, onNavigate, onL
     e.preventDefault();
     const targetBoss = employees.find((emp) => emp.id === pendingBossEmpId) || employees.find((emp) => emp.role === "OWNER");
     const expectedPin = targetBoss?.pin || "1234";
-    if (pinInput.trim() === expectedPin) {
-      switchEmployeeAccount(targetBoss?.id || "emp-01");
+    if (targetBoss && pinInput.trim() === expectedPin) {
+      switchEmployeeAccount(targetBoss.id);
       setPendingBossEmpId(null);
       setPinInput("");
       setPinError("");
@@ -487,8 +487,7 @@ export const TopHeader: React.FC<TopHeaderProps> = ({ pageTitle, onNavigate, onL
                   className="w-full py-2.5 px-3 rounded-xl neu-input text-center font-mono text-lg font-black tracking-widest"
                 />
                 <span className="block text-[10px] text-[#637B56] mt-1">
-                  {language === "sw" ? "PIN ya Majaribio: " : "Default Demo PIN: "}
-                  <strong>1234</strong>
+                  {language === "sw" ? "Ingiza tarakimu 4 za PIN ya duka lako." : "Enter your 4-digit store owner PIN."}
                 </span>
                 {pinError && (
                   <span className="block text-[11px] font-bold text-rose-600 mt-1">
