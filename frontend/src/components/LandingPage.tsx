@@ -503,42 +503,37 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onLoginC
               <h4 className="text-xs font-black uppercase tracking-wider text-white">
                 {language === "sw" ? "Mawasiliano ya Haraka" : "Direct Contacts"}
               </h4>
-              <div className="space-y-2 text-xs">
-                {/* WhatsApp Button */}
-                <a
-                  href="https://wa.me/255673190311"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl bg-[#25D366]/20 hover:bg-[#25D366] text-[#D6F59A] hover:text-white border border-[#25D366]/40 transition group cursor-pointer shadow-xs"
-                >
-                  <div className="w-6 h-6 rounded-lg bg-[#25D366] text-white flex items-center justify-center shrink-0">
-                    <MessageCircle className="w-3.5 h-3.5" />
-                  </div>
-                  <span className="font-bold text-xs">{language === "sw" ? "Wasiliana kwa WhatsApp" : "Chat on WhatsApp"}</span>
-                </a>
-
-                {/* Call Phone Button */}
-                <a
-                  href="tel:0779304500"
-                  className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl bg-white/10 hover:bg-[#E1FFAC] text-[#D6F59A] hover:text-[#121E07] border border-white/20 hover:border-[#A6DF52] transition group cursor-pointer shadow-xs"
-                >
-                  <div className="w-6 h-6 rounded-lg bg-[#E1FFAC] text-[#121E07] flex items-center justify-center shrink-0">
-                    <Phone className="w-3.5 h-3.5" />
-                  </div>
-                  <span className="font-bold text-xs">{language === "sw" ? "Piga Simu ya Moja kwa Moja" : "Call Direct Line"}</span>
-                </a>
-
-                {/* Email Button */}
-                <a
-                  href="mailto:pj0040280@gmail.com"
-                  className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl bg-white/10 hover:bg-[#E1FFAC] text-[#D6F59A] hover:text-[#121E07] border border-white/20 hover:border-[#A6DF52] transition group cursor-pointer shadow-xs"
-                >
-                  <div className="w-6 h-6 rounded-lg bg-[#E1FFAC] text-[#121E07] flex items-center justify-center shrink-0">
-                    <Mail className="w-3.5 h-3.5" />
-                  </div>
-                  <span className="font-bold text-xs">{language === "sw" ? "Tuma Barua Pepe (Email)" : "Send Us an Email"}</span>
-                </a>
-              </div>
+              <ul className="space-y-2 text-xs text-[#B2CE8F]">
+                <li>
+                  <a
+                    href="https://wa.me/255673190311"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 hover:text-white transition"
+                  >
+                    <MessageCircle className="w-3.5 h-3.5 text-[#25D366] shrink-0" />
+                    <span>{language === "sw" ? "WhatsApp (Chat ya Moja kwa Moja)" : "WhatsApp (Live Chat)"}</span>
+                  </a>
+                </li>
+                <li>
+                  <a
+                    href="tel:0779304500"
+                    className="flex items-center gap-2 hover:text-white transition"
+                  >
+                    <Phone className="w-3.5 h-3.5 text-[#E1FFAC] shrink-0" />
+                    <span>{language === "sw" ? "Piga Simu ya Msaada" : "Call Direct Support"}</span>
+                  </a>
+                </li>
+                <li>
+                  <a
+                    href="mailto:pj0040280@gmail.com"
+                    className="flex items-center gap-2 hover:text-white transition"
+                  >
+                    <Mail className="w-3.5 h-3.5 text-[#E1FFAC] shrink-0" />
+                    <span>{language === "sw" ? "Barua Pepe (Email)" : "Email Support"}</span>
+                  </a>
+                </li>
+              </ul>
             </div>
 
             {/* Column 3: Legal & Privacy Policies */}
