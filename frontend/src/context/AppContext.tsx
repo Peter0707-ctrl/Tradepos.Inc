@@ -23,6 +23,7 @@ import {
   SupportTicket,
 } from "@/types";
 import { en, sw } from "@/locales/translations";
+import { CheckCircle2, AlertCircle, AlertTriangle, Info, X } from "lucide-react";
 
 interface AppContextType {
   language: "en" | "sw";
@@ -1908,57 +1909,76 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     >
       {children}
 
-      {/* GLOBAL CENTERED LITTLE NOTIFICATION & ERROR BOX */}
+      {/* GLOBAL TOAST NOTIFICATION (HIGH Z-INDEX, TOP-RIGHT, NON-BLOCKING) */}
       {centerPopup && (
         <div
-          onClick={dismissCenterPopup}
-          className="fixed inset-0 z-[150] flex items-center justify-center p-4 bg-black/25 backdrop-blur-[2px]"
+          role="status"
+          aria-live="polite"
+          className="fixed top-5 right-5 z-[999999] max-w-sm w-full px-4 sm:px-0 pointer-events-none transition-all duration-300"
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            className={`w-full max-w-xs sm:max-w-sm rounded-2xl bg-white p-5 shadow-2xl border-2 text-center transition-all ${
+            className={`pointer-events-auto bg-white rounded-2xl p-4 shadow-2xl border-2 flex items-start gap-3 transition-all duration-200 ${
               centerPopup.type === "ERROR"
-                ? "border-rose-400"
+                ? "border-rose-400 bg-rose-50/50"
                 : centerPopup.type === "WARNING"
-                ? "border-amber-400"
-                : "border-[#8ECE28]"
+                ? "border-amber-400 bg-amber-50/50"
+                : centerPopup.type === "SUCCESS"
+                ? "border-emerald-400 bg-emerald-50/50"
+                : "border-[#8ECE28] bg-[#F7FCED]"
             }`}
           >
+            {/* Status Icon */}
             <div
-              className={`w-10 h-10 mx-auto mb-2.5 rounded-xl flex items-center justify-center font-black text-sm border ${
+              className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 border ${
                 centerPopup.type === "ERROR"
-                  ? "bg-rose-50 text-rose-800 border-rose-200"
+                  ? "bg-rose-100 text-rose-800 border-rose-200"
                   : centerPopup.type === "WARNING"
-                  ? "bg-amber-50 text-amber-800 border-amber-200"
-                  : "bg-[#E1FFAC] text-[#172709] border-[#9EDE31]"
+                  ? "bg-amber-100 text-amber-800 border-amber-200"
+                  : centerPopup.type === "SUCCESS"
+                  ? "bg-emerald-100 text-emerald-800 border-emerald-200"
+                  : "bg-[#E1FFAC] text-[#1b2f09] border-[#9EDE31]"
               }`}
             >
-              {centerPopup.type === "ERROR" ? "!" : centerPopup.type === "WARNING" ? "!" : "✓"}
+              {centerPopup.type === "ERROR" ? (
+                <AlertCircle className="w-5 h-5" />
+              ) : centerPopup.type === "WARNING" ? (
+                <AlertTriangle className="w-5 h-5" />
+              ) : centerPopup.type === "SUCCESS" ? (
+                <CheckCircle2 className="w-5 h-5" />
+              ) : (
+                <Info className="w-5 h-5" />
+              )}
             </div>
-            <h4
-              className={`text-sm font-black ${
-                centerPopup.type === "ERROR"
-                  ? "text-rose-900"
-                  : centerPopup.type === "WARNING"
-                  ? "text-amber-900"
-                  : "text-[#162709]"
-              }`}
-            >
-              {centerPopup.title}
-            </h4>
-            <p className="text-xs text-[#4A613E] font-medium mt-1 leading-relaxed">
-              {centerPopup.message}
-            </p>
+
+            {/* Content */}
+            <div className="flex-1 min-w-0 pr-1">
+              <h4
+                className={`text-xs font-black tracking-tight ${
+                  centerPopup.type === "ERROR"
+                    ? "text-rose-900"
+                    : centerPopup.type === "WARNING"
+                    ? "text-amber-900"
+                    : centerPopup.type === "SUCCESS"
+                    ? "text-emerald-900"
+                    : "text-[#162709]"
+                }`}
+              >
+                {centerPopup.title}
+              </h4>
+              <p className="text-xs text-[#3b4e33] font-medium mt-0.5 leading-snug break-words">
+                {centerPopup.message}
+              </p>
+            </div>
+
+            {/* Dismiss Button */}
             <button
               type="button"
               onClick={dismissCenterPopup}
-              className={`mt-4 w-full py-2 rounded-xl text-xs font-black transition cursor-pointer ${
-                centerPopup.type === "ERROR"
-                  ? "bg-rose-700 text-white hover:bg-rose-800"
-                  : "bg-[#1B2F09] text-[#E1FFAC] hover:bg-[#122006]"
-              }`}
+              title="Funga"
+              className="p-1 rounded-lg text-[#617758] hover:bg-black/5 hover:text-[#182a0b] transition cursor-pointer shrink-0"
             >
-              {language === "sw" ? "Sawa (Funga)" : "OK (Close)"}
+              <X className="w-4 h-4" />
             </button>
           </div>
         </div>
