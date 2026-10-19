@@ -19,6 +19,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ initialMode, onClose, onSu
   const [loginIdentifier, setLoginIdentifier] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [loginError, setLoginError] = useState("");
 
   // Register fields
   const [regFullName, setRegFullName] = useState("");
@@ -38,8 +39,26 @@ export const AuthModal: React.FC<AuthModalProps> = ({ initialMode, onClose, onSu
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
     if (!loginIdentifier) return;
-    loginUser(loginIdentifier);
-    onSuccess();
+    setLoginError("");
+
+    const trimmed = loginIdentifier.trim().toLowerCase();
+    const isAdmin = trimmed === "crestgroup@gmail.com" || trimmed === "admin@tradepos.cloud";
+
+    if (isAdmin) {
+      if (loginPassword !== "CREST@132026") {
+        setLoginError(
+          language === "sw"
+            ? "Nenosiri la Admin si sahihi. Tafadhali ingiza nenosiri sahihi."
+            : "Invalid Admin password. Please check your credentials."
+        );
+        return;
+      }
+    }
+
+    const ok = loginUser(loginIdentifier, "OWNER", loginPassword);
+    if (ok) {
+      onSuccess();
+    }
   };
 
   const handleRegisterStep1 = (e: React.FormEvent) => {
@@ -143,6 +162,12 @@ export const AuthModal: React.FC<AuthModalProps> = ({ initialMode, onClose, onSu
                 </button>
               </div>
             </div>
+
+            {loginError && (
+              <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-bold text-center animate-fade-in">
+                {loginError}
+              </div>
+            )}
 
             <button
               type="submit"

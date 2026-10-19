@@ -501,42 +501,42 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onLoginC
             {/* Column 2: Direct Contacts (WhatsApp, Phone Call, Email) */}
             <div className="space-y-3">
               <h4 className="text-xs font-black uppercase tracking-wider text-white">
-                Wasiliana Nasi (Direct Contacts)
+                {language === "sw" ? "Mawasiliano ya Haraka" : "Direct Contacts"}
               </h4>
-              <div className="space-y-2.5 text-xs text-[#D6F59A]">
-                {/* WhatsApp */}
+              <div className="space-y-2 text-xs">
+                {/* WhatsApp Button */}
                 <a
                   href="https://wa.me/255673190311"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center gap-2.5 hover:text-white transition group"
+                  className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl bg-[#25D366]/20 hover:bg-[#25D366] text-[#D6F59A] hover:text-white border border-[#25D366]/40 transition group cursor-pointer shadow-xs"
                 >
-                  <div className="w-7 h-7 rounded-lg bg-[#25D366]/20 border border-[#25D366]/40 flex items-center justify-center text-[#25D366] group-hover:bg-[#25D366] group-hover:text-white transition">
-                    <MessageCircle className="w-4 h-4" />
+                  <div className="w-6 h-6 rounded-lg bg-[#25D366] text-white flex items-center justify-center shrink-0">
+                    <MessageCircle className="w-3.5 h-3.5" />
                   </div>
-                  <span className="font-semibold">0673190311 (WhatsApp)</span>
+                  <span className="font-bold text-xs">{language === "sw" ? "Wasiliana kwa WhatsApp" : "Chat on WhatsApp"}</span>
                 </a>
 
-                {/* Call Phone */}
+                {/* Call Phone Button */}
                 <a
                   href="tel:0779304500"
-                  className="flex items-center gap-2.5 hover:text-white transition group"
+                  className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl bg-white/10 hover:bg-[#E1FFAC] text-[#D6F59A] hover:text-[#121E07] border border-white/20 hover:border-[#A6DF52] transition group cursor-pointer shadow-xs"
                 >
-                  <div className="w-7 h-7 rounded-lg bg-[#E1FFAC]/15 border border-[#E1FFAC]/30 flex items-center justify-center text-[#E1FFAC] group-hover:bg-[#E1FFAC] group-hover:text-[#121E07] transition">
-                    <Phone className="w-4 h-4" />
+                  <div className="w-6 h-6 rounded-lg bg-[#E1FFAC] text-[#121E07] flex items-center justify-center shrink-0">
+                    <Phone className="w-3.5 h-3.5" />
                   </div>
-                  <span className="font-semibold">0779304500 (Piga Simu)</span>
+                  <span className="font-bold text-xs">{language === "sw" ? "Piga Simu ya Moja kwa Moja" : "Call Direct Line"}</span>
                 </a>
 
-                {/* Email */}
+                {/* Email Button */}
                 <a
                   href="mailto:pj0040280@gmail.com"
-                  className="flex items-center gap-2.5 hover:text-white transition group"
+                  className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl bg-white/10 hover:bg-[#E1FFAC] text-[#D6F59A] hover:text-[#121E07] border border-white/20 hover:border-[#A6DF52] transition group cursor-pointer shadow-xs"
                 >
-                  <div className="w-7 h-7 rounded-lg bg-[#E1FFAC]/15 border border-[#E1FFAC]/30 flex items-center justify-center text-[#E1FFAC] group-hover:bg-[#E1FFAC] group-hover:text-[#121E07] transition">
-                    <Mail className="w-4 h-4" />
+                  <div className="w-6 h-6 rounded-lg bg-[#E1FFAC] text-[#121E07] flex items-center justify-center shrink-0">
+                    <Mail className="w-3.5 h-3.5" />
                   </div>
-                  <span className="font-semibold">pj0040280@gmail.com</span>
+                  <span className="font-bold text-xs">{language === "sw" ? "Tuma Barua Pepe (Email)" : "Send Us an Email"}</span>
                 </a>
               </div>
             </div>

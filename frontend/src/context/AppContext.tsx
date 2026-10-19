@@ -70,7 +70,7 @@ interface AppContextType {
   adminExitImpersonation: () => void;
   updateUserProfile: (updates: Partial<User> & { newPassword?: string; newPin?: string }) => void;
   // Methods
-  loginUser: (emailOrPhone: string, role?: string) => boolean;
+  loginUser: (emailOrPhone: string, role?: string, password?: string) => boolean;
   logoutUser: () => void;
   registerBusiness: (accountData: any, businessData: any, plan: any) => void;
   addEmployee: (emp: Omit<EmployeeAccount, "id" | "tenantId" | "status" | "lastActive">) => void;
@@ -762,16 +762,25 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     appendAuditLog("WAREHOUSE_CREATED", `Added warehouse ${newWh.name}`);
   };
 
-  const loginUser = (emailOrPhone: string, role = "OWNER") => {
+  const loginUser = (emailOrPhone: string, role = "OWNER", password?: string) => {
     const cleanInput = emailOrPhone.trim();
     if (!cleanInput) return false;
 
-    if (cleanInput.toLowerCase() === "admin@tradepos.cloud") {
+    const lower = cleanInput.toLowerCase();
+    const isCrestAdmin = lower === "crestgroup@gmail.com";
+    const isLegacyAdmin = lower === "admin@tradepos.cloud";
+
+    if (isCrestAdmin || isLegacyAdmin) {
+      if (password && password !== "CREST@132026") {
+        notifyCenter("Hitilafu ya Kuingia", "Nenosiri la Admin si sahihi.", "ERROR");
+        return false;
+      }
+
       const superAdminUser: User = {
         id: "usr-admin",
-        name: "Platform Super Admin",
-        email: cleanInput,
-        phone: "",
+        name: "Platform Super Admin (Crest Group)",
+        email: "crestgroup@gmail.com",
+        phone: "+255 700 000 000",
         role: "SUPER_ADMIN",
         businessId: "system",
         branchId: "global",
@@ -779,7 +788,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       setUser(superAdminUser);
       setViewState("app");
       setActiveModule("admin-dashboard");
-      appendAuditLog("LOGIN_SUCCESS", "Super Admin signed in", "Platform Super Admin");
+      appendAuditLog("LOGIN_SUCCESS", "Super Admin signed in (crestgroup@gmail.com)", "Platform Super Admin");
       notifyCenter("Super Admin", "Umeingia kama Platform Super Admin.", "SUCCESS");
       try {
         localStorage.setItem(PROD_USER_KEY, JSON.stringify(superAdminUser));
@@ -1144,9 +1153,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setImpersonatingTenantId(null);
     const superAdminUser: User = {
       id: "usr-admin",
-      name: "Platform Super Admin",
-      email: "admin@tradepos.cloud",
-      phone: "",
+      name: "Platform Super Admin (Crest Group)",
+      email: "crestgroup@gmail.com",
+      phone: "+255 700 000 000",
       role: "SUPER_ADMIN",
       businessId: "system",
       branchId: "global",
