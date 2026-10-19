@@ -25,6 +25,9 @@ import { ProfileSecurityModule } from "@/components/ProfileSecurityModule";
 import { HelpSupportModule } from "@/components/HelpSupportModule";
 import { NotificationCenterModule } from "@/components/NotificationCenterModule";
 import { SuperAdminPanel } from "@/components/SuperAdminPanel";
+import { AdminTenantsModule } from "@/components/AdminTenantsModule";
+import { AdminUsersModule } from "@/components/AdminUsersModule";
+import { AdminSupportDeskModule } from "@/components/AdminSupportDeskModule";
 import { AuditLogsModule } from "@/components/AuditLogsModule";
 import { AiAssistantModal } from "@/components/AiAssistantModal";
 import {
@@ -275,9 +278,9 @@ function MainApp() {
             <main className="flex-1 overflow-hidden relative">
               {isSuperAdmin ? (
                 <>
-                  {effectiveModule === "super-admin" && <SuperAdminPanel initialTab="tenants" />}
-                  {effectiveModule === "admin-users" && <SuperAdminPanel initialTab="users" />}
-                  {effectiveModule === "admin-support" && <SuperAdminPanel initialTab="support" />}
+                  {(effectiveModule === "super-admin" || effectiveModule === "admin-tenants") && <AdminTenantsModule />}
+                  {effectiveModule === "admin-users" && <AdminUsersModule />}
+                  {effectiveModule === "admin-support" && <AdminSupportDeskModule />}
                   {effectiveModule === "audit-logs" && <AuditLogsModule />}
                   {effectiveModule === "notifications" && <NotificationCenterModule onNavigate={(m) => setActiveModule(m)} />}
                   {effectiveModule === "settings" && <BusinessSettingsModule />}
