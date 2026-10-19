@@ -26,7 +26,8 @@ import {
   Activity,
   Building2,
   LifeBuoy,
-  LayoutDashboard
+  LayoutDashboard,
+  User
 } from "lucide-react";
 
 interface SidebarProps {
@@ -185,11 +186,21 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeModule, setActiveModule,
           label: language === "sw" ? "Wateja & Madeni" : "Customers & Debts",
           icon: Users,
         },
+        {
+          id: "profile",
+          label: language === "sw" ? "Akaunti & Wasifu" : "Account & Profile",
+          icon: User,
+        },
       ];
 
   // LOWER SECTION FOR OWNER ONLY: MANAGEMENT & SETTINGS
   const lowUsageNav: { id: string; label: string; icon: any; badge?: string }[] = [
     { id: "employees", label: t.nav.employees, icon: UserCheck },
+    {
+      id: "profile",
+      label: language === "sw" ? "Akaunti & Wasifu" : "Account & Profile",
+      icon: User,
+    },
     { id: "ai-assistant", label: t.nav.aiAssistant, icon: Sparkles, badge: "AI" },
     {
       id: "notifications",
@@ -272,14 +283,29 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeModule, setActiveModule,
           <div className="p-4 border-b border-[#D8E6CC] flex items-center justify-between">
             {!collapsed ? (
               <div className="flex items-center gap-2.5">
-                <div className={`w-9 h-9 rounded-xl ${isSuperAdmin ? "bg-[#1B2F09] border border-[#8ECE28] text-[#E1FFAC]" : "bg-[#E1FFAC] border border-[#A6DF52] text-[#182C08]"} flex items-center justify-center shadow-xs`}>
-                  {isSuperAdmin ? <ShieldAlert className="w-5 h-5" /> : <ShoppingBag className="w-5 h-5" />}
-                </div>
-                <div>
-                  <h2 className="text-sm font-black text-[#152508] tracking-tight">
+                <button
+                  type="button"
+                  onClick={() => setActiveModule("profile")}
+                  className={`w-9 h-9 rounded-xl ${
+                    isSuperAdmin
+                      ? "bg-[#1B2F09] border border-[#8ECE28] text-[#E1FFAC]"
+                      : "bg-[#E1FFAC] border border-[#A6DF52] text-[#182C08]"
+                  } flex items-center justify-center shadow-xs overflow-hidden cursor-pointer hover:ring-2 hover:ring-[#8ECE28] transition shrink-0`}
+                  title={user?.name || (language === "sw" ? "Wasifu & Picha" : "Profile & Picture")}
+                >
+                  {user?.avatar ? (
+                    <img src={user.avatar} alt={user.name} className="w-full h-full object-cover" />
+                  ) : isSuperAdmin ? (
+                    <ShieldAlert className="w-5 h-5" />
+                  ) : (
+                    <ShoppingBag className="w-5 h-5" />
+                  )}
+                </button>
+                <div className="truncate">
+                  <h2 className="text-sm font-black text-[#152508] tracking-tight truncate">
                     {isSuperAdmin ? "TradePOS Cloud" : "TradePOS"}
                   </h2>
-                  <span className="text-[10px] font-bold text-[#556D48] uppercase tracking-wider block">
+                  <span className="text-[10px] font-bold text-[#556D48] uppercase tracking-wider block truncate">
                     {isSuperAdmin
                       ? "Super Admin (ROOT)"
                       : isOwner
@@ -289,9 +315,24 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeModule, setActiveModule,
                 </div>
               </div>
             ) : (
-              <div className={`w-9 h-9 rounded-xl ${isSuperAdmin ? "bg-[#1B2F09] border border-[#8ECE28] text-[#E1FFAC]" : "bg-[#E1FFAC] border border-[#A6DF52] text-[#182C08]"} flex items-center justify-center mx-auto shadow-xs`}>
-                {isSuperAdmin ? <ShieldAlert className="w-5 h-5" /> : <ShoppingBag className="w-5 h-5" />}
-              </div>
+              <button
+                type="button"
+                onClick={() => setActiveModule("profile")}
+                className={`w-9 h-9 rounded-xl ${
+                  isSuperAdmin
+                    ? "bg-[#1B2F09] border border-[#8ECE28] text-[#E1FFAC]"
+                    : "bg-[#E1FFAC] border border-[#A6DF52] text-[#182C08]"
+                } flex items-center justify-center mx-auto shadow-xs overflow-hidden cursor-pointer hover:ring-2 hover:ring-[#8ECE28] transition`}
+                title={user?.name || (language === "sw" ? "Wasifu & Picha" : "Profile & Picture")}
+              >
+                {user?.avatar ? (
+                  <img src={user.avatar} alt={user.name} className="w-full h-full object-cover" />
+                ) : isSuperAdmin ? (
+                  <ShieldAlert className="w-5 h-5" />
+                ) : (
+                  <ShoppingBag className="w-5 h-5" />
+                )}
+              </button>
             )}
 
             <button

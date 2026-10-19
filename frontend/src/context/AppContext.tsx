@@ -68,6 +68,7 @@ interface AppContextType {
   adminCreateTicket: (ticket: Omit<SupportTicket, 'id' | 'ticketNumber' | 'createdAt'>) => void;
   adminImpersonateStore: (tenantId: string) => void;
   adminExitImpersonation: () => void;
+  updateUserProfile: (updates: Partial<User> & { newPassword?: string; newPin?: string }) => void;
   // Methods
   loginUser: (emailOrPhone: string, role?: string) => boolean;
   logoutUser: () => void;
@@ -1160,6 +1161,39 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     notifyCenter("Console ya Super Admin", "Umerudi kwenye jopo kuu la Super Admin.", "INFO");
   };
 
+  const updateUserProfile = (updates: Partial<User> & { newPassword?: string; newPin?: string }) => {
+    if (!user) return;
+    const updatedUser: User = {
+      ...user,
+      ...updates,
+    };
+    setUser(updatedUser);
+    try {
+      localStorage.setItem(PROD_USER_KEY, JSON.stringify(updatedUser));
+    } catch (e) {}
+
+    // Update in employees list to keep avatar, PIN and credentials synchronized
+    setEmployees((prev) =>
+      prev.map((emp) => {
+        if (emp.id === user.id || emp.email.toLowerCase() === user.email.toLowerCase()) {
+          return {
+            ...emp,
+            name: updates.name || emp.name,
+            email: updates.email || emp.email,
+            phone: updates.phone || emp.phone,
+            avatar: updates.avatar !== undefined ? updates.avatar : emp.avatar,
+            pin: updates.newPin || updates.pin || emp.pin,
+            password: updates.newPassword || emp.password,
+          };
+        }
+        return emp;
+      })
+    );
+
+    appendAuditLog("USER_MODIFIED", `User ${updatedUser.name} updated profile settings and picture`, updatedUser.name);
+    notifyCenter("Wasifu Umesasishwa", "Taarifa zako za wasifu na picha zimehifadhiwa kikamilifu.", "SUCCESS");
+  };
+
   const submitDailyReport = (notes?: string, actualCashCounted?: number) => {
     if (!business) return undefined;
     const validSales = sales.filter(
@@ -1904,6 +1938,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         centerPopup,
         notifyCenter,
         dismissCenterPopup,
+        updateUserProfile,
       }}
     >
       {children}

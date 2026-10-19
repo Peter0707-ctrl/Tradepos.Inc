@@ -29,6 +29,8 @@ export interface User {
   role: 'OWNER' | 'MANAGER' | 'ACCOUNTANT' | 'CASHIER' | 'STOREKEEPER' | 'SUPER_ADMIN';
   businessId: string;
   branchId: string;
+  avatar?: string;
+  pin?: string;
 }
 
 export interface Product {
@@ -242,6 +244,7 @@ export interface EmployeeAccount {
   phone: string;
   pin?: string;
   password?: string;
+  avatar?: string;
   role: 'OWNER' | 'MANAGER' | 'ACCOUNTANT' | 'CASHIER' | 'STOREKEEPER';
   branch: string;
   status: 'Active' | 'Suspended';

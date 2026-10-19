@@ -16,7 +16,8 @@ import {
   CreditCard,
   Smartphone,
   ChevronRight,
-  Plus
+  Plus,
+  User
 } from "lucide-react";
 
 interface CashierDashboardModuleProps {
@@ -101,14 +102,30 @@ export const CashierDashboardModule: React.FC<CashierDashboardModuleProps> = ({ 
     <div className="flex flex-col h-full bg-[#F4F7EE] p-3 sm:p-5 overflow-y-auto">
       {/* 1. Dynamic Typing Salutation Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5 pb-3 border-b border-[#D8E6CC] shrink-0">
-        <div>
-          <h1 className="text-xl sm:text-2xl font-black text-[#152508] tracking-tight flex items-center gap-1.5">
-            <span>{typedText}</span>
-            <span className="w-0.5 h-6 bg-[#27460d] inline-block animate-pulse"></span>
-          </h1>
-          <p className="text-xs text-[#52654c] mt-0.5">
-            {currentDateFormatted} • {currentBranch?.name || "Tawi Kuu"}
-          </p>
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={() => onNavigate("profile")}
+            className="w-12 h-12 rounded-2xl bg-[#E1FFAC] border-2 border-[#A6DF52] flex items-center justify-center overflow-hidden cursor-pointer hover:ring-2 hover:ring-[#84C924] transition shrink-0 shadow-xs"
+            title={language === "sw" ? "Wasifu & Picha Yangu" : "My Profile & Picture"}
+          >
+            {user?.avatar ? (
+              <img src={user.avatar} alt={user.name} className="w-full h-full object-cover" />
+            ) : (
+              <span className="text-base font-black text-[#193008] uppercase">
+                {user?.name ? user.name.charAt(0) : "M"}
+              </span>
+            )}
+          </button>
+          <div>
+            <h1 className="text-xl sm:text-2xl font-black text-[#152508] tracking-tight flex items-center gap-1.5">
+              <span>{typedText}</span>
+              <span className="w-0.5 h-6 bg-[#27460d] inline-block animate-pulse"></span>
+            </h1>
+            <p className="text-xs text-[#52654c] mt-0.5">
+              {currentDateFormatted} • {currentBranch?.name || "Tawi Kuu"}
+            </p>
+          </div>
         </div>
 
         {/* Quick Shift Status & End Day Button */}
@@ -230,7 +247,7 @@ export const CashierDashboardModule: React.FC<CashierDashboardModuleProps> = ({ 
         <h3 className="text-xs font-black uppercase tracking-wider text-[#495f3e] mb-3">
           {language === "sw" ? "Vitendo vya Haraka vya Kila Siku" : "Quick Daily Actions"}
         </h3>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
           <button
             onClick={() => onNavigate("sales")}
             className="p-3.5 rounded-xl bg-[#E1FFAC] hover:bg-[#d4f88e] border border-[#a2df4c] text-left transition cursor-pointer group shadow-xs"
@@ -288,6 +305,25 @@ export const CashierDashboardModule: React.FC<CashierDashboardModuleProps> = ({ 
             </div>
             <div className="text-[10px] text-[#6d8065] mt-0.5">
               {language === "sw" ? "Rekodi madeni na malipo" : "Track debts and payments"}
+            </div>
+          </button>
+
+          <button
+            onClick={() => onNavigate("profile")}
+            className="p-3.5 rounded-xl bg-[#F7FAF2] hover:bg-[#ebf4e1] border border-[#dbe6cf] text-left transition cursor-pointer group shadow-xs col-span-2 sm:col-span-1"
+          >
+            <div className="w-7 h-7 rounded-lg bg-[#eef5e7] text-[#294215] flex items-center justify-center mb-2 group-hover:scale-105 transition overflow-hidden">
+              {user?.avatar ? (
+                <img src={user.avatar} alt="Profile" className="w-full h-full object-cover" />
+              ) : (
+                <User className="w-4 h-4" />
+              )}
+            </div>
+            <div className="text-xs font-black text-[#172709]">
+              {language === "sw" ? "Wasifu & Picha" : "Profile & Picture"}
+            </div>
+            <div className="text-[10px] text-[#6d8065] mt-0.5">
+              {language === "sw" ? "Badili PIN & picha yako" : "Change PIN & photo"}
             </div>
           </button>
         </div>

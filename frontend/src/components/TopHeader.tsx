@@ -268,8 +268,14 @@ export const TopHeader: React.FC<TopHeaderProps> = ({ pageTitle, onNavigate, onL
               onClick={() => setIsProfileOpen(!isProfileOpen)}
               className="flex items-center gap-2 p-1 pl-2 rounded-xl bg-white border border-[#D5E5C4] hover:border-[#8ECE28] shadow-xs transition cursor-pointer"
             >
-              <div className="w-7 h-7 rounded-lg bg-[#E1FFAC] border border-[#A6DF52] flex items-center justify-center font-black text-xs text-[#1F3609]">
-                {user?.name ? user.name.charAt(0).toUpperCase() : "U"}
+              <div className="w-7 h-7 rounded-lg bg-[#E1FFAC] border border-[#A6DF52] flex items-center justify-center font-black text-xs text-[#1F3609] overflow-hidden shrink-0">
+                {user?.avatar ? (
+                  <img src={user.avatar} alt={user.name} className="w-full h-full object-cover" />
+                ) : user?.name ? (
+                  user.name.charAt(0).toUpperCase()
+                ) : (
+                  "U"
+                )}
               </div>
               <div className="hidden lg:block text-left pr-1">
                 <span className="block text-xs font-black text-[#172709] leading-tight">
@@ -298,6 +304,16 @@ export const TopHeader: React.FC<TopHeaderProps> = ({ pageTitle, onNavigate, onL
                     <span className="block text-[11px] text-[#476B19] font-bold mt-0.5">
                       Usimamizi Mkuu wa Jukwaa &amp; Maduka (ROOT)
                     </span>
+                    <button
+                      onClick={() => {
+                        setIsProfileOpen(false);
+                        onNavigate("profile");
+                      }}
+                      className="mt-2.5 w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-[#F2F7EB] hover:bg-[#e4eed7] text-left text-xs font-bold text-[#1b2f09] transition cursor-pointer"
+                    >
+                      <User className="w-3.5 h-3.5 text-[#3f6016]" />
+                      <span>{language === "sw" ? "Wasifu & Picha Yangu" : "My Profile & Picture"}</span>
+                    </button>
                   </div>
                 ) : (
                   <>
@@ -351,18 +367,20 @@ export const TopHeader: React.FC<TopHeaderProps> = ({ pageTitle, onNavigate, onL
                       </div>
                     </div>
 
-                    {isOwner && (
-                      <div className="py-1 space-y-0.5">
-                        <button
-                          onClick={() => {
-                            setIsProfileOpen(false);
-                            onNavigate("profile");
-                          }}
-                          className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-[#F2F7EB] transition text-left"
-                        >
-                          <User className="w-4 h-4 text-[#476517]" />
-                          <span>{language === "sw" ? "Wasifu Wangu" : "My Profile"}</span>
-                        </button>
+                    <div className="py-1 space-y-0.5">
+                      <button
+                        onClick={() => {
+                          setIsProfileOpen(false);
+                          onNavigate("profile");
+                        }}
+                        className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-[#F2F7EB] transition text-left cursor-pointer"
+                      >
+                        <User className="w-4 h-4 text-[#476517]" />
+                        <span>{language === "sw" ? "Wasifu & Picha Yangu" : "My Profile & Picture"}</span>
+                      </button>
+
+                      {isOwner && (
+                        <>
 
                         <button
                           onClick={() => {
@@ -396,25 +414,26 @@ export const TopHeader: React.FC<TopHeaderProps> = ({ pageTitle, onNavigate, onL
                           <CreditCard className="w-4 h-4 text-[#476517]" />
                           <span>{language === "sw" ? "Vifurushi & Malipo" : "Subscription & Billing"}</span>
                         </button>
-                      </div>
+                      </>
                     )}
-                  </>
-                )}
+                  </div>
+                </>
+              )}
 
-                <div className="pt-1 border-t border-[#EDF4E4]">
-                  <button
-                    onClick={() => {
-                      setIsProfileOpen(false);
-                      onLogout();
-                    }}
-                    className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-rose-700 hover:bg-rose-50 transition text-left"
-                  >
-                    <LogOut className="w-4 h-4" />
-                    <span>{t.logout}</span>
-                  </button>
-                </div>
+              <div className="pt-1 border-t border-[#EDF4E4]">
+                <button
+                  onClick={() => {
+                    setIsProfileOpen(false);
+                    onLogout();
+                  }}
+                  className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-rose-700 hover:bg-rose-50 transition text-left cursor-pointer"
+                >
+                  <LogOut className="w-4 h-4" />
+                  <span>{t.logout}</span>
+                </button>
               </div>
-            )}
+            </div>
+          )}
           </div>
 
           {/* 5. Direct Top Logout Button */}
