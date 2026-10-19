@@ -25,6 +25,7 @@ import { ProfileSecurityModule } from "@/components/ProfileSecurityModule";
 import { HelpSupportModule } from "@/components/HelpSupportModule";
 import { NotificationCenterModule } from "@/components/NotificationCenterModule";
 import { SuperAdminPanel } from "@/components/SuperAdminPanel";
+import { AdminDashboardModule } from "@/components/AdminDashboardModule";
 import { AdminTenantsModule } from "@/components/AdminTenantsModule";
 import { AdminUsersModule } from "@/components/AdminUsersModule";
 import { AdminSupportDeskModule } from "@/components/AdminSupportDeskModule";
@@ -38,6 +39,7 @@ import {
   Layers,
   Truck,
   Building,
+  Building2,
   Users,
   DollarSign,
   Calculator,
@@ -56,7 +58,8 @@ import {
   Sparkles,
   X,
   ShieldAlert,
-  Activity
+  Activity,
+  LayoutDashboard
 } from "lucide-react";
 
 class AppErrorBoundary extends React.Component<
@@ -139,13 +142,24 @@ function MainApp() {
   // 1. Super Admin: SaaS platform only (super-admin, admin-users, admin-support, audit-logs, notifications, settings, help)
   // 2. Boss/Owner: Full store management (dashboard, sales, expenses, inventory, customers, reports, etc.)
   // 3. Cashier/Seller: POS and daily sales only
-  const superAdminModules = ["super-admin", "admin-users", "admin-support", "audit-logs", "notifications", "settings", "help"];
+  const superAdminModules = [
+    "admin-dashboard",
+    "dashboard",
+    "super-admin",
+    "admin-tenants",
+    "admin-users",
+    "admin-support",
+    "audit-logs",
+    "notifications",
+    "settings",
+    "help"
+  ];
   const bossOnlyModules = ["dashboard", "cash-register", "reports", "employees", "settings", "subscription"];
 
   let effectiveModule = activeModule;
   if (isSuperAdmin) {
     if (!superAdminModules.includes(activeModule)) {
-      effectiveModule = "super-admin";
+      effectiveModule = "admin-dashboard";
     }
   } else if (!isOwner && bossOnlyModules.includes(activeModule)) {
     effectiveModule = "sales";
@@ -154,7 +168,7 @@ function MainApp() {
   React.useEffect(() => {
     if (isHydrated) {
       if (isSuperAdmin && !superAdminModules.includes(activeModule)) {
-        setActiveModule("super-admin");
+        setActiveModule("admin-dashboard");
       } else if (!isSuperAdmin && !isOwner && bossOnlyModules.includes(activeModule)) {
         setActiveModule("sales");
       }
@@ -165,7 +179,8 @@ function MainApp() {
   // Human readable title lookup
   const getModuleTitle = (mod: string) => {
     switch (mod) {
-      case "dashboard": return language === "sw" ? "Dashibodi" : t.titles.dashboard;
+      case "admin-dashboard": return language === "sw" ? "Dashibodi ya Admin" : "Admin Dashboard";
+      case "dashboard": return isSuperAdmin ? (language === "sw" ? "Dashibodi ya Admin" : "Admin Dashboard") : (language === "sw" ? "Dashibodi" : t.titles.dashboard);
       case "sales": return language === "sw" ? "Mauzo ya Siku" : "Daily Sales";
       case "expenses":
       case "accounting": return language === "sw" ? "Matumizi ya Siku" : "Daily Expenses";
@@ -187,10 +202,11 @@ function MainApp() {
       case "help": return t.titles.help;
       case "subscription": return t.titles.subscription;
       case "profile": return t.titles.profile;
-      case "super-admin": return language === "sw" ? "Maduka & Usajili (Subscriptions)" : "Stores & Subscriptions";
-      case "admin-users": return language === "sw" ? "Watumiaji Wote (All Users & Staff)" : "All Users & Staff Directory";
-      case "admin-support": return language === "sw" ? "Desk ya Msaada na Utatuzi (Support Desk)" : "Support & Issue Desk";
-      case "audit-logs": return language === "sw" ? "Kumbukumbu za Usalama (Global Audit Logs)" : "Global Audit Logs";
+      case "super-admin":
+      case "admin-tenants": return language === "sw" ? "Maduka & Usajili" : "Stores & Subscriptions";
+      case "admin-users": return language === "sw" ? "Watumiaji & Staff" : "All Users & Staff";
+      case "admin-support": return language === "sw" ? "Desk ya Msaada" : "Support & Issue Desk";
+      case "audit-logs": return language === "sw" ? "Kumbukumbu za Mfumo" : "Global Audit Logs";
       default: return t.titles.dashboard;
     }
   };
@@ -278,6 +294,9 @@ function MainApp() {
             <main className="flex-1 overflow-hidden relative">
               {isSuperAdmin ? (
                 <>
+                  {(effectiveModule === "admin-dashboard" || effectiveModule === "dashboard") && (
+                    <AdminDashboardModule onNavigate={(m) => setActiveModule(m)} />
+                  )}
                   {(effectiveModule === "super-admin" || effectiveModule === "admin-tenants") && <AdminTenantsModule />}
                   {effectiveModule === "admin-users" && <AdminUsersModule />}
                   {effectiveModule === "admin-support" && <AdminSupportDeskModule />}
@@ -328,13 +347,22 @@ function MainApp() {
               {isSuperAdmin ? (
                 <>
                   <button
-                    onClick={() => setActiveModule("super-admin")}
+                    onClick={() => setActiveModule("admin-dashboard")}
                     className={`flex flex-col items-center text-[10px] font-bold ${
-                      effectiveModule === "super-admin" ? "text-[#1C350A] font-black" : "text-[#627956]"
+                      effectiveModule === "admin-dashboard" || effectiveModule === "dashboard" ? "text-[#1C350A] font-black" : "text-[#627956]"
                     }`}
                   >
-                    <ShieldAlert className="w-4 h-4" />
-                    <span>{language === "sw" ? "Jukwaa" : "Platform"}</span>
+                    <LayoutDashboard className="w-4 h-4" />
+                    <span>{language === "sw" ? "Dashibodi" : "Dashboard"}</span>
+                  </button>
+                  <button
+                    onClick={() => setActiveModule("super-admin")}
+                    className={`flex flex-col items-center text-[10px] font-bold ${
+                      effectiveModule === "super-admin" || effectiveModule === "admin-tenants" ? "text-[#1C350A] font-black" : "text-[#627956]"
+                    }`}
+                  >
+                    <Building2 className="w-4 h-4" />
+                    <span>{language === "sw" ? "Maduka" : "Stores"}</span>
                   </button>
                   <button
                     onClick={() => setActiveModule("audit-logs")}

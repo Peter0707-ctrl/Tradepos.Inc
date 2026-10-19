@@ -587,12 +587,23 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           setViewStateInternal("app");
         }
         const isSuper = parsedUser.role === "SUPER_ADMIN";
-        const isValidSuperMod = storedModule && ["super-admin", "admin-users", "admin-support", "audit-logs", "notifications", "settings", "help"].includes(storedModule);
+        const isValidSuperMod = storedModule && [
+          "admin-dashboard",
+          "dashboard",
+          "super-admin",
+          "admin-tenants",
+          "admin-users",
+          "admin-support",
+          "audit-logs",
+          "notifications",
+          "settings",
+          "help"
+        ].includes(storedModule);
         if (isSuper) {
           if (storedModule === "notifications") {
-            setActiveModuleInternal("super-admin");
+            setActiveModuleInternal("admin-dashboard");
           } else {
-            setActiveModuleInternal(isValidSuperMod ? storedModule : "super-admin");
+            setActiveModuleInternal(isValidSuperMod ? storedModule : "admin-dashboard");
           }
         } else if (storedModule) {
           setActiveModuleInternal(storedModule);
@@ -765,13 +776,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       };
       setUser(superAdminUser);
       setViewState("app");
-      setActiveModule("super-admin");
+      setActiveModule("admin-dashboard");
       appendAuditLog("LOGIN_SUCCESS", "Super Admin signed in", "Platform Super Admin");
       notifyCenter("Super Admin", "Umeingia kama Platform Super Admin.", "SUCCESS");
       try {
         localStorage.setItem(PROD_USER_KEY, JSON.stringify(superAdminUser));
         localStorage.setItem(PROD_VIEW_KEY, "app");
-        localStorage.setItem(PROD_MODULE_KEY, "super-admin");
+        localStorage.setItem(PROD_MODULE_KEY, "admin-dashboard");
       } catch (e) {}
       return true;
     }
@@ -918,7 +929,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setUser(loggedUser);
     setViewState("app");
     const isBoss = loggedUser.role === "OWNER" || loggedUser.role === "SUPER_ADMIN";
-    const nextMod = loggedUser.role === "SUPER_ADMIN" ? "super-admin" : isBoss ? "dashboard" : "sales";
+    const nextMod = loggedUser.role === "SUPER_ADMIN" ? "admin-dashboard" : isBoss ? "dashboard" : "sales";
     setActiveModule(nextMod);
     appendAuditLog("LOGIN_SUCCESS", `User ${loggedUser.name} signed in`, loggedUser.name);
     notifyCenter(
@@ -966,7 +977,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       branchId: currentBranch?.id || "",
     };
     setUser(switchedUser);
-    const nextMod = switchedUser.role === "SUPER_ADMIN" ? "super-admin" : switchedUser.role === "OWNER" ? "dashboard" : "sales";
+    const nextMod = switchedUser.role === "SUPER_ADMIN" ? "admin-dashboard" : switchedUser.role === "OWNER" ? "dashboard" : "sales";
     setActiveModule(nextMod);
     notifyCenter(
       "Akaunti Imebadilishwa",
@@ -1140,7 +1151,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       branchId: "global",
     };
     setUser(superAdminUser);
-    setActiveModule("super-admin");
+    setActiveModule("admin-dashboard");
     appendAuditLog(
       "SUPPORT_IMPERSONATION_END",
       "Super Admin exited diagnostic mode and returned to Root Console.",

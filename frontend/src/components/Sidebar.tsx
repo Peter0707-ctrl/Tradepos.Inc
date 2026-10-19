@@ -25,7 +25,8 @@ import {
   Send,
   Activity,
   Building2,
-  LifeBuoy
+  LifeBuoy,
+  LayoutDashboard
 } from "lucide-react";
 
 interface SidebarProps {
@@ -66,6 +67,11 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeModule, setActiveModule,
   // DEDICATED SAAS NAVIGATION FOR PLATFORM SUPER ADMIN (ZERO SHOP ITEMS)
   const superAdminNav: { id: string; label: string; icon: any; badge?: string }[] = [
     {
+      id: "admin-dashboard",
+      label: language === "sw" ? "Dashibodi" : "Dashboard",
+      icon: LayoutDashboard,
+    },
+    {
       id: "super-admin",
       label: language === "sw" ? "Maduka & Usajili" : "Stores & Subscriptions",
       icon: Building2,
@@ -73,7 +79,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeModule, setActiveModule,
     },
     {
       id: "admin-users",
-      label: language === "sw" ? "Watumiaji Wote (Staff)" : "All Users & Staff",
+      label: language === "sw" ? "Watumiaji & Staff" : "All Users & Staff",
       icon: Users,
       badge: String(employees.length || 9),
     },
@@ -218,6 +224,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeModule, setActiveModule,
     const Icon = item.icon;
     const isActive =
       activeModule === item.id ||
+      (item.id === "admin-dashboard" && (activeModule === "dashboard" || activeModule === "admin-dashboard")) ||
+      (item.id === "super-admin" && activeModule === "admin-tenants") ||
       (item.id === "expenses" && activeModule === "accounting") ||
       (item.id === "inventory" && activeModule === "products") ||
       (item.id === "cash-register" && activeModule === "reports");
