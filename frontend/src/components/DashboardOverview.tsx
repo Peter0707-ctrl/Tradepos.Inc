@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useApp } from "@/context/AppContext";
 import {
   TrendingUp,
@@ -195,14 +195,43 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate
           )
         );
 
+  const bossName = user?.name ? user.name.split(" ")[0] : (language === "sw" ? "Boss" : "Owner");
+
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) {
+      return language === "sw" ? `Habari za Asubuhi, ${bossName}` : `Good morning, ${bossName}`;
+    } else if (hour < 17) {
+      return language === "sw" ? `Habari za Mchana, ${bossName}` : `Good afternoon, ${bossName}`;
+    } else {
+      return language === "sw" ? `Habari za Jioni, ${bossName}` : `Good evening, ${bossName}`;
+    }
+  };
+
+  const fullGreeting = getGreeting();
+  const [typedText, setTypedText] = useState("");
+
+  useEffect(() => {
+    let index = 0;
+    setTypedText("");
+    const interval = setInterval(() => {
+      index++;
+      setTypedText(fullGreeting.slice(0, index));
+      if (index >= fullGreeting.length) {
+        clearInterval(interval);
+      }
+    }, 45);
+    return () => clearInterval(interval);
+  }, [fullGreeting]);
+
   return (
     <div className="flex-1 flex flex-col h-full overflow-y-auto p-4 lg:p-6 space-y-6">
       {/* 1. Header & Quick Actions Bar */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 pb-2 border-b border-[#D8E6CC]">
         <div className="flex items-center gap-2">
-          <h2 className="text-xl sm:text-2xl font-black text-[#152508] tracking-tight">
-            {language === "sw" ? "Habari," : "Welcome,"}{" "}
-            {user?.name ? user.name.split(" ")[0] : "Mmiliki"}
+          <h2 className="text-xl sm:text-2xl font-black text-[#152508] tracking-tight flex items-center gap-1">
+            <span>{typedText}</span>
+            <span className="w-0.5 h-6 bg-[#27460d] inline-block animate-pulse"></span>
           </h2>
           <span className="px-2.5 py-0.5 rounded-full text-[11px] font-black bg-[#E1FFAC] text-[#172B08] border border-[#9CE034]">
             {currentBranch?.name || "Tawi Kuu"}

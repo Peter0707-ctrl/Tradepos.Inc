@@ -609,7 +609,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         } else if (storedModule) {
           setActiveModuleInternal(storedModule);
         } else {
-          setActiveModuleInternal(parsedUser.role === "OWNER" ? "dashboard" : "sales");
+          setActiveModuleInternal("dashboard");
         }
       } else {
         setViewStateInternal("landing");
@@ -829,13 +829,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       };
       setUser(cashierUser);
       setViewState("app");
-      setActiveModule("sales");
+      setActiveModule("dashboard");
       appendAuditLog("LOGIN_SUCCESS", "Cashier Amina signed in", "Amina Juma");
-      notifyCenter("Karibu Mfanyakazi", "Umeingia kama Muuzaji (Cashier) — Mauzo ya Siku pekee.", "INFO");
+      notifyCenter("Karibu Mfanyakazi", "Umeingia kama Muuzaji (Cashier).", "INFO");
       try {
         localStorage.setItem(PROD_USER_KEY, JSON.stringify(cashierUser));
         localStorage.setItem(PROD_VIEW_KEY, "app");
-        localStorage.setItem(PROD_MODULE_KEY, "sales");
+        localStorage.setItem(PROD_MODULE_KEY, "dashboard");
       } catch (e) {}
       return true;
     }
@@ -929,8 +929,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
     setUser(loggedUser);
     setViewState("app");
-    const isBoss = loggedUser.role === "OWNER" || loggedUser.role === "SUPER_ADMIN";
-    const nextMod = loggedUser.role === "SUPER_ADMIN" ? "admin-dashboard" : isBoss ? "dashboard" : "sales";
+    const nextMod = loggedUser.role === "SUPER_ADMIN" ? "admin-dashboard" : "dashboard";
     setActiveModule(nextMod);
     appendAuditLog("LOGIN_SUCCESS", `User ${loggedUser.name} signed in`, loggedUser.name);
     notifyCenter(
@@ -978,7 +977,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       branchId: currentBranch?.id || "",
     };
     setUser(switchedUser);
-    const nextMod = switchedUser.role === "SUPER_ADMIN" ? "admin-dashboard" : switchedUser.role === "OWNER" ? "dashboard" : "sales";
+    const nextMod = switchedUser.role === "SUPER_ADMIN" ? "admin-dashboard" : "dashboard";
     setActiveModule(nextMod);
     notifyCenter(
       "Akaunti Imebadilishwa",

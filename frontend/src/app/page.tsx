@@ -26,6 +26,7 @@ import { HelpSupportModule } from "@/components/HelpSupportModule";
 import { NotificationCenterModule } from "@/components/NotificationCenterModule";
 import { SuperAdminPanel } from "@/components/SuperAdminPanel";
 import { AdminDashboardModule } from "@/components/AdminDashboardModule";
+import { CashierDashboardModule } from "@/components/CashierDashboardModule";
 import { AdminTenantsModule } from "@/components/AdminTenantsModule";
 import { AdminUsersModule } from "@/components/AdminUsersModule";
 import { AdminSupportDeskModule } from "@/components/AdminSupportDeskModule";
@@ -154,7 +155,7 @@ function MainApp() {
     "settings",
     "help"
   ];
-  const bossOnlyModules = ["dashboard", "cash-register", "reports", "employees", "settings", "subscription"];
+  const bossOnlyModules = ["cash-register", "reports", "employees", "settings", "subscription"];
 
   let effectiveModule = activeModule;
   if (isSuperAdmin) {
@@ -310,6 +311,9 @@ function MainApp() {
                   {isOwner && (effectiveModule === "dashboard" || effectiveModule === "ai-assistant") && (
                     <DashboardOverview onNavigate={(m) => setActiveModule(m)} />
                   )}
+                  {!isOwner && (effectiveModule === "dashboard" || effectiveModule === "ai-assistant") && (
+                    <CashierDashboardModule onNavigate={(m) => setActiveModule(m)} />
+                  )}
                   {(effectiveModule === "sales" || effectiveModule === "pos") && <SalesLedgerModule />}
                   {(effectiveModule === "expenses" || effectiveModule === "accounting") && <ExpensesAccountingModule />}
                   {(effectiveModule === "products" || effectiveModule === "inventory") && <InventoryModule />}
@@ -394,17 +398,15 @@ function MainApp() {
                 </>
               ) : (
                 <>
-                  {isOwner && (
-                    <button
-                      onClick={() => setActiveModule("dashboard")}
-                      className={`flex flex-col items-center text-[10px] font-bold ${
-                        effectiveModule === "dashboard" ? "text-[#1C350A] font-black" : "text-[#627956]"
-                      }`}
-                    >
-                      <Store className="w-4 h-4" />
-                      <span>{language === "sw" ? "Dashibodi" : "Dashboard"}</span>
-                    </button>
-                  )}
+                  <button
+                    onClick={() => setActiveModule("dashboard")}
+                    className={`flex flex-col items-center text-[10px] font-bold ${
+                      effectiveModule === "dashboard" ? "text-[#1C350A] font-black" : "text-[#627956]"
+                    }`}
+                  >
+                    <Store className="w-4 h-4" />
+                    <span>{language === "sw" ? "Dashibodi" : "Dashboard"}</span>
+                  </button>
 
                   <button
                     onClick={() => setActiveModule("sales")}

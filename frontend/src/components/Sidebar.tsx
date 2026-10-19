@@ -156,6 +156,11 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeModule, setActiveModule,
       ]
     : [
         {
+          id: "dashboard",
+          label: language === "sw" ? "Dashibodi" : "Dashboard",
+          icon: Store,
+        },
+        {
           id: "sales",
           label: language === "sw" ? "Mauzo ya Leo" : "Today's Sales",
           icon: ShoppingBag,
