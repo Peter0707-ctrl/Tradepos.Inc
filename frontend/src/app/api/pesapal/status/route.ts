@@ -13,13 +13,8 @@ export async function GET(request: Request) {
     const consumerSecret = process.env.PESAPAL_CONSUMER_SECRET;
     const pesapalEnv = process.env.PESAPAL_ENV || "production";
 
-    // If order was generated via Pesapal API and credentials exist
-    if (
-      consumerKey &&
-      consumerSecret &&
-      !orderTrackingId.startsWith("pesa-live-") &&
-      !orderTrackingId.startsWith("pesa-test-")
-    ) {
+    // If credentials exist, query Pesapal
+    if (consumerKey && consumerSecret) {
       const baseUrl =
         pesapalEnv === "production"
           ? "https://pay.pesapal.com/v3/api"
@@ -31,10 +26,19 @@ export async function GET(request: Request) {
         headers: { "Content-Type": "application/json", Accept: "application/json" },
         body: JSON.stringify({ consumer_key: consumerKey, consumer_secret: consumerSecret }),
       });
+
+      if (!authRes.ok) {
+        return NextResponse.json({
+          completed: false,
+          status: "AUTH_FAILED",
+          message: "Failed to authenticate with Pesapal",
+        });
+      }
+
       const authData = await authRes.json();
       const token = authData.token;
 
-      // 2. Query status
+      // 2. Query status directly from Pesapal gateway
       const statusRes = await fetch(
         `${baseUrl}/Transactions/GetTransactionStatus?orderTrackingId=${orderTrackingId}`,
         {
@@ -44,29 +48,35 @@ export async function GET(request: Request) {
           },
         }
       );
+
+      if (!statusRes.ok) {
+        return NextResponse.json({
+          completed: false,
+          status: "PENDING",
+        });
+      }
+
       const statusData = await statusRes.json();
 
+      // Only mark completed if Pesapal explicitly returns Completed or status_code === 1
       const isCompleted =
         statusData.payment_status_description === "Completed" || statusData.status_code === 1;
 
       return NextResponse.json({
         completed: isCompleted,
         status: statusData.payment_status_description || "PENDING",
-        confirmationCode: statusData.confirmation_code || statusData.payment_account,
+        confirmationCode: statusData.confirmation_code || statusData.payment_account || "",
         paymentMethod: statusData.payment_method || "Mobile Money",
         amount: statusData.amount,
       });
     }
 
-    // For test / local simulated STK orders:
-    // We allow the poller to auto-complete after realistic STK PIN entry time (e.g. 5-7 seconds)
     return NextResponse.json({
-      completed: true,
-      status: "COMPLETED",
-      confirmationCode: `PESA-${Date.now().toString().slice(-6)}`,
-      paymentMethod: "Mobile Money",
+      completed: false,
+      status: "CONFIG_ERROR",
+      message: "Pesapal credentials not configured",
     });
   } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ completed: false, error: error.message }, { status: 500 });
   }
 }

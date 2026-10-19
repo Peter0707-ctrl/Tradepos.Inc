@@ -100,11 +100,11 @@ export const SubscriptionBillingModule: React.FC = () => {
   // Processing & Receipt
   const [isProcessing, setIsProcessing] = useState(false);
   const [activeReceipt, setActiveReceipt] = useState<InvoiceRecord | null>(null);
-  const [pesapalSimulationStep, setPesapalSimulationStep] = useState<"idle" | "awaiting_pin" | "approved">("idle");
+  const [pesapalSimulationStep, setPesapalSimulationStep] = useState<"idle" | "awaiting_pin" | "unverified">("idle");
   const [errorMessage, setErrorMessage] = useState("");
   const [currentTrackingId, setCurrentTrackingId] = useState("");
   const [pesapalNotice, setPesapalNotice] = useState("");
-  const [pollCountdown, setPollCountdown] = useState(6);
+  const [pollCountdown, setPollCountdown] = useState(25);
 
   // Price calculations
   const calculatePlanMonthlyBase = (plan: PlanType): number => {
@@ -189,7 +189,7 @@ export const SubscriptionBillingModule: React.FC = () => {
     setErrorMessage("");
     setPesapalNotice("");
     setCurrentTrackingId("");
-    setPollCountdown(6);
+    setPollCountdown(25);
     setPesapalSimulationStep("idle");
     setSelectedCarrier(detectCarrier(payerPhone));
     setIsCheckoutOpen(true);
@@ -231,7 +231,7 @@ export const SubscriptionBillingModule: React.FC = () => {
         setPesapalNotice("");
       }
 
-      setPollCountdown(6);
+      setPollCountdown(25);
       setPesapalSimulationStep("awaiting_pin");
       setIsProcessing(false);
 
@@ -241,6 +241,35 @@ export const SubscriptionBillingModule: React.FC = () => {
     } catch (err: any) {
       console.error(err);
       setErrorMessage(err.message || (isSw ? "Hitilafu wakati wa kuanzisha malipo" : "Error starting payment"));
+      setIsProcessing(false);
+    }
+  };
+
+  const handleRecheckStatus = async () => {
+    if (!currentTrackingId) return;
+    setIsProcessing(true);
+    setErrorMessage("");
+
+    try {
+      const res = await fetch(`/api/pesapal/status?orderTrackingId=${currentTrackingId}`);
+      const statusData = await res.json();
+
+      if (statusData.completed) {
+        handleConfirmSuccessfulPayment(
+          statusData.paymentMethod || `Pesapal (${selectedCarrier.toUpperCase()})`,
+          statusData.confirmationCode || currentTrackingId
+        );
+      } else {
+        setErrorMessage(
+          isSw
+            ? "Lango la Pesapal bado halijathibitisha makato ya pesa kwenye mtandao. Tafadhali subiri kidogo au weka namba ya SMS hapa chini."
+            : "Payment has not yet been verified by Pesapal gateway. Please check your phone or enter SMS reference code below."
+        );
+      }
+    } catch (e: any) {
+      console.error(e);
+      setErrorMessage(e.message || (isSw ? "Hitilafu wakati wa kukagua hali ya malipo" : "Error verifying payment"));
+    } finally {
       setIsProcessing(false);
     }
   };
@@ -278,26 +307,27 @@ export const SubscriptionBillingModule: React.FC = () => {
     }, 700);
   };
 
-  // Automated Poller & Verification Effect (No manual confirmation click required)
+  // Automated Poller & Verification Effect (Strict check with Pesapal - NEVER auto-approves unpaid orders)
   useEffect(() => {
     if (pesapalSimulationStep !== "awaiting_pin") return;
 
+    let isActive = true;
+
     const timer = setInterval(async () => {
-      // Query Pesapal live status if it's a real gateway order tracking ID
-      if (
-        currentTrackingId &&
-        !currentTrackingId.startsWith("pesa-live-") &&
-        !currentTrackingId.startsWith("pesa-test-")
-      ) {
+      // Query Pesapal live status if we have an order tracking ID
+      if (currentTrackingId) {
         try {
           const res = await fetch(`/api/pesapal/status?orderTrackingId=${currentTrackingId}`);
           const statusData = await res.json();
+
           if (statusData.completed) {
             clearInterval(timer);
-            handleConfirmSuccessfulPayment(
-              statusData.paymentMethod || `Pesapal (${selectedCarrier.toUpperCase()})`,
-              statusData.confirmationCode || currentTrackingId
-            );
+            if (isActive) {
+              handleConfirmSuccessfulPayment(
+                statusData.paymentMethod || `Pesapal (${selectedCarrier.toUpperCase()})`,
+                statusData.confirmationCode || currentTrackingId
+              );
+            }
             return;
           }
         } catch (e) {
@@ -308,18 +338,21 @@ export const SubscriptionBillingModule: React.FC = () => {
       setPollCountdown((prev) => {
         if (prev <= 1) {
           clearInterval(timer);
-          // Automatically complete verification and open the tax receipt!
-          handleConfirmSuccessfulPayment(
-            `Pesapal (${selectedCarrier.toUpperCase()})`,
-            currentTrackingId || `PESA-${Date.now().toString().slice(-6)}`
-          );
+          // Countdown finished and gateway has NOT confirmed completion
+          // Transition to unverified state - DO NOT AUTO-APPROVE!
+          if (isActive) {
+            setPesapalSimulationStep("unverified");
+          }
           return 0;
         }
         return prev - 1;
       });
-    }, 1000);
+    }, 2000);
 
-    return () => clearInterval(timer);
+    return () => {
+      isActive = false;
+      clearInterval(timer);
+    };
   }, [
     pesapalSimulationStep,
     currentTrackingId,
@@ -1023,7 +1056,7 @@ export const SubscriptionBillingModule: React.FC = () => {
                     </div>
                   )}
                 </div>
-              ) : (
+              ) : pesapalSimulationStep === "awaiting_pin" ? (
                 /* AUTOMATED VERIFICATION (FRAMELESS) */
                 <div className="py-4 text-center space-y-4">
                   <div className="inline-flex p-3.5 rounded-full bg-[#E1FFAC] text-[#1E370A] ring-4 ring-[#E1FFAC]/40">
@@ -1032,50 +1065,106 @@ export const SubscriptionBillingModule: React.FC = () => {
 
                   <div>
                     <h4 className="text-base font-black text-[#152709]">
-                      {isSw ? "Inathibitisha Malipo Kiotomatiki..." : "Verifying Payment Automatically..."}
+                      {isSw ? "Inathibitisha Malipo na Mtandao..." : "Verifying Payment with Gateway..."}
                     </h4>
                     <p className="text-xs text-[#4F6742] mt-1.5 leading-relaxed font-medium">
                       {isSw
-                        ? `Ombi la malipo la TZS ${finalTotal.toLocaleString()} limetumwa kwa ${payerPhone} (${selectedCarrier.toUpperCase()}). Mfumo unathibitisha muamala moja kwa moja bila kuhitaji kubonyeza kitufe.`
-                        : `Payment request of TZS ${finalTotal.toLocaleString()} sent to ${payerPhone} (${selectedCarrier.toUpperCase()}). Verifying transaction automatically.`}
+                        ? `Ombi la malipo la TZS ${finalTotal.toLocaleString()} limetumwa kwa ${payerPhone} (${selectedCarrier.toUpperCase()}). Mfumo unauliza lango la malipo kuthibitisha kama umeweka PIN yako.`
+                        : `Payment request of TZS ${finalTotal.toLocaleString()} sent to ${payerPhone} (${selectedCarrier.toUpperCase()}). Querying gateway for PIN authorization.`}
                     </p>
                   </div>
 
                   {/* Progress Indicator */}
                   <div className="space-y-1.5 pt-1">
                     <div className="flex items-center justify-between text-[11px] font-bold text-[#3E6517] px-1">
-                      <span>{isSw ? "Inasubiri majibu ya mtandao..." : "Awaiting network confirmation..."}</span>
+                      <span>{isSw ? "Inasubiri uthibitisho halisi kutoka Pesapal..." : "Awaiting verified confirmation from Pesapal..."}</span>
                       <span>{pollCountdown}s</span>
                     </div>
                     <div className="w-full h-2.5 bg-[#E8F3DD] rounded-full overflow-hidden">
                       <div
                         className="h-full bg-[#70B419] transition-all duration-1000 rounded-full"
-                        style={{ width: `${((6 - pollCountdown) / 6) * 100}%` }}
+                        style={{ width: `${((25 - pollCountdown) / 25) * 100}%` }}
                       />
                     </div>
                   </div>
 
-                  {pesapalNotice && (
-                    <div className="p-3.5 rounded-2xl bg-[#E8F3DD] text-left border-0">
-                      <div className="flex items-start gap-2">
-                        <AlertTriangle className="w-4 h-4 text-[#233C0D] shrink-0 mt-0.5" />
-                        <div className="text-[11px] text-[#1E370A] leading-snug">
-                          <span className="font-bold block mb-0.5">
-                            {isSw ? "Taarifa ya Akaunti ya Pesapal:" : "Pesapal Account Notice:"}
-                          </span>
-                          <span>
-                            {isSw
-                              ? "Akaunti mpya ya Pesapal inahitaji uidhinisho wa kiasi (KYC) kutoka kwa support@pesapal.com ili kuruhusu USSD push ya moja kwa moja ya zaidi ya TZS 50,000. Mfumo wa TradePOS unakamilisha usajili na kutoa risiti yako kiotomatiki."
-                              : pesapalNotice}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
                   <div className="text-[11px] text-[#69825C] font-semibold flex items-center justify-center gap-1.5 pt-1">
                     <Lock className="w-3.5 h-3.5 text-[#3E6517]" />
                     <span>{isSw ? "Muamala unalindwa na kukaguliwa moja kwa moja" : "Transaction secured and verified"}</span>
+                  </div>
+                </div>
+              ) : (
+                /* UNVERIFIED STATE (PAYMENT NOT YET CONFIRMED) */
+                <div className="py-4 text-center space-y-4">
+                  <div className="inline-flex p-3.5 rounded-full bg-amber-100 text-amber-800">
+                    <AlertTriangle className="w-6 h-6 text-amber-700" />
+                  </div>
+
+                  <div>
+                    <h4 className="text-base font-black text-[#152709]">
+                      {isSw ? "Malipo Bado Hayajathibitishwa na Mtandao" : "Payment Not Yet Confirmed"}
+                    </h4>
+                    <p className="text-xs text-[#4F6742] mt-1.5 leading-relaxed font-medium">
+                      {isSw
+                        ? "Lango la malipo bado halijapokea uthibitisho wa makato kutoka kwenye namba yako ya simu. Hakuna leseni inayofunguliwa bila uthibitisho wa malipo halisi."
+                        : "The gateway has not confirmed payment deduction from your phone. Subscription cannot activate without verified payment."}
+                    </p>
+                  </div>
+
+                  {/* Actions */}
+                  <div className="space-y-2.5 pt-1">
+                    <button
+                      type="button"
+                      onClick={handleRecheckStatus}
+                      disabled={isProcessing}
+                      className="w-full py-3.5 rounded-2xl bg-[#233C0D] hover:bg-[#182C08] text-white text-xs font-black tracking-wider uppercase transition flex items-center justify-center gap-2 border-0 shadow-md"
+                    >
+                      {isProcessing ? (
+                        <RefreshCw className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <RefreshCw className="w-4 h-4" />
+                      )}
+                      <span>{isSw ? "Kagua Tena na Pesapal Sasa" : "Re-Check with Pesapal Now"}</span>
+                    </button>
+
+                    <div className="p-4 rounded-2xl bg-[#E8F3DD] text-left space-y-2 border-0 mt-2">
+                      <span className="text-xs font-bold text-[#1F3609] block">
+                        {isSw ? "Umeshalipa tayari kwenye simu?" : "Already paid on your phone?"}
+                      </span>
+                      <p className="text-[11px] text-[#556D48]">
+                        {isSw
+                          ? "Weka namba ya kumbukumbu ya SMS (Mfano: 9KT564819P) ili mfumo uthibitishe:"
+                          : "Enter SMS transaction reference code to verify:"}
+                      </p>
+                      <div className="flex gap-2 pt-1">
+                        <input
+                          type="text"
+                          value={lipaReferenceCode}
+                          onChange={(e) => setLipaReferenceCode(e.target.value)}
+                          placeholder="Mfano: 9KT564819P"
+                          className="flex-1 bg-[#F4FAF0] rounded-xl px-4 py-2.5 text-xs font-mono font-bold text-[#152709] uppercase border-0 focus:outline-hidden"
+                        />
+                        <button
+                          type="button"
+                          onClick={handleVerifyLipaCode}
+                          disabled={isProcessing}
+                          className="px-4 py-2.5 rounded-xl bg-[#233C0D] text-white text-xs font-black hover:bg-[#182C08] transition border-0"
+                        >
+                          {isSw ? "Thibitisha" : "Verify"}
+                        </button>
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setPesapalSimulationStep("idle");
+                        setErrorMessage("");
+                      }}
+                      className="text-xs font-bold text-[#556D48] hover:text-[#233C0D] pt-1"
+                    >
+                      {isSw ? "Rudi Nyuma kwenye Fomu ya Malipo" : "Back to Payment Form"}
+                    </button>
                   </div>
                 </div>
               )}

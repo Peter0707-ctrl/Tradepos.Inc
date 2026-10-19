@@ -88,27 +88,35 @@ export async function POST(request: Request) {
 
       const orderData = await orderRes.json().catch(() => ({}));
 
-      // If Pesapal merchant account has limit / contractual verification pending
+      // If Pesapal merchant account has limit / contractual verification pending or declined
       if (orderData.error) {
-        console.warn("Pesapal returned limit notice:", orderData.error);
-        return NextResponse.json({
-          success: true,
-          mode: "live_limit_fallback",
-          pesapalNotice:
-            orderData.error.message ||
-            "Akaunti ya Pesapal inahitaji kuinuliwa kiwango na Pesapal Support (support@pesapal.com)",
-          orderTrackingId: `pesa-live-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
-          merchantReference: invoiceNumber,
-          invoiceNumber,
-          amount,
-          currency,
-          plan,
-          durationMonths,
-          customerPhone,
-        });
+        console.error("Pesapal Order Submission Error:", orderData.error);
+        let userMessage = orderData.error.message || "Pesapal order request was declined.";
+        if (
+          orderData.error.code === "amount_exceeds_default_limit" ||
+          orderData.error.error_type === "contractual_error"
+        ) {
+          userMessage =
+            "Lango la Pesapal limekataa muamala: Kiasi kinazidi kikomo cha akaunti yako ya Pesapal (amount exceeds limit). Wasiliana na support@pesapal.com ili wakuongezee kikomo cha biashara, au tumia Lipa Namba hapa chini.";
+        } else if (
+          orderData.error.code === "maximum_amount_limit_exceeded" ||
+          orderData.error.error_type === "test_transactions_exceeded"
+        ) {
+          userMessage =
+            "Lango la Pesapal limekataa muamala: Kikomo cha miamala ya majaribio (test limit) kimefikiwa kwenye akaunti hii. Wasiliana na support@pesapal.com, au tumia Lipa Namba.";
+        }
+
+        return NextResponse.json(
+          {
+            error: userMessage,
+            code: orderData.error.code,
+            details: orderData.error,
+          },
+          { status: 400 }
+        );
       }
 
-      if (orderData.redirect_url) {
+      if (orderData.redirect_url || orderData.order_tracking_id) {
         return NextResponse.json({
           success: true,
           mode: "live",
@@ -122,25 +130,21 @@ export async function POST(request: Request) {
           durationMonths,
         });
       }
+
+      return NextResponse.json(
+        {
+          error: "Lango la Pesapal halikurudisha namba ya uthibitisho (order tracking ID). Tafadhali jaribu tena au tumia Lipa Namba.",
+        },
+        { status: 502 }
+      );
     }
 
-    // Otherwise, simulate a seamless instant STK push & real invoice generation
-    // This allows complete offline / localhost test of Pesapal before Railway deployment
-    const simulatedTrackingId = `pesa-test-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
-
-    return NextResponse.json({
-      success: true,
-      mode: "simulation",
-      orderTrackingId: simulatedTrackingId,
-      merchantReference: invoiceNumber,
-      invoiceNumber,
-      amount,
-      currency,
-      plan,
-      durationMonths,
-      customerPhone,
-      message: "Order initiated. Ready for automated verification or STK push prompt.",
-    });
+    return NextResponse.json(
+      {
+        error: "Vigezo vya akaunti ya Pesapal (Consumer Key na Secret) havijawekwa kwenye mfumo.",
+      },
+      { status: 400 }
+    );
   } catch (error: any) {
     console.error("Checkout API handler error:", error);
     return NextResponse.json(
