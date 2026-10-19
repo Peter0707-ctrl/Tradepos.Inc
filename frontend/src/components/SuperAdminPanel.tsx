@@ -35,7 +35,11 @@ import {
   MessageSquare
 } from "lucide-react";
 
-export const SuperAdminPanel: React.FC = () => {
+interface SuperAdminPanelProps {
+  initialTab?: "tenants" | "users" | "support" | "audit";
+}
+
+export const SuperAdminPanel: React.FC<SuperAdminPanelProps> = ({ initialTab = "tenants" }) => {
   const {
     business,
     availableBusinesses,
@@ -52,8 +56,14 @@ export const SuperAdminPanel: React.FC = () => {
     language,
   } = useApp();
 
-  const [activeTab, setActiveTab] = useState<"tenants" | "users" | "support" | "audit">("tenants");
+  const [activeTab, setActiveTab] = useState<"tenants" | "users" | "support" | "audit">(initialTab);
   const [search, setSearch] = useState("");
+
+  React.useEffect(() => {
+    if (initialTab) {
+      setActiveTab(initialTab);
+    }
+  }, [initialTab]);
 
   // Sub-filters
   const [tenantFilter, setTenantFilter] = useState<"ALL" | "ACTIVE" | "EXPIRED" | "SUSPENDED">("ALL");

@@ -587,9 +587,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           setViewStateInternal("app");
         }
         const isSuper = parsedUser.role === "SUPER_ADMIN";
-        const isValidSuperMod = storedModule && ["super-admin", "audit-logs", "notifications", "settings", "help"].includes(storedModule);
+        const isValidSuperMod = storedModule && ["super-admin", "admin-users", "admin-support", "audit-logs", "notifications", "settings", "help"].includes(storedModule);
         if (isSuper) {
-          setActiveModuleInternal(isValidSuperMod ? storedModule : "super-admin");
+          if (storedModule === "notifications") {
+            setActiveModuleInternal("super-admin");
+          } else {
+            setActiveModuleInternal(isValidSuperMod ? storedModule : "super-admin");
+          }
         } else if (storedModule) {
           setActiveModuleInternal(storedModule);
         } else {

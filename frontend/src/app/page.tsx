@@ -133,10 +133,10 @@ function MainApp() {
   const isOwner = user?.role === "OWNER" || (!user && !isSuperAdmin) || !!impersonatingTenantId;
 
   // Strict isolation:
-  // 1. Super Admin: SaaS platform only (super-admin, audit-logs, notifications, settings, help)
+  // 1. Super Admin: SaaS platform only (super-admin, admin-users, admin-support, audit-logs, notifications, settings, help)
   // 2. Boss/Owner: Full store management (dashboard, sales, expenses, inventory, customers, reports, etc.)
   // 3. Cashier/Seller: POS and daily sales only
-  const superAdminModules = ["super-admin", "audit-logs", "notifications", "settings", "help"];
+  const superAdminModules = ["super-admin", "admin-users", "admin-support", "audit-logs", "notifications", "settings", "help"];
   const bossOnlyModules = ["dashboard", "cash-register", "reports", "employees", "settings", "subscription"];
 
   let effectiveModule = activeModule;
@@ -179,12 +179,15 @@ function MainApp() {
       case "employees": return t.titles.employees;
       case "branches": return t.titles.branches;
       case "warehouses": return t.titles.warehouses;
-      case "notifications": return t.titles.notifications;
-      case "settings": return t.titles.settings;
+      case "notifications": return language === "sw" ? "Matangazo na Taarifa za Mfumo" : "System Broadcasts";
+      case "settings": return language === "sw" ? "Mipangilio ya Jukwaa" : "Platform Settings";
       case "help": return t.titles.help;
       case "subscription": return t.titles.subscription;
       case "profile": return t.titles.profile;
-      case "super-admin": return t.titles.superAdmin;
+      case "super-admin": return language === "sw" ? "Maduka & Usajili (Subscriptions)" : "Stores & Subscriptions";
+      case "admin-users": return language === "sw" ? "Watumiaji Wote (All Users & Staff)" : "All Users & Staff Directory";
+      case "admin-support": return language === "sw" ? "Desk ya Msaada na Utatuzi (Support Desk)" : "Support & Issue Desk";
+      case "audit-logs": return language === "sw" ? "Kumbukumbu za Usalama (Global Audit Logs)" : "Global Audit Logs";
       default: return t.titles.dashboard;
     }
   };
@@ -272,7 +275,9 @@ function MainApp() {
             <main className="flex-1 overflow-hidden relative">
               {isSuperAdmin ? (
                 <>
-                  {effectiveModule === "super-admin" && <SuperAdminPanel />}
+                  {effectiveModule === "super-admin" && <SuperAdminPanel initialTab="tenants" />}
+                  {effectiveModule === "admin-users" && <SuperAdminPanel initialTab="users" />}
+                  {effectiveModule === "admin-support" && <SuperAdminPanel initialTab="support" />}
                   {effectiveModule === "audit-logs" && <AuditLogsModule />}
                   {effectiveModule === "notifications" && <NotificationCenterModule onNavigate={(m) => setActiveModule(m)} />}
                   {effectiveModule === "settings" && <BusinessSettingsModule />}

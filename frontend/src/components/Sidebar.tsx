@@ -23,7 +23,9 @@ import {
   Lock,
   CheckCircle2,
   Send,
-  Activity
+  Activity,
+  Building2,
+  LifeBuoy
 } from "lucide-react";
 
 interface SidebarProps {
@@ -41,6 +43,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeModule, setActiveModule,
     unreadNotificationCount,
     dailyReports,
     employees,
+    availableBusinesses,
+    supportTickets,
     switchEmployeeAccount,
     closeDayAndSendToBoss,
     isDayClosed,
@@ -57,14 +61,27 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeModule, setActiveModule,
   const isSuperAdmin = user?.role === "SUPER_ADMIN" && !impersonatingTenantId;
   const isOwner = user?.role === "OWNER" || (!user && !isSuperAdmin) || !!impersonatingTenantId;
   const pendingReportsCount = (dailyReports || []).filter((r) => r.status === "PENDING_REVIEW").length;
+  const openTicketsCount = (supportTickets || []).filter((t) => t.status === "OPEN" || t.status === "IN_PROGRESS").length;
 
   // DEDICATED SAAS NAVIGATION FOR PLATFORM SUPER ADMIN (ZERO SHOP ITEMS)
   const superAdminNav: { id: string; label: string; icon: any; badge?: string }[] = [
     {
       id: "super-admin",
-      label: language === "sw" ? "Paneli Kuu ya Jukwaa" : "Platform Overview",
-      icon: ShieldAlert,
-      badge: "ROOT",
+      label: language === "sw" ? "Maduka & Usajili" : "Stores & Subscriptions",
+      icon: Building2,
+      badge: String(availableBusinesses.length || 4),
+    },
+    {
+      id: "admin-users",
+      label: language === "sw" ? "Watumiaji Wote (Staff)" : "All Users & Staff",
+      icon: Users,
+      badge: String(employees.length || 9),
+    },
+    {
+      id: "admin-support",
+      label: language === "sw" ? "Desk ya Msaada" : "Support & Issue Desk",
+      icon: LifeBuoy,
+      badge: openTicketsCount > 0 ? String(openTicketsCount) : undefined,
     },
     {
       id: "audit-logs",

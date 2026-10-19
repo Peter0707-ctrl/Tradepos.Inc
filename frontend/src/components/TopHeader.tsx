@@ -120,14 +120,15 @@ export const TopHeader: React.FC<TopHeaderProps> = ({ pageTitle, onNavigate, onL
     <>
       <header className="h-16 bg-[#F4F7EE] border-b border-[#D8E6CC] px-4 lg:px-6 flex items-center justify-between z-30 select-none shadow-xs">
         {/* Left: Dynamic Page Title */}
-        <div className="flex items-center gap-2 min-w-0">
-          <h1 className="text-sm sm:text-base lg:text-xl font-black text-[#17260A] tracking-tight truncate max-w-[160px] sm:max-w-[320px] lg:max-w-none">
-            {isSuperAdmin
-              ? language === "sw"
-                ? "Paneli Kuu ya Jukwaa (TradePOS Cloud)"
-                : "Platform Super Admin Console"
-              : pageTitle}
+        <div className="flex items-center gap-2.5 min-w-0">
+          <h1 className="text-sm sm:text-base lg:text-xl font-black text-[#17260A] tracking-tight truncate max-w-[200px] sm:max-w-[420px] lg:max-w-none">
+            {pageTitle}
           </h1>
+          {isSuperAdmin && (
+            <span className="hidden sm:inline-block px-2 py-0.5 rounded-full bg-[#1b2f09] text-[#E1FFAC] text-[10px] font-black tracking-wider uppercase">
+              ROOT
+            </span>
+          )}
         </div>
 
         {/* Right Controls: Install App (PWA), Notifications, Help, Language, Profile */}

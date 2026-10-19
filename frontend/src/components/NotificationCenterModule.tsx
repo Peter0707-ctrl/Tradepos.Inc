@@ -18,10 +18,32 @@ interface NotificationCenterModuleProps {
 }
 
 export const NotificationCenterModule: React.FC<NotificationCenterModuleProps> = ({ onNavigate }) => {
-  const { notifications, markNotificationRead, markAllNotificationsRead } = useApp();
+  const { notifications, markNotificationRead, markAllNotificationsRead, user, language } = useApp();
 
   return (
     <div className="flex-1 flex flex-col h-full p-4 lg:p-6 overflow-hidden">
+      {/* Super Admin Quick Navigation Banner */}
+      {user?.role === "SUPER_ADMIN" && (
+        <div className="p-4 mb-4 rounded-2xl bg-[#1b2f09] text-white flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-md shrink-0">
+          <div>
+            <span className="text-xs font-black text-[#E1FFAC] tracking-wider uppercase block">
+              Platform Super Admin Console
+            </span>
+            <p className="text-xs text-[#d2e7c5] mt-0.5">
+              {language === "sw"
+                ? "Kusimamia maduka yote, watumiaji wote, na kutatua matatizo ya wateja (Support Desk):"
+                : "Manage all stores, staff accounts, and resolve customer issues (Support Desk):"}
+            </p>
+          </div>
+          <button
+            onClick={() => onNavigate("super-admin")}
+            className="px-4 py-2 rounded-xl bg-[#E1FFAC] hover:bg-[#d6f798] text-[#172709] font-black text-xs transition cursor-pointer self-start sm:self-auto shrink-0 shadow"
+          >
+            {language === "sw" ? "Fungua Maduka & Watumiaji \u2192" : "Open Stores & Users Console \u2192"}
+          </button>
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-5">
         <div>
@@ -48,7 +70,11 @@ export const NotificationCenterModule: React.FC<NotificationCenterModuleProps> =
             key={n.id}
             onClick={() => {
               markNotificationRead(n.id);
-              if (n.actionUrl) onNavigate(n.actionUrl);
+              if (n.actionUrl) {
+                onNavigate(n.actionUrl);
+              } else if (user?.role === "SUPER_ADMIN") {
+                onNavigate("super-admin");
+              }
             }}
             className={`p-4 rounded-2xl border cursor-pointer transition flex items-start justify-between gap-4 ${
               !n.read
