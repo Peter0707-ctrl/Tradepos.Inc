@@ -45,7 +45,7 @@ const EN_PHRASES = [
 ];
 
 export const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onLoginClick }) => {
-  const { t, language, setLanguage } = useApp();
+  const { t, language, setLanguage, loginUser } = useApp();
 
   const phrases = t.landing.phrases;
 
@@ -179,20 +179,43 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onLoginC
             Manage daily sales, store stock &amp; bundle tracking, customer debts, expenses, and automatic end-of-day reports from one unified platform.
           </p>
 
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-16">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3.5 mb-6">
             <button
               onClick={onGetStarted}
-              className="w-full sm:w-auto px-8 py-4 rounded-2xl bg-[#1f350c] text-[#E1FFAC] text-base font-bold shadow-neu-raised hover:bg-[#152507] hover:scale-[1.02] active:scale-95 transition flex items-center justify-center gap-3"
+              className="w-full sm:w-auto px-7 py-3.5 rounded-2xl bg-[#1f350c] text-[#E1FFAC] text-sm font-bold shadow-neu-raised hover:bg-[#152507] hover:scale-[1.02] active:scale-95 transition flex items-center justify-center gap-2 cursor-pointer"
             >
               <span>{t.getStarted}</span>
-              <ArrowRight className="w-5 h-5" />
+              <ArrowRight className="w-4 h-4" />
             </button>
 
             <button
               onClick={onLoginClick}
-              className="w-full sm:w-auto px-8 py-4 rounded-2xl bg-white text-[#213812] border-2 border-[#8ecc28] text-base font-extrabold shadow-neu-flat hover:bg-[#F4FFDC] transition"
+              className="w-full sm:w-auto px-7 py-3.5 rounded-2xl bg-white text-[#213812] border-2 border-[#8ecc28] text-sm font-extrabold shadow-neu-flat hover:bg-[#F4FFDC] transition cursor-pointer"
             >
               {t.login}
+            </button>
+          </div>
+
+          {/* QUICK 1-CLICK DEMO ACCESS BUTTONS FOR TESTING & REVIEW */}
+          <div className="w-full max-w-sm mx-auto mb-10 p-3.5 rounded-2xl bg-white/85 border border-[#cbe89a] shadow-sm backdrop-blur-xs flex flex-col gap-2">
+            <span className="text-[11px] font-black uppercase tracking-wider text-[#345318]">
+              {language === "sw" ? "Majaribio ya Haraka (Demo 1-Click)" : "Quick Demo Access (1-Click)"}
+            </span>
+            <button
+              type="button"
+              onClick={() => loginUser("peter@tradepos.co.tz")}
+              className="w-full py-2.5 px-4 rounded-xl bg-[#E1FFAC] hover:bg-[#d4fc88] text-[#192E08] text-xs font-black transition flex items-center justify-center gap-2 border border-[#BCE86C] shadow-xs cursor-pointer active:scale-98"
+            >
+              <Store className="w-4 h-4 text-[#192E08]" />
+              <span>{language === "sw" ? "Ingia Moja kwa Moja Kama Boss (Peter)" : "Login as Store Owner (Peter)"}</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => loginUser("admin@tradepos.cloud")}
+              className="w-full py-2 px-4 rounded-xl bg-[#F0F5EB] hover:bg-[#E5EEDD] text-[#334A23] text-xs font-bold transition flex items-center justify-center gap-2 cursor-pointer active:scale-98"
+            >
+              <Shield className="w-3.5 h-3.5 text-[#334A23]" />
+              <span>{language === "sw" ? "Ingia Kama Platform Super Admin" : "Login as Platform Super Admin"}</span>
             </button>
           </div>
 

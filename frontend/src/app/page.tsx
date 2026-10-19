@@ -175,7 +175,7 @@ function MainApp() {
   };
 
   return (
-    <div className="min-h-screen text-[#1E241E] flex flex-col font-sans select-none antialiased">
+    <div className="min-h-screen text-[#1E241E] flex flex-col font-sans antialiased overflow-x-clip">
       {/* 5-SECOND BRANDED SPLASH SCREEN */}
       {showSplash && (
         <SplashScreen
@@ -193,7 +193,6 @@ function MainApp() {
           onSuccess={() => {
             setAuthModal(null);
             setView("app");
-            setActiveModule(user?.role === "SUPER_ADMIN" ? "super-admin" : isOwner ? "dashboard" : "sales");
           }}
         />
       )}

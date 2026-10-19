@@ -498,9 +498,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         branchId: "global",
       };
       setUser(superAdminUser);
+      setViewState("app");
+      setActiveModule("super-admin");
+      appendAuditLog("LOGIN_SUCCESS", "Super Admin signed in", "Platform Super Admin");
+      notifyCenter("Super Admin", "Umeingia kama Platform Super Admin.", "SUCCESS");
       try {
         localStorage.setItem(PROD_USER_KEY, JSON.stringify(superAdminUser));
         localStorage.setItem(PROD_VIEW_KEY, "app");
+        localStorage.setItem(PROD_MODULE_KEY, "super-admin");
       } catch (e) {}
       return true;
     }
