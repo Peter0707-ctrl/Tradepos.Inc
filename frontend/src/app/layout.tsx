@@ -53,16 +53,24 @@ export default function RootLayout({
           dangerouslySetInnerHTML={{
             __html: `
               if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
-                window.addEventListener('load', function() {
-                  navigator.serviceWorker.register('/sw.js').then(
-                    function(registration) {
-                      console.log('TradePOS PWA ServiceWorker registered with scope:', registration.scope);
-                    },
-                    function(err) {
-                      console.warn('TradePOS PWA ServiceWorker registration failed:', err);
+                if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+                  navigator.serviceWorker.getRegistrations().then(function(registrations) {
+                    for (var r of registrations) {
+                      r.unregister();
                     }
-                  );
-                });
+                  });
+                } else {
+                  window.addEventListener('load', function() {
+                    navigator.serviceWorker.register('/sw.js').then(
+                      function(registration) {
+                        console.log('TradePOS PWA ServiceWorker registered with scope:', registration.scope);
+                      },
+                      function(err) {
+                        console.warn('TradePOS PWA ServiceWorker registration failed:', err);
+                      }
+                    );
+                  });
+                }
               }
             `,
           }}
