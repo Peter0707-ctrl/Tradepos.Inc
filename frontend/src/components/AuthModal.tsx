@@ -146,34 +146,10 @@ export const AuthModal: React.FC<AuthModalProps> = ({ initialMode, onClose, onSu
 
             <button
               type="submit"
-              className="w-full py-4 rounded-2xl auth-neu-btn text-sm font-black shadow-md mt-3"
+              className="w-full py-4 rounded-2xl auth-neu-btn text-sm font-black shadow-md mt-3 cursor-pointer"
             >
               {language === "sw" ? "Ingia Kwenye Mfumo" : "Sign In to TradePOS"}
             </button>
-
-            {/* QUICK DEMO LOGIN BUTTONS */}
-            <div className="pt-2 flex flex-col gap-2">
-              <button
-                type="button"
-                onClick={() => {
-                  loginUser("peter@tradepos.co.tz");
-                  onSuccess();
-                }}
-                className="w-full py-3 rounded-2xl bg-[#E1FFAC] hover:bg-[#d4fc88] text-[#192E08] text-xs font-black transition flex items-center justify-center gap-1.5 border border-[#BCE86C]"
-              >
-                <span>{language === "sw" ? "Ingia Moja kwa Moja Kama Boss (Peter)" : "Demo Login as Store Owner (Peter)"}</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  loginUser("admin@tradepos.cloud");
-                  onSuccess();
-                }}
-                className="w-full py-2.5 rounded-2xl bg-[#F0F5EB] hover:bg-[#E5EEDD] text-[#334A23] text-xs font-bold transition flex items-center justify-center gap-1.5"
-              >
-                <span>{language === "sw" ? "Ingia Kama Platform Super Admin" : "Demo Login as Super Admin"}</span>
-              </button>
-            </div>
 
             <div className="text-center pt-3 border-t border-[#d5e2cb]">
               <span className="text-xs text-[#52634d]">
