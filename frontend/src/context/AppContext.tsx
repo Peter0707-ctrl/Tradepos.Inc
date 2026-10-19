@@ -89,7 +89,13 @@ interface AppContextType {
   updateDeliveryDetails: (orderId: string, updates: Partial<OnlineOrder>) => void;
   updateDeliveryStatus: (deliveryId: string, status: DeliveryItem["status"]) => void;
   updateCashRegister: (data: Partial<CashRegister>) => void;
-  renewSubscription: () => void;
+  renewSubscription: (details?: {
+    planName?: "STARTER" | "PROFESSIONAL" | "BUSINESS" | "ENTERPRISE" | "CUSTOM";
+    durationMonths?: number;
+    amount?: number;
+    paymentMethod?: string;
+    invoiceNumber?: string;
+  }) => void;
   isAiModalOpen: boolean;
   setIsAiModalOpen: (open: boolean) => void;
   isHydrated: boolean;
@@ -1259,11 +1265,29 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const unreadNotificationCount = notifications.filter((n) => !n.read).length;
 
-  const renewSubscription = () => {
+  const renewSubscription = (details?: {
+    planName?: "STARTER" | "PROFESSIONAL" | "BUSINESS" | "ENTERPRISE" | "CUSTOM";
+    durationMonths?: number;
+    amount?: number;
+    paymentMethod?: string;
+    invoiceNumber?: string;
+  }) => {
     if (!business) return;
-    const nextDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
+    const months = details?.durationMonths && details.durationMonths > 0 ? details.durationMonths : 1;
+    const daysToAdd = months * 30;
+
+    const currentExpiryTime = business.subscriptionExpiry
+      ? new Date(business.subscriptionExpiry).getTime()
+      : Date.now();
+    const baseTime = !isNaN(currentExpiryTime) && currentExpiryTime > Date.now()
+      ? currentExpiryTime
+      : Date.now();
+    const nextDate = new Date(baseTime + daysToAdd * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
+    const newPlan = details?.planName || business.subscriptionPlan || "PROFESSIONAL";
+
     const updatedBiz: Business = {
       ...business,
+      subscriptionPlan: newPlan,
       subscriptionStatus: "ACTIVE",
       subscriptionExpiry: nextDate,
     };
@@ -1271,10 +1295,21 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setAvailableBusinesses((prev) =>
       prev.map((b) => (b.id === updatedBiz.id ? updatedBiz : b))
     );
-    appendAuditLog("SUBSCRIPTION_RENEWED", `Renewed subscription until ${nextDate}`);
+
+    const invoice = details?.invoiceNumber || `INV-${Date.now().toString().slice(-6)}`;
+    const method = details?.paymentMethod || "PESAPAL";
+    const amountStr = details?.amount ? `TZS ${details.amount.toLocaleString()}` : "Standard";
+
+    appendAuditLog(
+      "SUBSCRIPTION_RENEWED",
+      `Renewed ${newPlan} plan for ${months} mo (${invoice}, ${amountStr}, ${method}) until ${nextDate}`
+    );
+
     notifyCenter(
-      "Kifurushi Kimehuishwa",
-      `Leseni ya biashara yako imehuishwa hadi tarehe ${nextDate}.`,
+      language === "sw" ? "Kifurushi Kimehuishwa" : "Subscription Activated",
+      language === "sw"
+        ? `Leseni ya ${newPlan} imehuishwa hadi tarehe ${nextDate}. Nambari ya ankara: ${invoice}.`
+        : `License (${newPlan}) renewed until ${nextDate}. Invoice reference: ${invoice}.`,
       "SUCCESS"
     );
   };

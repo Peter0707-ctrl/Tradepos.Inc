@@ -7,7 +7,7 @@ export interface Business {
   taxRate: number;
   phone: string;
   email: string;
-  subscriptionPlan: 'STARTER' | 'PROFESSIONAL' | 'BUSINESS' | 'ENTERPRISE';
+  subscriptionPlan: 'STARTER' | 'PROFESSIONAL' | 'BUSINESS' | 'ENTERPRISE' | 'CUSTOM';
   subscriptionStatus: 'PENDING' | 'ACTIVE' | 'EXPIRING' | 'EXPIRED' | 'SUSPENDED';
   subscriptionExpiry: string;
   branches: Branch[];
