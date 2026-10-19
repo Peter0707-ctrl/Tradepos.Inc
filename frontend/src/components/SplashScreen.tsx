@@ -9,10 +9,10 @@ interface SplashScreenProps {
 
 export const SplashScreen: React.FC<SplashScreenProps> = ({ onFinish }) => {
   useEffect(() => {
-    // Exactly 5 seconds timer, then smoothly transition
+    // 3 seconds timer, then smoothly transition
     const timer = setTimeout(() => {
       onFinish();
-    }, 4500);
+    }, 3000);
 
     return () => clearTimeout(timer);
   }, [onFinish]);

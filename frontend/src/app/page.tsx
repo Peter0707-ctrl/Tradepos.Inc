@@ -112,23 +112,16 @@ function MainApp() {
     language
   } = useApp();
 
-  const [showSplash, setShowSplash] = useState(false);
+  const [showSplash, setShowSplash] = useState(true);
   const [authModal, setAuthModal] = useState<"login" | "register" | null>(null);
   const [isMobileMoreOpen, setIsMobileMoreOpen] = useState<boolean>(false);
 
-  // Only show splash on first visit when not logged in
+  // If already logged in, skip splash screen directly
   React.useEffect(() => {
-    if (!isHydrated) return;
-    try {
-      const hasSeenSplash = sessionStorage.getItem("tradepos_splash_shown");
-      if (!hasSeenSplash && !user) {
-        setShowSplash(true);
-        sessionStorage.setItem("tradepos_splash_shown", "true");
-      } else if (!hasSeenSplash) {
-        sessionStorage.setItem("tradepos_splash_shown", "true");
-      }
-    } catch (e) {}
-  }, [isHydrated, user]);
+    if (user) {
+      setShowSplash(false);
+    }
+  }, [user]);
 
   const isLoggedIn = !!user;
   const isOwner = !user || user.role === "OWNER" || user.role === "SUPER_ADMIN";

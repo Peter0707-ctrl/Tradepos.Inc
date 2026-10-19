@@ -510,6 +510,58 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       return true;
     }
 
+    if (cleanInput.toLowerCase() === "cashier@tradepos.co.tz" || cleanInput.toLowerCase() === "muuzaji@tradepos.co.tz") {
+      let activeBiz = business;
+      let activeBr = currentBranch;
+      if (!activeBiz) {
+        const mainBr: Branch = {
+          id: "br-main",
+          name: "Tawi Kuu (HQ)",
+          location: "Tanzania",
+          isMain: true,
+          phone: "+255 700 000 000",
+        };
+        activeBiz = {
+          id: "tenant-demo",
+          name: "Duka la Mfano (TradePOS Demo)",
+          businessType: "Duka la Rejareja",
+          location: "Tanzania",
+          currency: "TZS",
+          taxRate: 18,
+          phone: "+255 700 000 000",
+          email: "peter@tradepos.co.tz",
+          subscriptionPlan: "PROFESSIONAL",
+          subscriptionStatus: "ACTIVE",
+          subscriptionExpiry: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
+          branches: [mainBr],
+        };
+        activeBr = mainBr;
+        setBusiness(activeBiz);
+        setAvailableBusinesses([activeBiz]);
+        setCurrentBranch(mainBr);
+      }
+      const cashierUser: User = {
+        id: "usr-cashier-1",
+        name: "Amina Juma (Muuzaji)",
+        email: cleanInput,
+        phone: "+255 754 000 111",
+        role: "CASHIER",
+        businessId: activeBiz.id,
+        branchId: activeBr?.id || activeBiz.branches[0]?.id || "",
+      };
+      setUser(cashierUser);
+      setViewState("app");
+      setActiveModule("sales");
+      appendAuditLog("LOGIN_SUCCESS", "Cashier Amina signed in", "Amina Juma");
+      notifyCenter("Karibu Mfanyakazi", "Umeingia kama Muuzaji (Cashier) — Mauzo ya Siku pekee.", "INFO");
+      try {
+        localStorage.setItem(PROD_USER_KEY, JSON.stringify(cashierUser));
+        localStorage.setItem(PROD_VIEW_KEY, "app");
+        localStorage.setItem(PROD_MODULE_KEY, "sales");
+      } catch (e) {}
+      return true;
+    }
+
     const lowerInput = cleanInput.toLowerCase();
     const matchedEmployee = employees.find(
       (e) =>
