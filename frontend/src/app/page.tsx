@@ -111,7 +111,10 @@ function MainApp() {
     isAiModalOpen,
     setIsAiModalOpen,
     t,
-    language
+    language,
+    impersonatingTenantId,
+    adminExitImpersonation,
+    business,
   } = useApp();
 
   const [showSplash, setShowSplash] = useState(true);
@@ -126,8 +129,8 @@ function MainApp() {
   }, [user]);
 
   const isLoggedIn = !!user;
-  const isSuperAdmin = user?.role === "SUPER_ADMIN";
-  const isOwner = user?.role === "OWNER" || (!user && !isSuperAdmin);
+  const isSuperAdmin = user?.role === "SUPER_ADMIN" && !impersonatingTenantId;
+  const isOwner = user?.role === "OWNER" || (!user && !isSuperAdmin) || !!impersonatingTenantId;
 
   // Strict isolation:
   // 1. Super Admin: SaaS platform only (super-admin, audit-logs, notifications, settings, help)
@@ -235,6 +238,26 @@ function MainApp() {
 
           {/* MAIN BUSINESS WORKSPACE CONTAINER */}
           <div className="flex-1 flex flex-col h-full min-w-0 overflow-hidden bg-[#F4F7EE]/95">
+            {/* SUPPORT DIAGNOSTIC BANNER */}
+            {impersonatingTenantId && (
+              <div className="bg-[#1b2f09] text-white border-b-2 border-[#E1FFAC] px-4 py-2.5 flex flex-wrap items-center justify-between gap-3 shadow-md z-50 shrink-0">
+                <div className="flex items-center gap-3">
+                  <span className="px-2.5 py-0.5 rounded-full bg-[#E1FFAC] text-[#172709] font-black text-[10px] tracking-wider uppercase">
+                    SUPPORT DIAGNOSTIC MODE
+                  </span>
+                  <span className="text-xs text-white">
+                    Unakagua na kutatua matatizo kwenye duka la: <strong className="text-[#E1FFAC]">{business?.name || "Duka la Mteja"}</strong> ({business?.phone})
+                  </span>
+                </div>
+                <button
+                  onClick={adminExitImpersonation}
+                  className="px-3.5 py-1.5 rounded-xl bg-[#E1FFAC] hover:bg-[#d5f795] text-[#172709] font-black text-xs transition cursor-pointer flex items-center gap-1.5 shadow"
+                >
+                  Rudi Super Admin Console &rarr;
+                </button>
+              </div>
+            )}
+
             {/* TOP HEADER */}
             <TopHeader
               pageTitle={getModuleTitle(effectiveModule)}

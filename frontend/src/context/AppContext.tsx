@@ -20,6 +20,7 @@ import {
   StockMovement,
   EmployeeAccount,
   DailyShiftReport,
+  SupportTicket,
 } from "@/types";
 import { en, sw } from "@/locales/translations";
 
@@ -56,6 +57,16 @@ interface AppContextType {
   auditLogs: AuditLog[];
   isOffline: boolean;
   setIsOffline: (offline: boolean) => void;
+  // Super Admin Methods & State
+  supportTickets: SupportTicket[];
+  impersonatingTenantId: string | null;
+  adminUpdateEmployee: (empId: string, updates: Partial<EmployeeAccount>) => void;
+  adminResetCredentials: (empId: string, newPassword?: string, newPin?: string) => { success: boolean; message: string };
+  adminExtendSubscription: (tenantId: string, daysToAdd: number, newStatus?: 'ACTIVE' | 'EXPIRED' | 'SUSPENDED') => void;
+  adminUpdateTicket: (ticketId: string, updates: Partial<SupportTicket>) => void;
+  adminCreateTicket: (ticket: Omit<SupportTicket, 'id' | 'ticketNumber' | 'createdAt'>) => void;
+  adminImpersonateStore: (tenantId: string) => void;
+  adminExitImpersonation: () => void;
   // Methods
   loginUser: (emailOrPhone: string, role?: string) => boolean;
   logoutUser: () => void;
@@ -144,10 +155,247 @@ const PROD_USER_KEY = "tradepos_prod_user_v1";
 const PROD_VIEW_KEY = "tradepos_prod_view_v1";
 const PROD_MODULE_KEY = "tradepos_prod_module_v1";
 
+const SEED_BUSINESSES: Business[] = [
+  {
+    id: "tenant-kariakoo",
+    name: "Kariakoo Wholesalers Ltd",
+    businessType: "Jumla na Rejareja",
+    location: "Kariakoo, Dar es Salaam",
+    currency: "TZS",
+    taxRate: 18,
+    phone: "+255 754 111 222",
+    email: "info@kariakoowholesalers.co.tz",
+    subscriptionPlan: "BUSINESS",
+    subscriptionStatus: "ACTIVE",
+    subscriptionExpiry: new Date(Date.now() + 25 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
+    branches: [
+      { id: "br-kkoo-1", name: "Duka Kuu Kariakoo", location: "Msimbazi St", isMain: true, phone: "+255 754 111 222" },
+      { id: "br-kkoo-2", name: "Tawi la Kongo", location: "Kongo St", isMain: false, phone: "+255 754 111 223" },
+    ],
+  },
+  {
+    id: "tenant-mlimani",
+    name: "Mlimani Boutique & Accessories",
+    businessType: "Mavazi na Urembo",
+    location: "Mlimani City Mall, Dar es Salaam",
+    currency: "TZS",
+    taxRate: 18,
+    phone: "+255 712 333 444",
+    email: "sales@mlimanifashion.co.tz",
+    subscriptionPlan: "PROFESSIONAL",
+    subscriptionStatus: "ACTIVE",
+    subscriptionExpiry: new Date(Date.now() + 45 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
+    branches: [
+      { id: "br-mlm-1", name: "Mall Store", location: "Mlimani City Wing B", isMain: true, phone: "+255 712 333 444" },
+    ],
+  },
+  {
+    id: "tenant-dodoma",
+    name: "Dodoma Agrovet & Hardware",
+    businessType: "Kilimo na Ujenzi",
+    location: "Kikuyu, Dodoma",
+    currency: "TZS",
+    taxRate: 18,
+    phone: "+255 784 555 666",
+    email: "contact@dodomaagro.co.tz",
+    subscriptionPlan: "STARTER",
+    subscriptionStatus: "EXPIRED",
+    subscriptionExpiry: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
+    branches: [
+      { id: "br-ddm-1", name: "Kikuyu Main", location: "Kikuyu Road", isMain: true, phone: "+255 784 555 666" },
+    ],
+  },
+  {
+    id: "tenant-arusha",
+    name: "Arusha Highlands Supermarket",
+    businessType: "Supermarket & Groceries",
+    location: "Sombetini, Arusha",
+    currency: "TZS",
+    taxRate: 18,
+    phone: "+255 767 777 888",
+    email: "admin@arushahighlands.co.tz",
+    subscriptionPlan: "ENTERPRISE",
+    subscriptionStatus: "SUSPENDED",
+    subscriptionExpiry: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
+    branches: [
+      { id: "br-arsh-1", name: "Sombetini HQ", location: "Sombetini", isMain: true, phone: "+255 767 777 888" },
+      { id: "br-arsh-2", name: "Tawi la Njiro", location: "Njiro Complex", isMain: false, phone: "+255 767 777 889" },
+    ],
+  },
+];
+
+const SEED_EMPLOYEES: EmployeeAccount[] = [
+  {
+    id: "emp-kkoo-1",
+    tenantId: "tenant-kariakoo",
+    name: "Peter Mwangi",
+    email: "peter@tradepos.co.tz",
+    phone: "+255 754 111 222",
+    pin: "1234",
+    password: "Password123!",
+    role: "OWNER",
+    branch: "Duka Kuu Kariakoo",
+    status: "Active",
+    lastActive: "Leo saa 09:30 AM",
+  },
+  {
+    id: "emp-kkoo-2",
+    tenantId: "tenant-kariakoo",
+    name: "Amina Juma",
+    email: "cashier@tradepos.co.tz",
+    phone: "+255 754 000 111",
+    pin: "4321",
+    password: "Amina2026#",
+    role: "CASHIER",
+    branch: "Duka Kuu Kariakoo",
+    status: "Active",
+    lastActive: "Dakika 10 zilizopita",
+  },
+  {
+    id: "emp-kkoo-3",
+    tenantId: "tenant-kariakoo",
+    name: "Juma Bakari",
+    email: "juma.bakari@tradepos.co.tz",
+    phone: "+255 754 999 888",
+    pin: "5566",
+    password: "JumaManager1",
+    role: "MANAGER",
+    branch: "Tawi la Kongo",
+    status: "Active",
+    lastActive: "Jana saa 05:40 PM",
+  },
+  {
+    id: "emp-mlm-1",
+    tenantId: "tenant-mlimani",
+    name: "Neema Massawe",
+    email: "neema@mlimanifashion.co.tz",
+    phone: "+255 712 333 444",
+    pin: "9900",
+    password: "NeemaBoutique#",
+    role: "OWNER",
+    branch: "Mall Store",
+    status: "Active",
+    lastActive: "Leo saa 11:15 AM",
+  },
+  {
+    id: "emp-mlm-2",
+    tenantId: "tenant-mlimani",
+    name: "Kelvin Mushi",
+    email: "kelvin@mlimanifashion.co.tz",
+    phone: "+255 712 555 123",
+    pin: "7788",
+    password: "Kelvin2026#",
+    role: "CASHIER",
+    branch: "Mall Store",
+    status: "Active",
+    lastActive: "Dakika 45 zilizopita",
+  },
+  {
+    id: "emp-ddm-1",
+    tenantId: "tenant-dodoma",
+    name: "Rashid Ally",
+    email: "rashid@dodomaagro.co.tz",
+    phone: "+255 784 555 666",
+    pin: "2233",
+    password: "RashidAgro!",
+    role: "OWNER",
+    branch: "Kikuyu Main",
+    status: "Active",
+    lastActive: "Siku 2 zilizopita",
+  },
+  {
+    id: "emp-ddm-2",
+    tenantId: "tenant-dodoma",
+    name: "Baraka Juma",
+    email: "baraka@dodomaagro.co.tz",
+    phone: "+255 784 777 999",
+    pin: "1122",
+    password: "BarakaStore1",
+    role: "STOREKEEPER",
+    branch: "Kikuyu Main",
+    status: "Suspended",
+    lastActive: "Siku 5 zilizopita",
+  },
+  {
+    id: "emp-arsh-1",
+    tenantId: "tenant-arusha",
+    name: "Dr. Grace Kimaro",
+    email: "grace@arushahighlands.co.tz",
+    phone: "+255 767 777 888",
+    pin: "8899",
+    password: "GraceArusha!",
+    role: "OWNER",
+    branch: "Sombetini HQ",
+    status: "Suspended",
+    lastActive: "Siku 7 zilizopita",
+  },
+  {
+    id: "emp-arsh-2",
+    tenantId: "tenant-arusha",
+    name: "Elias Sanga",
+    email: "elias@arushahighlands.co.tz",
+    phone: "+255 767 123 456",
+    pin: "3344",
+    password: "EliasCashier!",
+    role: "CASHIER",
+    branch: "Tawi la Njiro",
+    status: "Suspended",
+    lastActive: "Siku 10 zilizopita",
+  },
+];
+
+const SEED_TICKETS: SupportTicket[] = [
+  {
+    id: "tkt-1",
+    ticketNumber: "TKT-1082",
+    tenantId: "tenant-kariakoo",
+    tenantName: "Kariakoo Wholesalers Ltd",
+    reportedBy: "Amina Juma (Cashier)",
+    contactPhone: "+255 754 000 111",
+    title: "Akaunti ya Cashier imefungwa kwa sababu ya kukosea PIN",
+    description: "Cashier Amina ameingiza PIN isiyo sahihi mara tatu mashineni na akaunti imefungwa. Anahitaji PIN mpya au reset mara moja ili aendelee na mauzo.",
+    category: "LOGIN_PASSWORD",
+    priority: "HIGH",
+    status: "OPEN",
+    createdAt: "Leo saa 10:14 AM",
+  },
+  {
+    id: "tkt-2",
+    ticketNumber: "TKT-1081",
+    tenantId: "tenant-dodoma",
+    tenantName: "Dodoma Agrovet & Hardware",
+    reportedBy: "Rashid Ally (Mmiliki)",
+    contactPhone: "+255 784 555 666",
+    title: "Malipo ya M-Pesa yamekatwa lakini subscription haija-ongezeka",
+    description: "Tulilipa TZS 150,000 kupitia Lipa Namba ya M-Pesa (Ref: QK8899231) lakini dashboard bado inasema subscription imeisha (EXPIRED). Tunaomba kuongezewa siku 30.",
+    category: "SUBSCRIPTION",
+    priority: "HIGH",
+    status: "OPEN",
+    createdAt: "Leo saa 08:30 AM",
+  },
+  {
+    id: "tkt-3",
+    ticketNumber: "TKT-1079",
+    tenantId: "tenant-mlimani",
+    tenantName: "Mlimani Boutique & Accessories",
+    reportedBy: "Kelvin Mushi (Cashier)",
+    contactPhone: "+255 712 555 123",
+    title: "Thermal Printer ya Bluetooth haitoi risiti",
+    description: "Mashine ya kuchapisha risiti (80mm Bluetooth) inakataa ku-connect baada ya kuwasha tablet asubuhi.",
+    category: "POS_HARDWARE",
+    priority: "NORMAL",
+    status: "RESOLVED",
+    createdAt: "Jana saa 02:15 PM",
+    resolvedAt: "Jana saa 03:00 PM",
+    resolutionNotes: "Mteja alisaidiwa ku-unpair na ku-pair upya kifaa cha Bluetooth kwenye mipangilio ya tablet.",
+    assignedTo: "Platform Super Admin",
+  },
+];
+
 export function AppProvider({ children }: { children: React.ReactNode }) {
   const [language, setLanguage] = useState<"en" | "sw">("sw");
   const [user, setUser] = useState<User | null>(null);
-  const [availableBusinesses, setAvailableBusinesses] = useState<Business[]>([]);
+  const [availableBusinesses, setAvailableBusinesses] = useState<Business[]>(SEED_BUSINESSES);
   const [business, setBusiness] = useState<Business | null>(null);
   const [currentBranch, setCurrentBranch] = useState<Branch | null>(null);
 
@@ -162,7 +410,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
   const [cashRegister, setCashRegister] = useState<CashRegister>(emptyCashRegister);
   const [stockMovements, setStockMovements] = useState<StockMovement[]>([]);
-  const [employees, setEmployees] = useState<EmployeeAccount[]>([]);
+  const [employees, setEmployees] = useState<EmployeeAccount[]>(SEED_EMPLOYEES);
+  const [supportTickets, setSupportTickets] = useState<SupportTicket[]>(SEED_TICKETS);
+  const [impersonatingTenantId, setImpersonatingTenantId] = useState<string | null>(null);
   const [dailyReports, setDailyReports] = useState<DailyShiftReport[]>([]);
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
@@ -297,7 +547,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       const savedStore = localStorage.getItem(PROD_STORAGE_KEY);
       if (savedStore) {
         const parsed = JSON.parse(savedStore);
-        if (Array.isArray(parsed.availableBusinesses)) setAvailableBusinesses(parsed.availableBusinesses);
+        if (Array.isArray(parsed.availableBusinesses) && parsed.availableBusinesses.length > 0) {
+          setAvailableBusinesses(parsed.availableBusinesses);
+        }
         if (parsed.business) setBusiness(parsed.business);
         if (parsed.currentBranch) setCurrentBranch(parsed.currentBranch);
         if (Array.isArray(parsed.products)) setProducts(parsed.products);
@@ -311,7 +563,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         if (Array.isArray(parsed.warehouses)) setWarehouses(parsed.warehouses);
         if (parsed.cashRegister) setCashRegister(parsed.cashRegister);
         if (Array.isArray(parsed.stockMovements)) setStockMovements(parsed.stockMovements);
-        if (Array.isArray(parsed.employees)) setEmployees(parsed.employees);
+        if (Array.isArray(parsed.employees) && parsed.employees.length > 0) {
+          setEmployees(parsed.employees);
+        }
+        if (Array.isArray(parsed.supportTickets) && parsed.supportTickets.length > 0) {
+          setSupportTickets(parsed.supportTickets);
+        }
         if (Array.isArray(parsed.dailyReports)) setDailyReports(parsed.dailyReports);
         if (Array.isArray(parsed.notifications)) setNotifications(parsed.notifications);
         if (Array.isArray(parsed.auditLogs)) setAuditLogs(parsed.auditLogs);
@@ -369,6 +626,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           cashRegister,
           stockMovements,
           employees,
+          supportTickets,
           dailyReports,
           notifications,
           auditLogs,
@@ -394,6 +652,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     cashRegister,
     stockMovements,
     employees,
+    supportTickets,
     dailyReports,
     notifications,
     auditLogs,
@@ -713,6 +972,177 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     try {
       localStorage.setItem(PROD_USER_KEY, JSON.stringify(switchedUser));
     } catch (e) {}
+  };
+
+  const adminUpdateEmployee = (empId: string, updates: Partial<EmployeeAccount>) => {
+    setEmployees((prev) =>
+      prev.map((e) => {
+        if (e.id === empId) {
+          const updated = { ...e, ...updates };
+          appendAuditLog(
+            "USER_MODIFIED",
+            `Admin updated user ${e.name} (${e.email}): ${JSON.stringify(updates)}`,
+            "Platform Super Admin"
+          );
+          return updated;
+        }
+        return e;
+      })
+    );
+    notifyCenter("Taarifa ya Mtumiaji", "Akaunti ya mtumiaji imesasishwa kikamilifu.", "SUCCESS");
+  };
+
+  const adminResetCredentials = (empId: string, newPassword?: string, newPin?: string) => {
+    const emp = employees.find((e) => e.id === empId);
+    if (!emp) {
+      notifyCenter("Hitilafu", "Mtumiaji hakupatikana kwenye mfumo.", "ERROR");
+      return { success: false, message: "Mtumiaji hakupatikana." };
+    }
+    const updates: Partial<EmployeeAccount> = {};
+    if (newPassword) updates.password = newPassword;
+    if (newPin) updates.pin = newPin;
+    updates.status = "Active";
+
+    setEmployees((prev) =>
+      prev.map((e) => (e.id === empId ? { ...e, ...updates } : e))
+    );
+
+    appendAuditLog(
+      "SECURITY_CREDENTIALS_RESET",
+      `Super Admin reset credentials for ${emp.name} (${emp.email}). PIN/Password updated.`,
+      "Platform Super Admin"
+    );
+
+    notifyCenter(
+      "Nenosiri / PIN Imewekwa Upya",
+      `Nenosiri au PIN ya ${emp.name} imebadilishwa kikamilifu.`,
+      "SUCCESS"
+    );
+    return { success: true, message: "Credentials zimefanikiwa kusasishwa." };
+  };
+
+  const adminExtendSubscription = (
+    tenantId: string,
+    daysToAdd: number,
+    newStatus: 'ACTIVE' | 'EXPIRED' | 'SUSPENDED' = 'ACTIVE'
+  ) => {
+    const targetBiz = availableBusinesses.find((b) => b.id === tenantId) || (business?.id === tenantId ? business : null);
+    if (!targetBiz) return;
+
+    const currentExpiry = targetBiz.subscriptionExpiry ? new Date(targetBiz.subscriptionExpiry) : new Date();
+    const baseDate = currentExpiry > new Date() ? currentExpiry : new Date();
+    baseDate.setDate(baseDate.getDate() + daysToAdd);
+    const newExpiryStr = baseDate.toISOString().split("T")[0];
+
+    const updatedBiz: Business = {
+      ...targetBiz,
+      subscriptionExpiry: newExpiryStr,
+      subscriptionStatus: newStatus,
+    };
+
+    setAvailableBusinesses((prev) =>
+      prev.map((b) => (b.id === tenantId ? updatedBiz : b))
+    );
+
+    if (business?.id === tenantId) {
+      setBusiness(updatedBiz);
+    }
+
+    appendAuditLog(
+      "SUBSCRIPTION_EXTENDED",
+      `Super Admin extended subscription for ${targetBiz.name} by ${daysToAdd} days (Until ${newExpiryStr}) with status ${newStatus}.`,
+      "Platform Super Admin"
+    );
+
+    notifyCenter(
+      "Usajili Umeongezwa",
+      `${targetBiz.name}: Siku +${daysToAdd} zimeongezwa. Tarehe mpya ya mwisho: ${newExpiryStr}.`,
+      "SUCCESS"
+    );
+  };
+
+  const adminUpdateTicket = (ticketId: string, updates: Partial<SupportTicket>) => {
+    setSupportTickets((prev) =>
+      prev.map((t) => {
+        if (t.id === ticketId) {
+          const updated = {
+            ...t,
+            ...updates,
+            resolvedAt: updates.status === "RESOLVED" ? new Date().toLocaleString() : t.resolvedAt,
+            assignedTo: updates.assignedTo || t.assignedTo || "Platform Super Admin",
+          };
+          appendAuditLog(
+            "SUPPORT_TICKET_UPDATED",
+            `Ticket ${t.ticketNumber} updated to status: ${updated.status}. Notes: ${updated.resolutionNotes || "None"}`,
+            "Platform Super Admin"
+          );
+          return updated;
+        }
+        return t;
+      })
+    );
+    notifyCenter("Tiketi ya Msaada", "Taarifa za tiketi zimesasishwa.", "SUCCESS");
+  };
+
+  const adminCreateTicket = (ticketData: Omit<SupportTicket, 'id' | 'ticketNumber' | 'createdAt'>) => {
+    const newTicket: SupportTicket = {
+      ...ticketData,
+      id: "tkt-" + Date.now(),
+      ticketNumber: "TKT-" + Math.floor(1000 + Math.random() * 9000),
+      createdAt: new Date().toLocaleString(),
+    };
+    setSupportTickets((prev) => [newTicket, ...prev]);
+    appendAuditLog(
+      "SUPPORT_TICKET_CREATED",
+      `Created ticket ${newTicket.ticketNumber} for ${newTicket.tenantName}: ${newTicket.title}`,
+      "Platform Super Admin"
+    );
+    notifyCenter("Tiketi Imefunguliwa", `Tiketi #${newTicket.ticketNumber} imeandikishwa kikamilifu.`, "SUCCESS");
+  };
+
+  const adminImpersonateStore = (tenantId: string) => {
+    const targetBiz = availableBusinesses.find((b) => b.id === tenantId);
+    if (!targetBiz) {
+      notifyCenter("Hitilafu", "Duka halikupatikana.", "ERROR");
+      return;
+    }
+    setImpersonatingTenantId(tenantId);
+    setBusiness(targetBiz);
+    if (targetBiz.branches.length > 0) {
+      setCurrentBranch(targetBiz.branches[0]);
+    }
+    setActiveModule("dashboard");
+    appendAuditLog(
+      "SUPPORT_IMPERSONATION_START",
+      `Super Admin entered diagnostic support mode for store: ${targetBiz.name} (${targetBiz.id})`,
+      "Platform Super Admin"
+    );
+    notifyCenter(
+      "Hali ya Msaada (Support Mode)",
+      `Umeingia kukagua duka la "${targetBiz.name}". Unaweza kurudi Super Admin wakati wowote.`,
+      "INFO"
+    );
+  };
+
+  const adminExitImpersonation = () => {
+    setImpersonatingTenantId(null);
+    const superAdminUser: User = {
+      id: "usr-admin",
+      name: "Platform Super Admin",
+      email: "admin@tradepos.cloud",
+      phone: "",
+      role: "SUPER_ADMIN",
+      businessId: "system",
+      branchId: "global",
+    };
+    setUser(superAdminUser);
+    setActiveModule("super-admin");
+    appendAuditLog(
+      "SUPPORT_IMPERSONATION_END",
+      "Super Admin exited diagnostic mode and returned to Root Console.",
+      "Platform Super Admin"
+    );
+    notifyCenter("Console ya Super Admin", "Umerudi kwenye jopo kuu la Super Admin.", "INFO");
   };
 
   const submitDailyReport = (notes?: string, actualCashCounted?: number) => {
@@ -1403,6 +1833,15 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         cashRegister,
         stockMovements,
         employees,
+        supportTickets,
+        impersonatingTenantId,
+        adminUpdateEmployee,
+        adminResetCredentials,
+        adminExtendSubscription,
+        adminUpdateTicket,
+        adminCreateTicket,
+        adminImpersonateStore,
+        adminExitImpersonation,
         dailyReports,
         notifications,
         unreadNotificationCount,

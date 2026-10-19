@@ -34,7 +34,8 @@ export const TopHeader: React.FC<TopHeaderProps> = ({ pageTitle, onNavigate, onL
     employees,
     switchEmployeeAccount,
     notifyCenter,
-    t
+    t,
+    impersonatingTenantId,
   } = useApp();
 
   const [isNotifOpen, setIsNotifOpen] = useState(false);
@@ -48,8 +49,8 @@ export const TopHeader: React.FC<TopHeaderProps> = ({ pageTitle, onNavigate, onL
   const notifRef = useRef<HTMLDivElement>(null);
   const profileRef = useRef<HTMLDivElement>(null);
 
-  const isSuperAdmin = user?.role === "SUPER_ADMIN";
-  const isOwner = user?.role === "OWNER" || (!user && !isSuperAdmin);
+  const isSuperAdmin = user?.role === "SUPER_ADMIN" && !impersonatingTenantId;
+  const isOwner = user?.role === "OWNER" || (!user && !isSuperAdmin) || !!impersonatingTenantId;
 
   useEffect(() => {
     if (typeof window !== "undefined") {

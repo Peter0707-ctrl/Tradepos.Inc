@@ -241,10 +241,29 @@ export interface EmployeeAccount {
   email: string;
   phone: string;
   pin?: string;
+  password?: string;
   role: 'OWNER' | 'MANAGER' | 'ACCOUNTANT' | 'CASHIER' | 'STOREKEEPER';
   branch: string;
   status: 'Active' | 'Suspended';
   lastActive: string;
+}
+
+export interface SupportTicket {
+  id: string;
+  ticketNumber: string;
+  tenantId: string;
+  tenantName: string;
+  reportedBy: string;
+  contactPhone: string;
+  title: string;
+  description: string;
+  category: 'SUBSCRIPTION' | 'LOGIN_PASSWORD' | 'POS_HARDWARE' | 'STOCK_INVENTORY' | 'GENERAL';
+  priority: 'HIGH' | 'MEDIUM' | 'NORMAL';
+  status: 'OPEN' | 'IN_PROGRESS' | 'RESOLVED';
+  createdAt: string;
+  resolvedAt?: string;
+  resolutionNotes?: string;
+  assignedTo?: string;
 }
 
 export interface DailyShiftReport {

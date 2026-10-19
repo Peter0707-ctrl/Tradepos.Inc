@@ -45,6 +45,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeModule, setActiveModule,
     closeDayAndSendToBoss,
     isDayClosed,
     startNewDay,
+    impersonatingTenantId,
+    adminExitImpersonation,
   } = useApp();
 
   const [collapsed, setCollapsed] = useState(false);
@@ -52,8 +54,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeModule, setActiveModule,
   const [pinInput, setPinInput] = useState("");
   const [pinError, setPinError] = useState("");
 
-  const isSuperAdmin = user?.role === "SUPER_ADMIN";
-  const isOwner = user?.role === "OWNER" || (!user && !isSuperAdmin);
+  const isSuperAdmin = user?.role === "SUPER_ADMIN" && !impersonatingTenantId;
+  const isOwner = user?.role === "OWNER" || (!user && !isSuperAdmin) || !!impersonatingTenantId;
   const pendingReportsCount = (dailyReports || []).filter((r) => r.status === "PENDING_REVIEW").length;
 
   // DEDICATED SAAS NAVIGATION FOR PLATFORM SUPER ADMIN (ZERO SHOP ITEMS)
