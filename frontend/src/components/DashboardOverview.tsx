@@ -18,6 +18,7 @@ interface DashboardOverviewProps {
 }
 
 const SWAHILI_DAYS_SHORT = ["Jumapili", "Jumatatu", "Jumanne", "Jumatano", "Alhamisi", "Ijumaa", "Jumamosi"];
+const ENGLISH_DAYS_SHORT = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
 export const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate }) => {
   const {
@@ -153,9 +154,19 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate
     dObj.setDate(dObj.getDate() - daysAgo);
     const daySales = validSales.filter((s) => (s.createdAt || "").startsWith(dStr));
     const revenue = daySales.reduce((acc, s) => acc + s.total, 0);
+    const dayName =
+      daysAgo === 0
+        ? language === "sw"
+          ? "Leo"
+          : "Today"
+        : daysAgo === 1
+        ? language === "sw"
+          ? "Jana"
+          : "Yesterday"
+        : (language === "sw" ? SWAHILI_DAYS_SHORT : ENGLISH_DAYS_SHORT)[dObj.getDay()].slice(0, 3);
     return {
       dateStr: dStr,
-      dayLabel: daysAgo === 0 ? "Leo" : daysAgo === 1 ? "Jana" : SWAHILI_DAYS_SHORT[dObj.getDay()].slice(0, 4),
+      dayLabel: dayName,
       revenue,
       count: daySales.length,
     };
@@ -244,7 +255,11 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate
           </p>
           <div className="flex items-center gap-1 text-[11px] font-bold text-emerald-700 mt-1">
             <ArrowUpRight className="w-3.5 h-3.5" />
-            <span>Jana: TZS {yesterdaysSales.toLocaleString()}</span>
+            <span>
+              {language === "sw"
+                ? `Jana: TZS ${yesterdaysSales.toLocaleString()}`
+                : `Yesterday: TZS ${yesterdaysSales.toLocaleString()}`}
+            </span>
           </div>
         </div>
 
@@ -255,7 +270,11 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate
             TZS {todayGrossProfit.toLocaleString()}
           </p>
           <div className="flex items-center gap-1 text-[11px] font-bold text-emerald-700 mt-1">
-            <span>Net: TZS {todayNetProfit.toLocaleString()}</span>
+            <span>
+              {language === "sw"
+                ? `Faida Halisi: TZS ${todayNetProfit.toLocaleString()}`
+                : `Net Profit: TZS ${todayNetProfit.toLocaleString()}`}
+            </span>
           </div>
         </div>
 
@@ -268,7 +287,11 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate
             {totalOrdersCount}
           </p>
           <div className="flex items-center gap-1 text-[11px] font-bold text-[#4B623F] mt-1">
-            <span>Wastani: TZS {avgOrderValue.toLocaleString()}</span>
+            <span>
+              {language === "sw"
+                ? `Wastani: TZS ${avgOrderValue.toLocaleString()}`
+                : `Avg: TZS ${avgOrderValue.toLocaleString()}`}
+            </span>
           </div>
         </div>
 
@@ -279,7 +302,11 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate
             TZS {todaysExpenses.toLocaleString()}
           </p>
           <div className="flex items-center gap-1 text-[11px] font-semibold text-[#667D59] mt-1">
-            <span>Jumla: TZS {totalAllExpenses.toLocaleString()}</span>
+            <span>
+              {language === "sw"
+                ? `Jumla: TZS ${totalAllExpenses.toLocaleString()}`
+                : `Total: TZS ${totalAllExpenses.toLocaleString()}`}
+            </span>
           </div>
         </div>
 
@@ -290,7 +317,10 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate
             {customers.length}
           </p>
           <div className="flex items-center gap-1 text-[11px] font-bold text-[#4B623F] mt-1">
-            <span>{customers.filter((c) => c.debtBalance > 0).length} wana madeni</span>
+            <span>
+              {customers.filter((c) => c.debtBalance > 0).length}{" "}
+              {language === "sw" ? "wana madeni" : "with debts"}
+            </span>
           </div>
         </div>
 
@@ -302,7 +332,7 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate
           </p>
           <div className="flex items-center gap-1 text-[11px] font-semibold text-amber-800 mt-1">
             <AlertTriangle className="w-3.5 h-3.5" />
-            <span>Bidhaa zinaisha</span>
+            <span>{language === "sw" ? "Bidhaa zinaisha" : "Low stock alert"}</span>
           </div>
         </div>
 
@@ -313,7 +343,7 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate
             TZS {totalDebts.toLocaleString()}
           </p>
           <div className="flex items-center gap-1 text-[11px] font-bold text-[#637C55] mt-1">
-            <span>Madeni ya wateja</span>
+            <span>{language === "sw" ? "Madeni ya wateja" : "Customer debts"}</span>
           </div>
         </div>
 
@@ -324,7 +354,7 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate
             TZS {cashRegister.actualCash.toLocaleString()}
           </p>
           <div className="flex items-center gap-1 text-[11px] font-bold text-emerald-700 mt-1">
-            <span>Salio la Cash</span>
+            <span>{language === "sw" ? "Salio la Cash" : "Cash in drawer"}</span>
           </div>
         </div>
       </div>
@@ -498,7 +528,17 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate
                       : "text-[#4A613E] hover:text-[#182B0A]"
                   }`}
                 >
-                  {period}
+                  {period === "Today"
+                    ? language === "sw"
+                      ? "Leo"
+                      : "Today"
+                    : period === "7 Days"
+                    ? language === "sw"
+                      ? "Siku 7"
+                      : "7 Days"
+                    : language === "sw"
+                    ? "Siku 30"
+                    : "30 Days"}
                 </button>
               ))}
             </div>
@@ -522,10 +562,12 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate
 
           <div className="pt-3 border-t border-[#EDF4E4] flex items-center justify-between text-xs text-[#526846]">
             <span>
-              Wastani: <strong className="text-[#192D0A]">TZS {avgOrderValue.toLocaleString()}</strong>
+              {language === "sw" ? "Wastani: " : "Average: "}
+              <strong className="text-[#192D0A]">TZS {avgOrderValue.toLocaleString()}</strong>
             </span>
             <span>
-              Miamala: <strong className="text-[#192D0A]">{validSales.length}</strong>
+              {language === "sw" ? "Miamala: " : "Transactions: "}
+              <strong className="text-[#192D0A]">{validSales.length}</strong>
             </span>
           </div>
         </div>
@@ -539,35 +581,45 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate
 
             <div className="space-y-3 text-xs">
               <div className="flex justify-between items-center py-2 border-b border-[#EDF4E4]">
-                <span className="text-[#4E6441] font-semibold">Jumla ya Mauzo (Revenue)</span>
+                <span className="text-[#4E6441] font-semibold">
+                  {language === "sw" ? "Mauzo Yote" : "Total Revenue"}
+                </span>
                 <span className="font-black text-[#152709]">
                   TZS {totalAllSales.toLocaleString()}
                 </span>
               </div>
 
               <div className="flex justify-between items-center py-2 border-b border-[#EDF4E4]">
-                <span className="text-[#4E6441] font-semibold">Gharama ya Bidhaa (COGS)</span>
+                <span className="text-[#4E6441] font-semibold">
+                  {language === "sw" ? "Gharama ya Bidhaa (COGS)" : "Cost of Goods Sold (COGS)"}
+                </span>
                 <span className="font-bold text-[#6A815E]">
                   -TZS {totalCogsAll.toLocaleString()}
                 </span>
               </div>
 
               <div className="flex justify-between items-center py-2 border-b border-[#EDF4E4] bg-[#F7FCEE] px-2 rounded-lg">
-                <span className="font-bold text-[#182C09]">Faida Ghafi (Gross Profit)</span>
+                <span className="font-bold text-[#182C09]">
+                  {language === "sw" ? "Faida Ghafi" : "Gross Profit"}
+                </span>
                 <span className="font-black text-emerald-800">
                   TZS {totalGrossProfitAll.toLocaleString()}
                 </span>
               </div>
 
               <div className="flex justify-between items-center py-2 border-b border-[#EDF4E4]">
-                <span className="text-[#4E6441] font-semibold">Matumizi ya Duka (Expenses)</span>
+                <span className="text-[#4E6441] font-semibold">
+                  {language === "sw" ? "Matumizi ya Duka" : "Shop Expenses"}
+                </span>
                 <span className="font-bold text-rose-700">
                   -TZS {totalAllExpenses.toLocaleString()}
                 </span>
               </div>
 
               <div className="flex justify-between items-center pt-2">
-                <span className="font-black text-sm text-[#162A08]">Faida Halisi (Net Profit)</span>
+                <span className="font-black text-sm text-[#162A08]">
+                  {language === "sw" ? "Faida Halisi" : "Net Profit"}
+                </span>
                 <span
                   className={`font-black text-base ${
                     totalNetProfitAll >= 0 ? "text-emerald-800" : "text-rose-700"
@@ -580,7 +632,7 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate
           </div>
 
           <div className="mt-4 p-3 rounded-xl bg-[#EDF3E6] text-[11px] text-[#3B522C] font-semibold">
-            Kiwango cha Faida (Margin):{" "}
+            {language === "sw" ? "Kiwango cha Faida: " : "Profit Margin: "}
             <strong className="text-[#152808]">{overallMarginPct}%</strong>
           </div>
         </div>
@@ -605,7 +657,7 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate
           <div className="divide-y divide-[#EDF4E4] my-2">
             {topProducts.length === 0 ? (
               <div className="py-8 text-center text-xs text-gray-400">
-                Bado hakuna mauzo yaliyoandikwa.
+                {language === "sw" ? "Bado hakuna mauzo yaliyoandikwa." : "No sales recorded yet."}
               </div>
             ) : (
               topProducts.map((p, idx) => (
@@ -614,14 +666,16 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate
                     <h4 className="font-bold text-[#17290A]">
                       {idx + 1}. {p.name}
                     </h4>
-                    <span className="text-[11px] text-[#657C58]">{p.units} pcs zimeuzwa</span>
+                    <span className="text-[11px] text-[#657C58]">
+                      {p.units} {language === "sw" ? "zimeuzwa" : "sold"}
+                    </span>
                   </div>
                   <div className="text-right">
                     <span className="font-black text-[#152708] block">
                       TZS {p.revenue.toLocaleString()}
                     </span>
                     <span className="text-[10px] font-bold text-emerald-700">
-                      +TZS {p.profit.toLocaleString()} faida
+                      +TZS {p.profit.toLocaleString()} {language === "sw" ? "faida" : "profit"}
                     </span>
                   </div>
                 </div>
@@ -648,7 +702,7 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate
             <div className="divide-y divide-[#EDF4E4] my-2">
               {lowStockProducts.length === 0 ? (
                 <div className="py-8 text-center text-xs text-gray-400">
-                  Hakuna bidhaa iliyo chini ya kiwango cha chini cha stoo.
+                  {language === "sw" ? "Hakuna bidhaa iliyo chini ya kiwango cha stoo." : "All products are well stocked."}
                 </div>
               ) : (
                 lowStockProducts.map((prod) => (
@@ -656,11 +710,13 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate
                     <div>
                       <h4 className="font-bold text-[#182B0B]">{prod.name}</h4>
                       <span className="text-[11px] text-[#69815D]">
-                        Stoo: <strong className="text-amber-800">{prod.stockQuantity}</strong> • Kiwango cha chini: {prod.minStock}
+                        {language === "sw" ? "Stoo: " : "Stock: "}
+                        <strong className="text-amber-800">{prod.stockQuantity}</strong> •{" "}
+                        {language === "sw" ? "Kiwango cha chini: " : "Min: "}{prod.minStock}
                       </span>
                     </div>
                     <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-amber-100 text-amber-900 border border-amber-300">
-                      LOW STOCK
+                      {language === "sw" ? "INAHITAJI STOCK" : "LOW STOCK"}
                     </span>
                   </div>
                 ))
@@ -681,7 +737,7 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate
           <div>
             <div className="flex items-center justify-between pb-2 border-b border-[#DDE8D2]">
               <span className="text-xs font-black text-[#1C320A] uppercase tracking-wider">
-                Afya ya Biashara
+                {language === "sw" ? "Afya ya Biashara" : "Business Health"}
               </span>
               <span className="text-xs font-bold text-emerald-800 bg-[#E1FFAC] px-2 py-0.5 rounded-md">
                 {healthScore >= 80 ? "Grade: A" : healthScore >= 60 ? "Grade: B" : "Grade: C"}
@@ -700,15 +756,19 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate
 
             <div className="space-y-1.5 text-xs text-[#475E39] pt-2 border-t border-[#E3EDD9]">
               <div className="flex justify-between">
-                <span>Utoshelevu wa Stoo:</span>
-                <strong className="text-[#192E0B]">{stockedRatio}% salama</strong>
+                <span>{language === "sw" ? "Utoshelevu wa Stoo:" : "Stock Adequacy:"}</span>
+                <strong className="text-[#192E0B]">
+                  {stockedRatio}% {language === "sw" ? "salama" : "safe"}
+                </strong>
               </div>
               <div className="flex justify-between">
-                <span>Jumla ya Bidhaa:</span>
-                <strong className="text-[#192E0B]">{products.length} aina</strong>
+                <span>{language === "sw" ? "Jumla ya Bidhaa:" : "Total Products:"}</span>
+                <strong className="text-[#192E0B]">
+                  {products.length} {language === "sw" ? "aina" : "items"}
+                </strong>
               </div>
               <div className="flex justify-between">
-                <span>Madeni ya Wateja:</span>
+                <span>{language === "sw" ? "Madeni ya Wateja:" : "Customer Debts:"}</span>
                 <strong className="text-emerald-700">TZS {totalDebts.toLocaleString()}</strong>
               </div>
             </div>
@@ -717,12 +777,17 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate
           <div className="mt-3 p-2.5 rounded-xl bg-white border border-[#D5E5C4] text-[11px] text-[#344B26]">
             {lowStockProducts.length > 0 ? (
               <span>
-                <strong>Hatua:</strong> Ongeza stoo ya{" "}
-                <strong>{lowStockProducts[0].name}</strong> (imebaki {lowStockProducts[0].stockQuantity}).
+                <strong>{language === "sw" ? "Hatua: " : "Action: "}</strong>
+                {language === "sw"
+                  ? `Ongeza stoo ya ${lowStockProducts[0].name} (imebaki ${lowStockProducts[0].stockQuantity}).`
+                  : `Restock ${lowStockProducts[0].name} (${lowStockProducts[0].stockQuantity} remaining).`}
               </span>
             ) : (
               <span>
-                <strong>Hali:</strong> Stoo na mahesabu yako ya siku yako sawa.
+                <strong>{language === "sw" ? "Hali: " : "Status: "}</strong>
+                {language === "sw"
+                  ? "Stoo na mahesabu yako yako sawa."
+                  : "Inventory and daily calculations are balanced."}
               </span>
             )}
           </div>

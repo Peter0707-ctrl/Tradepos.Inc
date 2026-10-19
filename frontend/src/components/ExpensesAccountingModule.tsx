@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 
 const SWAHILI_DAYS_SHORT = ["Jumapili", "Jumatatu", "Jumanne", "Jumatano", "Alhamisi", "Ijumaa", "Jumamosi"];
+const ENGLISH_DAYS_SHORT = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 const SWAHILI_MONTHS_SHORT = ["Jan", "Feb", "Mac", "Apr", "Mei", "Jun", "Jul", "Ago", "Sep", "Okt", "Nov", "Des"];
 const SWAHILI_MONTHS_FULL = [
   "Januari",
@@ -29,6 +30,20 @@ const SWAHILI_MONTHS_FULL = [
   "Oktoba",
   "Novemba",
   "Desemba",
+];
+const ENGLISH_MONTHS_FULL = [
+  "January",
+  "February",
+  "March",
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December",
 ];
 
 const parseDateParts = (dateStr: string): Date => {
@@ -150,22 +165,34 @@ export const ExpensesAccountingModule: React.FC = () => {
 
   const formatSelectedDateTitle = (dateStr: string) => {
     const dObj = parseDateParts(dateStr);
-    const dayName = SWAHILI_DAYS_SHORT[dObj.getDay()];
+    const dayName = (language === "sw" ? SWAHILI_DAYS_SHORT : ENGLISH_DAYS_SHORT)[dObj.getDay()];
     const dayNum = dObj.getDate();
-    const monthName = SWAHILI_MONTHS_FULL[dObj.getMonth()];
+    const monthName = (language === "sw" ? SWAHILI_MONTHS_FULL : ENGLISH_MONTHS_FULL)[dObj.getMonth()];
     const yearNum = dObj.getFullYear();
 
     if (dateStr === todayStr) {
-      return `Leo — ${dayName}, ${dayNum} ${monthName} ${yearNum}`;
+      return language === "sw"
+        ? `Leo — ${dayName}, ${dayNum} ${monthName} ${yearNum}`
+        : `Today — ${dayName}, ${dayNum} ${monthName} ${yearNum}`;
     }
     if (dateStr === yesterdayStr) {
-      return `Jana — ${dayName}, ${dayNum} ${monthName} ${yearNum}`;
+      return language === "sw"
+        ? `Jana — ${dayName}, ${dayNum} ${monthName} ${yearNum}`
+        : `Yesterday — ${dayName}, ${dayNum} ${monthName} ${yearNum}`;
     }
     const diffDays = Math.round(
       (parseDateParts(todayStr).getTime() - dObj.getTime()) / (1000 * 60 * 60 * 24)
     );
     const relText =
-      diffDays > 0 ? `(Siku ${diffDays} zilizopita)` : diffDays < 0 ? `(Siku ${Math.abs(diffDays)} mbele)` : "";
+      diffDays > 0
+        ? language === "sw"
+          ? `(Siku ${diffDays} zilizopita)`
+          : `(${diffDays} days ago)`
+        : diffDays < 0
+        ? language === "sw"
+          ? `(Siku ${Math.abs(diffDays)} mbele)`
+          : `(${Math.abs(diffDays)} days ahead)`
+        : "";
     return `${dayName}, ${dayNum} ${monthName} ${yearNum} ${relText}`;
   };
 
@@ -228,7 +255,7 @@ export const ExpensesAccountingModule: React.FC = () => {
               <button
                 onClick={() => handleShiftSelectedDate(-1)}
                 className="w-7 h-7 rounded-lg bg-[#F4F7EE] hover:bg-[#E1FFAC] text-[#1B2F09] flex items-center justify-center transition cursor-pointer"
-                title="Siku Iliyopita"
+                title={language === "sw" ? "Siku Iliyopita" : "Previous Day"}
               >
                 <ChevronLeft className="w-4 h-4" />
               </button>
@@ -236,14 +263,18 @@ export const ExpensesAccountingModule: React.FC = () => {
               <button
                 onClick={() => setShowMonthGrid((prev) => !prev)}
                 className="px-2.5 py-1 rounded-lg bg-[#1B2F09] text-[#E1FFAC] font-black text-xs flex items-center gap-1.5 cursor-pointer"
-                title="Fungua Kalenda Ndogo"
+                title={language === "sw" ? "Fungua Kalenda" : "Open Calendar"}
               >
                 <Calendar className="w-3.5 h-3.5 text-[#A6DF52]" />
                 <span>
                   {selectedDate === todayStr
-                    ? `Leo (${selectedDate})`
+                    ? language === "sw"
+                      ? `Leo (${selectedDate})`
+                      : `Today (${selectedDate})`
                     : selectedDate === yesterdayStr
-                    ? `Jana (${selectedDate})`
+                    ? language === "sw"
+                      ? `Jana (${selectedDate})`
+                      : `Yesterday (${selectedDate})`
                     : selectedDate}
                 </span>
               </button>
@@ -251,7 +282,7 @@ export const ExpensesAccountingModule: React.FC = () => {
               <button
                 onClick={() => handleShiftSelectedDate(1)}
                 className="w-7 h-7 rounded-lg bg-[#F4F7EE] hover:bg-[#E1FFAC] text-[#1B2F09] flex items-center justify-center transition cursor-pointer"
-                title="Siku Inayofuata"
+                title={language === "sw" ? "Siku Inayofuata" : "Next Day"}
               >
                 <ChevronRight className="w-4 h-4" />
               </button>
@@ -261,7 +292,7 @@ export const ExpensesAccountingModule: React.FC = () => {
                   onClick={() => handleSelectCalendarDate(todayStr)}
                   className="px-2 py-1 rounded-lg bg-[#E1FFAC] hover:bg-[#d2f88c] text-[#162709] font-black text-[11px] transition cursor-pointer"
                 >
-                  Leo
+                  {language === "sw" ? "Leo" : "Today"}
                 </button>
               )}
             </div>
@@ -277,7 +308,7 @@ export const ExpensesAccountingModule: React.FC = () => {
                     <ChevronLeft className="w-3.5 h-3.5" />
                   </button>
                   <span className="font-black text-xs text-[#162709]">
-                    {SWAHILI_MONTHS_FULL[viewMonth]} {viewYear}
+                    {(language === "sw" ? SWAHILI_MONTHS_FULL : ENGLISH_MONTHS_FULL)[viewMonth]} {viewYear}
                   </span>
                   <button
                     onClick={() => handleShiftMonth(1)}
@@ -288,13 +319,12 @@ export const ExpensesAccountingModule: React.FC = () => {
                 </div>
 
                 <div className="grid grid-cols-7 gap-0.5 text-center text-[9px] font-black text-[#58704A] mb-1">
-                  <div>Jp</div>
-                  <div>Jt</div>
-                  <div>Jn</div>
-                  <div>Ju</div>
-                  <div>Al</div>
-                  <div>Ij</div>
-                  <div>Jm</div>
+                  {(language === "sw"
+                    ? ["Jp", "Jt", "Jn", "Ju", "Al", "Ij", "Jm"]
+                    : ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"]
+                  ).map((dayInit, idx) => (
+                    <div key={idx}>{dayInit}</div>
+                  ))}
                 </div>
 
                 <div className="grid grid-cols-7 gap-1">
@@ -345,13 +375,13 @@ export const ExpensesAccountingModule: React.FC = () => {
                     }}
                     className="text-[11px] font-black text-[#355B0F] hover:underline cursor-pointer"
                   >
-                    Rudi Leo ({todayStr})
+                    {language === "sw" ? `Rudi Leo (${todayStr})` : `Back to Today (${todayStr})`}
                   </button>
                   <button
                     onClick={() => setShowMonthGrid(false)}
                     className="px-2.5 py-1 rounded-lg bg-[#F4F7EE] text-[#162709] text-[10px] font-black cursor-pointer"
                   >
-                    Funga
+                    {language === "sw" ? "Funga" : "Close"}
                   </button>
                 </div>
               </div>
@@ -364,7 +394,7 @@ export const ExpensesAccountingModule: React.FC = () => {
               className="px-3.5 py-2 rounded-xl bg-[#1B2F09] hover:bg-[#27430D] text-[#E1FFAC] border-2 border-[#A6DF52] text-xs font-black flex items-center gap-1.5 shadow-sm transition cursor-pointer"
             >
               <Send className="w-3.5 h-3.5" />
-              <span>Funga Mauzo ya Siku</span>
+              <span>{language === "sw" ? "Funga Mauzo ya Siku" : "Close Day's Sales"}</span>
             </button>
           ) : (
             <button
@@ -375,7 +405,7 @@ export const ExpensesAccountingModule: React.FC = () => {
               className="px-3.5 py-2 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-black flex items-center gap-1.5 shadow-sm transition cursor-pointer"
             >
               <CheckCircle2 className="w-3.5 h-3.5" />
-              <span>Fungua Siku Mpya</span>
+              <span>{language === "sw" ? "Fungua Siku Mpya" : "Start New Day"}</span>
             </button>
           )}
         </div>
@@ -385,31 +415,33 @@ export const ExpensesAccountingModule: React.FC = () => {
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
         <div className="p-3.5 rounded-2xl bg-white border-2 border-rose-200 shadow-xs">
           <span className="text-xs font-bold text-[#5c7054] block">
-            Jumla ya Matumizi ({selectedDate === todayStr ? "Leo" : selectedDate === yesterdayStr ? "Jana" : selectedDate})
+            {language === "sw"
+              ? `Jumla ya Matumizi (${selectedDate === todayStr ? "Leo" : selectedDate === yesterdayStr ? "Jana" : selectedDate})`
+              : `Total Expenses (${selectedDate === todayStr ? "Today" : selectedDate === yesterdayStr ? "Yesterday" : selectedDate})`}
           </span>
           <p className="text-xl font-black text-rose-700 mt-0.5">
             TZS {totalExpenses.toLocaleString()}
           </p>
           <span className="text-[11px] text-[#6d8065] font-bold">
-            Rekodi {selectedDateExpenses.length}
+            {language === "sw" ? `Rekodi ${selectedDateExpenses.length}` : `${selectedDateExpenses.length} records`}
           </span>
         </div>
 
         <div className="p-3.5 rounded-2xl bg-white border border-[#d6e5c5] shadow-xs">
           <span className="text-xs font-bold text-[#5c7054] block">
-            Cash vs Simu
+            {language === "sw" ? "Cash vs Simu" : "Cash vs Mobile"}
           </span>
           <p className="text-xl font-black text-[#17280a] mt-0.5">
             Cash: TZS {cashExpenses.toLocaleString()}
           </p>
           <span className="text-[11px] text-[#6d8065] font-bold">
-            Simu: TZS {mobileExpenses.toLocaleString()}
+            {language === "sw" ? "Simu: " : "Mobile: "}TZS {mobileExpenses.toLocaleString()}
           </span>
         </div>
 
         <div className="p-3.5 rounded-2xl bg-white border border-[#d6e5c5] shadow-xs">
           <span className="text-xs font-bold text-[#5c7054] block">
-            Salio Baada ya Matumizi
+            {language === "sw" ? "Salio Baada ya Matumizi" : "Remaining Balance"}
           </span>
           <p className="text-xl font-black text-emerald-800 mt-0.5">
             TZS {remainingAfterExpenses.toLocaleString()}
@@ -423,44 +455,62 @@ export const ExpensesAccountingModule: React.FC = () => {
         <div className="bg-white rounded-2xl border-2 border-[#BFE973] p-4 shadow-xs h-fit">
           <h3 className="font-black text-sm text-[#162709] mb-3 flex items-center gap-1.5">
             <PlusCircle className="w-4 h-4 text-[#3A6112]" />
-            <span>Andika Matumizi</span>
+            <span>{language === "sw" ? "Andika Matumizi" : "Record Expense"}</span>
           </h3>
 
           <form onSubmit={handleSaveExpense} className="space-y-3 text-xs">
             <div>
               <label className="block font-bold text-[#334A26] mb-1">
-                Maelezo ya Matumizi:
+                {language === "sw" ? "Maelezo ya Matumizi:" : "Expense Description:"}
               </label>
               <input
                 type="text"
                 required
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                placeholder="Mfano: Nauli, Chakula, LUKU..."
+                placeholder={language === "sw" ? "Mfano: Nauli, Chakula, LUKU..." : "e.g. Transport, Food, Electricity..."}
                 className="w-full py-2.5 px-3 rounded-xl neu-input font-bold"
               />
             </div>
 
             <div>
-              <label className="block font-bold text-[#334A26] mb-1">Kundi</label>
+              <label className="block font-bold text-[#334A26] mb-1">
+                {language === "sw" ? "Kundi" : "Category"}
+              </label>
               <select
                 value={category}
                 onChange={(e) => setCategory(e.target.value)}
                 className="w-full py-2 px-3 rounded-xl neu-input font-semibold"
               >
-                <option value="Usafiri & Bodaboda">Usafiri & Bodaboda</option>
-                <option value="Chakula & Maji Dukani">Chakula & Maji Dukani</option>
-                <option value="Umeme (LUKU) & Maji">Umeme (LUKU) & Maji</option>
-                <option value="Vifungashio & Mifuko">Vifungashio & Mifuko</option>
-                <option value="Pango la Duka (Rent)">Pango la Duka (Rent)</option>
-                <option value="Posho / Mishahara">Posho / Mishahara</option>
-                <option value="Mengineyo">Mengineyo</option>
+                <option value="Usafiri & Bodaboda">
+                  {language === "sw" ? "Usafiri & Bodaboda" : "Transport & Delivery"}
+                </option>
+                <option value="Chakula & Maji Dukani">
+                  {language === "sw" ? "Chakula & Maji Dukani" : "Food & Drinking Water"}
+                </option>
+                <option value="Umeme (LUKU) & Maji">
+                  {language === "sw" ? "Umeme (LUKU) & Maji" : "Electricity (LUKU) & Utilities"}
+                </option>
+                <option value="Vifungashio & Mifuko">
+                  {language === "sw" ? "Vifungashio & Mifuko" : "Packaging Materials & Bags"}
+                </option>
+                <option value="Pango la Duka (Rent)">
+                  {language === "sw" ? "Pango la Duka" : "Shop Rent"}
+                </option>
+                <option value="Posho / Mishahara">
+                  {language === "sw" ? "Posho / Mishahara" : "Wages & Allowances"}
+                </option>
+                <option value="Mengineyo">
+                  {language === "sw" ? "Mengineyo" : "Other Expenses"}
+                </option>
               </select>
             </div>
 
             <div className="grid grid-cols-2 gap-2.5">
               <div>
-                <label className="block font-bold text-[#334A26] mb-1">Kiasi (TZS)</label>
+                <label className="block font-bold text-[#334A26] mb-1">
+                  {language === "sw" ? "Kiasi (TZS)" : "Amount (TZS)"}
+                </label>
                 <input
                   type="number"
                   min="1"
@@ -473,14 +523,16 @@ export const ExpensesAccountingModule: React.FC = () => {
               </div>
 
               <div>
-                <label className="block font-bold text-[#334A26] mb-1">Malipo</label>
+                <label className="block font-bold text-[#334A26] mb-1">
+                  {language === "sw" ? "Malipo" : "Payment"}
+                </label>
                 <select
                   value={paymentMethod}
                   onChange={(e) => setPaymentMethod(e.target.value as "CASH" | "MPESA")}
                   className="w-full py-2 px-3 rounded-xl neu-input font-bold"
                 >
                   <option value="CASH">Cash</option>
-                  <option value="MPESA">M-Pesa / Simu</option>
+                  <option value="MPESA">{language === "sw" ? "M-Pesa / Simu" : "Mobile (M-Pesa)"}</option>
                 </select>
               </div>
             </div>
@@ -489,7 +541,7 @@ export const ExpensesAccountingModule: React.FC = () => {
               type="submit"
               className="w-full py-3 rounded-xl neu-btn font-black text-xs uppercase tracking-wider cursor-pointer"
             >
-              + Hifadhi Matumizi
+              {language === "sw" ? "+ Hifadhi Matumizi" : "+ Save Expense"}
             </button>
           </form>
         </div>
@@ -499,10 +551,12 @@ export const ExpensesAccountingModule: React.FC = () => {
           <div className="flex items-center justify-between pb-3 border-b border-[#EBF2E2]">
             <h3 className="font-black text-sm text-[#162709] flex items-center gap-1.5">
               <Wallet className="w-4 h-4 text-[#233F0D]" />
-              <span>Matumizi ({selectedDate})</span>
+              <span>
+                {language === "sw" ? `Matumizi (${selectedDate})` : `Expenses (${selectedDate})`}
+              </span>
             </h3>
             <span className="px-3 py-1 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs font-black">
-              Jumla: TZS {totalExpenses.toLocaleString()}
+              {language === "sw" ? "Jumla: " : "Total: "}TZS {totalExpenses.toLocaleString()}
             </span>
           </div>
 
@@ -510,19 +564,21 @@ export const ExpensesAccountingModule: React.FC = () => {
             <table className="w-full text-left text-xs divide-y divide-[#e8f0df]">
               <thead className="bg-[#F8FAF4] font-bold text-[#44573d]">
                 <tr>
-                  <th className="py-2.5 px-3">Tarehe</th>
-                  <th className="py-2.5 px-3">Ametumia Nini</th>
-                  <th className="py-2.5 px-3">Kundi</th>
-                  <th className="py-2.5 px-3">Malipo</th>
-                  <th className="py-2.5 px-3">Aliyeandika</th>
-                  <th className="py-2.5 px-3 text-right">Kiasi (TZS)</th>
+                  <th className="py-2.5 px-3">{language === "sw" ? "Tarehe" : "Date"}</th>
+                  <th className="py-2.5 px-3">{language === "sw" ? "Ametumia Nini" : "Description"}</th>
+                  <th className="py-2.5 px-3">{language === "sw" ? "Kundi" : "Category"}</th>
+                  <th className="py-2.5 px-3">{language === "sw" ? "Malipo" : "Payment"}</th>
+                  <th className="py-2.5 px-3">{language === "sw" ? "Aliyeandika" : "Recorded By"}</th>
+                  <th className="py-2.5 px-3 text-right">{language === "sw" ? "Kiasi (TZS)" : "Amount (TZS)"}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#eff5e9] text-[#1c2c0e]">
                 {selectedDateExpenses.length === 0 ? (
                   <tr>
                     <td colSpan={6} className="py-8 text-center text-gray-400">
-                      Hakuna matumizi ({selectedDate}).
+                      {language === "sw"
+                        ? `Hakuna matumizi (${selectedDate}).`
+                        : `No expenses recorded (${selectedDate}).`}
                     </td>
                   </tr>
                 ) : (

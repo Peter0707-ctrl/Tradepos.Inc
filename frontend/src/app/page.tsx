@@ -282,7 +282,7 @@ function MainApp() {
                   }`}
                 >
                   <Store className="w-4 h-4" />
-                  <span>Dashibodi</span>
+                  <span>{language === "sw" ? "Dashibodi" : "Dashboard"}</span>
                 </button>
               )}
 
@@ -342,14 +342,14 @@ function MainApp() {
 
                 <div className="grid grid-cols-3 gap-2.5 text-center">
                   {[
-                    { id: "sales", label: "Mauzo ya Leo", icon: ShoppingBag },
-                    { id: "expenses", label: "Matumizi ya Leo", icon: DollarSign },
-                    { id: "inventory", label: "Stoo & Bidhaa", icon: Layers },
-                    { id: "deliveries", label: "Delivery", icon: Truck },
-                    { id: "customers", label: "Wateja & Madeni", icon: Users },
+                    { id: "sales", label: language === "sw" ? "Mauzo ya Leo" : "Today's Sales", icon: ShoppingBag },
+                    { id: "expenses", label: language === "sw" ? "Matumizi ya Leo" : "Today's Expenses", icon: DollarSign },
+                    { id: "inventory", label: language === "sw" ? "Stoo & Bidhaa" : "Store Stock", icon: Layers },
+                    { id: "deliveries", label: language === "sw" ? "Delivery" : "Deliveries", icon: Truck },
+                    { id: "customers", label: language === "sw" ? "Wateja & Madeni" : "Customers & Debts", icon: Users },
                     ...(isOwner
                       ? [
-                          { id: "cash-register", label: "Ripoti (Faida)", icon: BarChart3 },
+                          { id: "cash-register", label: language === "sw" ? "Ripoti (Faida)" : "Reports (P&L)", icon: BarChart3 },
                           { id: "employees", label: t.nav.employees, icon: UserCheck },
                           { id: "settings", label: t.nav.settings, icon: Settings },
                           { id: "subscription", label: t.nav.subscription, icon: CreditCard },

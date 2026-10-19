@@ -86,35 +86,37 @@ export const CustomersModule: React.FC = () => {
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
         <div className="p-3.5 rounded-2xl bg-white border-2 border-amber-300 shadow-xs">
           <span className="text-xs font-bold text-[#5c7054] block">
-            Jumla ya Madeni
+            {language === "sw" ? "Jumla ya Madeni" : "Total Outstanding Debt"}
           </span>
           <p className="text-xl font-black text-amber-800 mt-0.5">
             TZS {totalOutstandingDebt.toLocaleString()}
           </p>
           <span className="text-[11px] text-amber-900 font-bold">
-            Wateja {customersWithDebtCount} wanadaiwa
+            {language === "sw"
+              ? `Wateja ${customersWithDebtCount} wanadaiwa`
+              : `${customersWithDebtCount} customers with debt`}
           </span>
         </div>
 
         <div className="p-3.5 rounded-2xl bg-white border border-[#d6e5c5] shadow-xs">
           <span className="text-xs font-bold text-[#5c7054] block">
-            Idadi ya Wateja
+            {language === "sw" ? "Idadi ya Wateja" : "Total Customers"}
           </span>
           <p className="text-xl font-black text-[#192b0c] mt-0.5">{customers.length}</p>
           <span className="text-[11px] text-[#6d8065] font-bold">
-            Waliosajiliwa
+            {language === "sw" ? "Waliosajiliwa" : "Registered"}
           </span>
         </div>
 
         <div className="p-3.5 rounded-2xl bg-white border border-[#d6e5c5] shadow-xs">
           <span className="text-xs font-bold text-[#5c7054] block">
-            Jumla ya Manunuzi
+            {language === "sw" ? "Jumla ya Manunuzi" : "Total Customer Purchases"}
           </span>
           <p className="text-xl font-black text-emerald-800 mt-0.5">
             TZS {customers.reduce((a, b) => a + b.totalSpent, 0).toLocaleString()}
           </p>
           <span className="text-[11px] text-[#6d8065] font-bold">
-            Thamani ya mauzo
+            {language === "sw" ? "Thamani ya mauzo" : "Gross revenue from customers"}
           </span>
         </div>
       </div>
@@ -125,27 +127,27 @@ export const CustomersModule: React.FC = () => {
         <div className="bg-white rounded-2xl border-2 border-[#BFE973] p-4 shadow-xs h-fit">
           <h3 className="font-black text-sm text-[#162709] mb-3 flex items-center gap-1.5">
             <PlusCircle className="w-4 h-4 text-[#3A6112]" />
-            <span>Andika Deni la Mteja</span>
+            <span>{language === "sw" ? "Andika Deni la Mteja" : "Record Customer Debt"}</span>
           </h3>
 
           <form onSubmit={handleDirectRecordDebt} className="space-y-3 text-xs">
             <div>
               <label className="block font-bold text-[#334A26] mb-1">
-                Andika Jina la Mteja:
+                {language === "sw" ? "Andika Jina la Mteja:" : "Customer Name:"}
               </label>
               <input
                 type="text"
                 required
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                placeholder="Mfano: Mama Juma au David Kimaro..."
+                placeholder={language === "sw" ? "Mfano: Mama Juma au David Kimaro..." : "e.g. Mama Juma or David Kimaro..."}
                 className="w-full py-2.5 px-3 rounded-xl neu-input font-bold"
               />
             </div>
 
             <div>
               <label className="block font-bold text-[#334A26] mb-1">
-                Kiasi cha Deni Anachodaiwa (TZS):
+                {language === "sw" ? "Kiasi cha Deni Anachodaiwa (TZS):" : "Debt Amount (TZS):"}
               </label>
               <input
                 type="number"
@@ -153,14 +155,14 @@ export const CustomersModule: React.FC = () => {
                 required
                 value={debtInput}
                 onChange={(e) => setDebtInput(e.target.value)}
-                placeholder="Mfano: 45000"
+                placeholder={language === "sw" ? "Mfano: 45000" : "e.g. 45000"}
                 className="w-full py-2.5 px-3 rounded-xl neu-input font-black text-sm"
               />
             </div>
 
             <div>
               <label className="block font-bold text-[#334A26] mb-1">
-                Namba ya Simu (Hiari):
+                {language === "sw" ? "Namba ya Simu (Hiari):" : "Phone Number (Optional):"}
               </label>
               <input
                 type="text"
@@ -173,13 +175,13 @@ export const CustomersModule: React.FC = () => {
 
             <div>
               <label className="block font-bold text-[#334A26] mb-1">
-                Bidhaa Aliyochukua / Maelezo ya Deni:
+                {language === "sw" ? "Bidhaa Aliyochukua / Maelezo:" : "Items Taken / Description:"}
               </label>
               <input
                 type="text"
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
-                placeholder="Mfano: Amechukua Nivea 2 kwa mkopo..."
+                placeholder={language === "sw" ? "Mfano: Amechukua bidhaa kwa mkopo..." : "e.g. Took items on credit..."}
                 className="w-full py-2 px-3 rounded-xl neu-input"
               />
             </div>
@@ -188,7 +190,7 @@ export const CustomersModule: React.FC = () => {
               type="submit"
               className="w-full py-3 rounded-xl neu-btn font-black text-xs uppercase tracking-wider cursor-pointer"
             >
-              + Hifadhi Jina & Deni la Mteja
+              {language === "sw" ? "+ Hifadhi Jina & Deni" : "+ Save Customer & Debt"}
             </button>
           </form>
         </div>
@@ -199,10 +201,12 @@ export const CustomersModule: React.FC = () => {
             <div>
               <h3 className="font-black text-sm text-[#162709] flex items-center gap-1.5">
                 <Users className="w-4 h-4 text-[#233F0D]" />
-                <span>Orodha ya Wateja & Madeni Yao</span>
+                <span>{language === "sw" ? "Orodha ya Wateja & Madeni Yao" : "Customers & Debts Register"}</span>
               </h3>
               <p className="text-[11px] text-[#5B714F]">
-                Bonyeza &ldquo;Lipa Deni&rdquo; mteja anapolipa au &ldquo;+ Kopesha&rdquo; kuongeza deni
+                {language === "sw"
+                  ? 'Bonyeza "Lipa Deni" mteja anapolipa au "+ Kopesha" kuongeza deni'
+                  : 'Click "Pay Debt" when settled or "+ Add Debt" to record new credit'}
               </p>
             </div>
 
@@ -212,7 +216,7 @@ export const CustomersModule: React.FC = () => {
                 type="text"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="Tafuta jina la mteja..."
+                placeholder={language === "sw" ? "Tafuta jina la mteja..." : "Search customer name..."}
                 className="py-1.5 pl-8 pr-3 rounded-xl neu-input text-xs"
               />
             </div>
@@ -222,20 +226,24 @@ export const CustomersModule: React.FC = () => {
             <table className="w-full text-left text-xs divide-y divide-[#e8f0df]">
               <thead className="bg-[#F8FAF4] font-bold text-[#44573d]">
                 <tr>
-                  <th className="py-2.5 px-3">Jina la Mteja</th>
-                  <th className="py-2.5 px-3">Simu</th>
-                  <th className="py-2.5 px-3">Maelezo / Mahali</th>
-                  <th className="py-2.5 px-3">Deni Analodaiwa</th>
-                  <th className="py-2.5 px-3 text-right">Hatua</th>
+                  <th className="py-2.5 px-3">{language === "sw" ? "Jina la Mteja" : "Customer Name"}</th>
+                  <th className="py-2.5 px-3">{language === "sw" ? "Simu" : "Phone"}</th>
+                  <th className="py-2.5 px-3">{language === "sw" ? "Maelezo / Mahali" : "Details / Location"}</th>
+                  <th className="py-2.5 px-3">{language === "sw" ? "Deni Analodaiwa" : "Outstanding Debt"}</th>
+                  <th className="py-2.5 px-3 text-right">{language === "sw" ? "Hatua" : "Action"}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#eff5e9] text-[#1c2c0e]">
                 {filteredCustomers.map((c) => {
                   const cleanPhone = c.phone.replace(/[^0-9]/g, "");
                   const waMsg = encodeURIComponent(
-                    `Habari ${c.name}, tunakukumbusha kuhusu salio la deni lako la TZS ${c.debtBalance.toLocaleString()} dukani ${
-                      business?.name || "kwetu"
-                    }. Karibu kulipia. Asante!`
+                    language === "sw"
+                      ? `Habari ${c.name}, tunakukumbusha kuhusu salio la deni lako la TZS ${c.debtBalance.toLocaleString()} dukani ${
+                          business?.name || "kwetu"
+                        }. Karibu kulipia. Asante!`
+                      : `Hello ${c.name}, this is a gentle reminder regarding your outstanding balance of TZS ${c.debtBalance.toLocaleString()} at ${
+                          business?.name || "our store"
+                        }. Thank you!`
                   );
                   return (
                     <tr key={c.id} className="hover:bg-[#FAFCF7] transition">
@@ -249,7 +257,7 @@ export const CustomersModule: React.FC = () => {
                           </span>
                         ) : (
                           <span className="text-emerald-800 font-bold bg-emerald-50 px-2.5 py-0.5 rounded-md border border-emerald-200">
-                            Hana Deni
+                            {language === "sw" ? "Hana Deni" : "No Debt"}
                           </span>
                         )}
                       </td>
@@ -273,7 +281,13 @@ export const CustomersModule: React.FC = () => {
                           }}
                           className="px-2.5 py-1 rounded-lg bg-[#E1FFAC] hover:bg-[#d6f798] border border-[#a5df4f] text-[11px] font-black text-[#1a2d0b] transition cursor-pointer"
                         >
-                          {c.debtBalance > 0 ? "Lipa Deni" : "+ Ongeza Deni"}
+                          {c.debtBalance > 0
+                            ? language === "sw"
+                              ? "Lipa Deni"
+                              : "Pay Debt"
+                            : language === "sw"
+                            ? "+ Kopesha"
+                            : "+ Add Debt"}
                         </button>
                       </td>
                     </tr>
@@ -293,7 +307,7 @@ export const CustomersModule: React.FC = () => {
               <div>
                 <h3 className="text-base font-black text-[#17270a]">{selectedCustomer.name}</h3>
                 <p className="text-xs text-[#54694c]">
-                  Deni la Sasa:{" "}
+                  {language === "sw" ? "Deni la Sasa: " : "Current Debt: "}
                   <strong className="text-amber-700 font-black">
                     TZS {selectedCustomer.debtBalance.toLocaleString()}
                   </strong>
@@ -317,7 +331,7 @@ export const CustomersModule: React.FC = () => {
                     : "bg-[#F4F8EC] text-[#35482c]"
                 }`}
               >
-                Punguza / Lipa Deni
+                {language === "sw" ? "Punguza / Lipa Deni" : "Pay / Reduce Debt"}
               </button>
               <button
                 type="button"
@@ -328,13 +342,15 @@ export const CustomersModule: React.FC = () => {
                     : "bg-[#F4F8EC] text-[#35482c]"
                 }`}
               >
-                + Ongeza Deni Jipya
+                {language === "sw" ? "+ Ongeza Deni Jipya" : "+ Add New Debt"}
               </button>
             </div>
 
             <form onSubmit={handleDebtSubmit} className="space-y-3 text-xs">
               <div>
-                <label className="block font-bold text-[#35482c] mb-1">Kiasi (TZS)</label>
+                <label className="block font-bold text-[#35482c] mb-1">
+                  {language === "sw" ? "Kiasi (TZS)" : "Amount (TZS)"}
+                </label>
                 <input
                   type="number"
                   min="1"
@@ -347,14 +363,16 @@ export const CustomersModule: React.FC = () => {
 
               {debtAction === "PAY" && (
                 <div>
-                  <label className="block font-bold text-[#35482c] mb-1">Amelipa Kwa Njia Gani?</label>
+                  <label className="block font-bold text-[#35482c] mb-1">
+                    {language === "sw" ? "Amelipa Kwa Njia Gani?" : "Payment Method"}
+                  </label>
                   <select
                     value={paymentMethod}
                     onChange={(e) => setPaymentMethod(e.target.value)}
                     className="w-full py-2 px-3 rounded-xl neu-input font-bold"
                   >
-                    <option value="CASH">Cash (Taslimu)</option>
-                    <option value="MPESA">M-Pesa / Simu</option>
+                    <option value="CASH">{language === "sw" ? "Cash (Taslimu)" : "Cash"}</option>
+                    <option value="MPESA">{language === "sw" ? "M-Pesa / Simu" : "Mobile Money / M-Pesa"}</option>
                   </select>
                 </div>
               )}
@@ -365,10 +383,10 @@ export const CustomersModule: React.FC = () => {
                   onClick={() => setSelectedCustomer(null)}
                   className="flex-1 py-2.5 rounded-xl neu-btn-secondary font-bold"
                 >
-                  Ghairi
+                  {language === "sw" ? "Ghairi" : "Cancel"}
                 </button>
                 <button type="submit" className="flex-1 py-2.5 rounded-xl neu-btn font-black">
-                  Thibitisha
+                  {language === "sw" ? "Thibitisha" : "Confirm"}
                 </button>
               </div>
             </form>

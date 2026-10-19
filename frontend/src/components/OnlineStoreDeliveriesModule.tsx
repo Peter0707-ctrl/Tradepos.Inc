@@ -216,7 +216,9 @@ export const OnlineStoreDeliveriesModule: React.FC = () => {
       <div className="flex-1 overflow-y-auto space-y-3 pr-1">
         {filteredOrders.length === 0 ? (
           <div className="py-12 text-center text-xs text-[#63795b] bg-white rounded-2xl border border-[#d6e5c5]">
-            Hakuna taarifa za delivery kwa vigezo hivi.
+            {language === "sw"
+              ? "Hakuna taarifa za delivery kwa vigezo hivi."
+              : "No delivery orders found matching your filters."}
           </div>
         ) : (
           filteredOrders.map((ord) => {
@@ -245,18 +247,20 @@ export const OnlineStoreDeliveriesModule: React.FC = () => {
                       }`}
                     >
                       {ord.status === "DELIVERED"
-                        ? "✓ IMEPOKELEWA SALAMA"
+                        ? language === "sw" ? "✓ IMEPOKELEWA SALAMA" : "✓ DELIVERED SAFELY"
                         : ord.status === "OUT_FOR_DELIVERY"
-                        ? "NJIANI NA DEREVA"
+                        ? language === "sw" ? "NJIANI NA DEREVA" : "OUT FOR DELIVERY"
                         : ord.status === "CANCELLED"
-                        ? "⚠ SHIDA / IMERUDISHWA"
-                        : "INAANDALIWA DUKANI"}
+                        ? language === "sw" ? "⚠ SHIDA / IMERUDISHWA" : "⚠ CANCELLED / RETURNED"
+                        : language === "sw" ? "INAANDALIWA DUKANI" : "PACKED IN SHOP"}
                     </span>
                     <span className="text-xs font-black text-emerald-800">
-                      Thamani: TZS {ord.total.toLocaleString()}
+                      {language === "sw" ? "Thamani: TZS " : "Value: TZS "}{ord.total.toLocaleString()}
                     </span>
                     <span className="text-[11px] text-[#63795b]">
-                      (+ Nauli TZS {ord.deliveryFee.toLocaleString()})
+                      {language === "sw"
+                        ? `(+ Nauli TZS ${ord.deliveryFee.toLocaleString()})`
+                        : `(+ Fee TZS ${ord.deliveryFee.toLocaleString()})`}
                     </span>
                   </div>
 
@@ -282,7 +286,7 @@ export const OnlineStoreDeliveriesModule: React.FC = () => {
                   <div className="text-xs text-[#485f39] flex items-center gap-1.5 bg-[#FAFDF7] p-2 rounded-xl border border-[#e1ebd5]">
                     <Package className="w-3.5 h-3.5 text-[#546b45] shrink-0" />
                     <span className="font-medium">
-                      Vitu Vilivyomo:{" "}
+                      {language === "sw" ? "Vitu Vilivyomo: " : "Items: "}
                       <strong className="text-[#192f0b]">
                         {ord.items.map((i) => `${i.productName} (x${i.quantity})`).join(", ")}
                       </strong>
@@ -294,8 +298,8 @@ export const OnlineStoreDeliveriesModule: React.FC = () => {
                     <div className="flex items-center gap-1">
                       <ShieldCheck className="w-3.5 h-3.5 text-emerald-700" />
                       <span>
-                        Aliyeandaa Dukani:{" "}
-                        <strong className="text-[#162709]">{ord.packedBy || "Mhudumu"}</strong>
+                        {language === "sw" ? "Aliyeandaa Dukani: " : "Packed by: "}
+                        <strong className="text-[#162709]">{ord.packedBy || (language === "sw" ? "Mhudumu" : "Staff")}</strong>
                       </span>
                     </div>
 
@@ -303,7 +307,7 @@ export const OnlineStoreDeliveriesModule: React.FC = () => {
                       <div className="flex items-center gap-1">
                         <Truck className="w-3.5 h-3.5 text-blue-700" />
                         <span>
-                          Dereva / Bodaboda:{" "}
+                          {language === "sw" ? "Dereva / Bodaboda: " : "Rider / Driver: "}
                           <strong className="text-[#162709]">
                             {ord.driverName} {ord.driverPhone ? `(${ord.driverPhone})` : ""}
                           </strong>
@@ -313,7 +317,7 @@ export const OnlineStoreDeliveriesModule: React.FC = () => {
 
                     {ord.issueNotes && (
                       <div className="w-full text-rose-800 font-semibold bg-rose-50 p-1.5 rounded-lg border border-rose-200">
-                        Sababu ya Shida: {ord.issueNotes}
+                        {language === "sw" ? "Sababu ya Shida: " : "Issue Reason: "}{ord.issueNotes}
                       </div>
                     )}
                   </div>
@@ -331,7 +335,7 @@ export const OnlineStoreDeliveriesModule: React.FC = () => {
                     className="flex-1 lg:w-full px-3 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-xs transition"
                   >
                     <MessageCircle className="w-3.5 h-3.5" />
-                    <span>WhatsApp Dereva</span>
+                    <span>{language === "sw" ? "WhatsApp Dereva" : "WhatsApp Driver"}</span>
                   </a>
 
                   {/* Status Progression */}
@@ -352,8 +356,12 @@ export const OnlineStoreDeliveriesModule: React.FC = () => {
                       <Check className="w-3.5 h-3.5" />
                       <span>
                         {ord.status === "PACKED" || ord.status === "PENDING"
-                          ? "Kabidhi Dereva (Njiani)"
-                          : "Imefika Salama"}
+                          ? language === "sw"
+                            ? "Kabidhi Dereva (Njiani)"
+                            : "Hand to Driver"
+                          : language === "sw"
+                          ? "Imefika Salama"
+                          : "Mark Delivered"}
                       </span>
                     </button>
                   )}
@@ -365,7 +373,7 @@ export const OnlineStoreDeliveriesModule: React.FC = () => {
                       className="px-3 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-800 text-[11px] font-bold border border-rose-200 flex items-center gap-1"
                     >
                       <AlertTriangle className="w-3 h-3 text-rose-700" />
-                      <span>Ripoti Shida</span>
+                      <span>{language === "sw" ? "Ripoti Shida" : "Report Issue"}</span>
                     </button>
                   )}
                 </div>
@@ -383,10 +391,12 @@ export const OnlineStoreDeliveriesModule: React.FC = () => {
               <div>
                 <h3 className="text-base font-black text-[#152709] flex items-center gap-2">
                   <Truck className="w-5 h-5 text-[#243d12]" />
-                  <span>Sajili Mteja Mpya wa Delivery</span>
+                  <span>{language === "sw" ? "Sajili Mteja Mpya wa Delivery" : "Register New Delivery"}</span>
                 </h3>
                 <p className="text-[11px] text-[#55694b]">
-                  Taarifa hizi zitalinda mfanyakazi na biashara iwapo mzigo utapotea au kuchelewa.
+                  {language === "sw"
+                    ? "Taarifa hizi zitalinda mfanyakazi na biashara iwapo mzigo utapotea au kuchelewa."
+                    : "Protects both staff and store in tracking accountability and delivery status."}
                 </p>
               </div>
             </div>
@@ -394,18 +404,22 @@ export const OnlineStoreDeliveriesModule: React.FC = () => {
             <form onSubmit={handleSaveDelivery} className="space-y-3.5 text-xs">
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block font-bold text-[#34482b] mb-1">Jina la Mteja:</label>
+                  <label className="block font-bold text-[#34482b] mb-1">
+                    {language === "sw" ? "Jina la Mteja:" : "Customer Name:"}
+                  </label>
                   <input
                     type="text"
                     required
                     value={customerName}
                     onChange={(e) => setCustomerName(e.target.value)}
-                    placeholder="Mfano: Fatma Kassim"
+                    placeholder={language === "sw" ? "Mfano: Fatma Kassim" : "e.g. Fatma Kassim"}
                     className="w-full py-2 px-3 rounded-xl neu-input font-medium"
                   />
                 </div>
                 <div>
-                  <label className="block font-bold text-[#34482b] mb-1">Simu ya Mteja:</label>
+                  <label className="block font-bold text-[#34482b] mb-1">
+                    {language === "sw" ? "Simu ya Mteja:" : "Customer Phone:"}
+                  </label>
                   <input
                     type="tel"
                     required
@@ -418,26 +432,32 @@ export const OnlineStoreDeliveriesModule: React.FC = () => {
               </div>
 
               <div>
-                <label className="block font-bold text-[#34482b] mb-1">Mahali pa Kupeleka (Location / Mtaa):</label>
+                <label className="block font-bold text-[#34482b] mb-1">
+                  {language === "sw" ? "Mahali pa Kupeleka (Location / Mtaa):" : "Delivery Address / Location:"}
+                </label>
                 <input
                   type="text"
                   required
                   value={address}
                   onChange={(e) => setAddress(e.target.value)}
-                  placeholder="Mfano: Mikocheni B, Karibu na Regency Hospital"
+                  placeholder={language === "sw" ? "Mfano: Mikocheni B, Karibu na Regency Hospital" : "e.g. Mikocheni B, near Regency Hospital"}
                   className="w-full py-2 px-3 rounded-xl neu-input font-medium"
                 />
               </div>
 
               {/* Product Selection */}
               <div>
-                <label className="block font-bold text-[#34482b] mb-1">Chagua Bidhaa kutoka Stoo (Hiari):</label>
+                <label className="block font-bold text-[#34482b] mb-1">
+                  {language === "sw" ? "Chagua Bidhaa kutoka Stoo (Hiari):" : "Select Product from Store (Optional):"}
+                </label>
                 <select
                   value={selectedProductId}
                   onChange={(e) => handleProductSelect(e.target.value)}
                   className="w-full py-2 px-3 rounded-xl neu-input font-medium"
                 >
-                  <option value="">-- Chagua Bidhaa Dukani --</option>
+                  <option value="">
+                    {language === "sw" ? "-- Chagua Bidhaa Dukani --" : "-- Select Product in Store --"}
+                  </option>
                   {products.map((p) => (
                     <option key={p.id} value={p.id}>
                       {p.name} (TZS {p.sellingPrice.toLocaleString()})
@@ -448,21 +468,23 @@ export const OnlineStoreDeliveriesModule: React.FC = () => {
 
               <div>
                 <label className="block font-bold text-[#34482b] mb-1">
-                  Maelezo ya Bidhaa / Vitu Vilivyomo kwenye Mzigo:
+                  {language === "sw" ? "Maelezo ya Bidhaa / Vitu Vilivyomo:" : "Package Items / Description:"}
                 </label>
                 <input
                   type="text"
                   required
                   value={customItemDesc}
                   onChange={(e) => setCustomItemDesc(e.target.value)}
-                  placeholder="Mfano: Mafuta ya Nivea chupa 2 na Sabuni"
+                  placeholder={language === "sw" ? "Mfano: Mafuta ya Nivea chupa 2 na Sabuni" : "e.g. 2 Nivea lotions and soaps"}
                   className="w-full py-2 px-3 rounded-xl neu-input font-medium"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block font-bold text-[#34482b] mb-1">Thamani ya Mzigo (TZS):</label>
+                  <label className="block font-bold text-[#34482b] mb-1">
+                    {language === "sw" ? "Thamani ya Mzigo (TZS):" : "Package Value (TZS):"}
+                  </label>
                   <input
                     type="number"
                     required
@@ -473,7 +495,9 @@ export const OnlineStoreDeliveriesModule: React.FC = () => {
                   />
                 </div>
                 <div>
-                  <label className="block font-bold text-[#34482b] mb-1">Nauli ya Usafiri (TZS):</label>
+                  <label className="block font-bold text-[#34482b] mb-1">
+                    {language === "sw" ? "Nauli ya Usafiri (TZS):" : "Delivery Fee (TZS):"}
+                  </label>
                   <input
                     type="number"
                     value={deliveryFee}
@@ -488,22 +512,26 @@ export const OnlineStoreDeliveriesModule: React.FC = () => {
               <div className="p-3 rounded-2xl bg-[#F7FAF3] border border-[#dce8d0] space-y-2.5">
                 <span className="text-[11px] font-black text-[#2e471f] block uppercase flex items-center gap-1">
                   <ShieldCheck className="w-3.5 h-3.5 text-emerald-700" />
-                  Taarifa za Dereva & Mfanyakazi (Ulinzi wa Biashara)
+                  {language === "sw" ? "Taarifa za Dereva & Mfanyakazi" : "Driver & Staff Accountability"}
                 </span>
 
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block font-bold text-[#445b37] mb-1">Jina la Bodaboda / Dereva:</label>
+                    <label className="block font-bold text-[#445b37] mb-1">
+                      {language === "sw" ? "Jina la Bodaboda / Dereva:" : "Driver / Rider Name:"}
+                    </label>
                     <input
                       type="text"
                       value={driverName}
                       onChange={(e) => setDriverName(e.target.value)}
-                      placeholder="Mfano: Juma Bodaboda"
+                      placeholder={language === "sw" ? "Mfano: Juma Bodaboda" : "e.g. Juma Rider"}
                       className="w-full py-2 px-3 rounded-xl neu-input"
                     />
                   </div>
                   <div>
-                    <label className="block font-bold text-[#445b37] mb-1">Simu ya Dereva:</label>
+                    <label className="block font-bold text-[#445b37] mb-1">
+                      {language === "sw" ? "Simu ya Dereva:" : "Driver Phone Number:"}
+                    </label>
                     <input
                       type="tel"
                       value={driverPhone}
@@ -516,7 +544,7 @@ export const OnlineStoreDeliveriesModule: React.FC = () => {
 
                 <div>
                   <label className="block font-bold text-[#445b37] mb-1">
-                    Mfanyakazi Aliyefunga Mzigo Dukani (Staff):
+                    {language === "sw" ? "Mfanyakazi Aliyefunga Mzigo Dukani:" : "Staff Who Packed Parcel:"}
                   </label>
                   <input
                     type="text"
@@ -533,13 +561,13 @@ export const OnlineStoreDeliveriesModule: React.FC = () => {
                   onClick={() => setIsModalOpen(false)}
                   className="flex-1 py-2.5 rounded-xl neu-btn-secondary font-bold"
                 >
-                  Ghairi
+                  {language === "sw" ? "Ghairi" : "Cancel"}
                 </button>
                 <button
                   type="submit"
                   className="flex-1 py-2.5 rounded-xl neu-btn font-black shadow-sm"
                 >
-                  Sajili Delivery
+                  {language === "sw" ? "Sajili Delivery" : "Create Delivery"}
                 </button>
               </div>
             </form>
@@ -555,27 +583,43 @@ export const OnlineStoreDeliveriesModule: React.FC = () => {
               <div className="w-10 h-10 rounded-2xl bg-rose-100 flex items-center justify-center mx-auto mb-2 text-rose-700">
                 <AlertTriangle className="w-5 h-5" />
               </div>
-              <h3 className="font-black text-sm text-rose-950">Ripoti Shida ya Delivery</h3>
+              <h3 className="font-black text-sm text-rose-950">
+                {language === "sw" ? "Ripoti Shida ya Delivery" : "Report Delivery Issue"}
+              </h3>
               <p className="text-xs text-[#677a5e]">
-                Oda {issueModalOrder.orderNumber} ({issueModalOrder.customerName})
+                {issueModalOrder.orderNumber} ({issueModalOrder.customerName})
               </p>
             </div>
 
             <form onSubmit={handleReportIssue} className="space-y-3 pt-3 text-xs">
               <div>
-                <label className="block font-bold text-[#34482b] mb-1">Sababu ya Shida / Kurudi:</label>
+                <label className="block font-bold text-[#34482b] mb-1">
+                  {language === "sw" ? "Sababu ya Shida / Kurudi:" : "Reason for Issue / Return:"}
+                </label>
                 <select
                   required
                   value={issueReason}
                   onChange={(e) => setIssueReason(e.target.value)}
                   className="w-full py-2 px-3 rounded-xl neu-input font-medium"
                 >
-                  <option value="">-- Chagua Sababu --</option>
-                  <option value="Mteja hapatikani kwenye simu">Mteja hapatikani kwenye simu</option>
-                  <option value="Mteja amekataa kupokea au kughairi">Mteja amekataa kupokea au kughairi</option>
-                  <option value="Dereva amepotea eneo au hakufika">Dereva amepotea eneo au hakufika</option>
-                  <option value="Mzigo umeharibika wakati wa safari">Mzigo umeharibika wakati wa safari</option>
-                  <option value="Pesa ya malipo haikutimia">Pesa ya malipo haikutimia</option>
+                  <option value="">
+                    {language === "sw" ? "-- Chagua Sababu --" : "-- Select Reason --"}
+                  </option>
+                  <option value="Mteja hapatikani kwenye simu">
+                    {language === "sw" ? "Mteja hapatikani kwenye simu" : "Customer unreachable on phone"}
+                  </option>
+                  <option value="Mteja amekataa kupokea au kughairi">
+                    {language === "sw" ? "Mteja amekataa kupokea au kughairi" : "Customer refused / cancelled"}
+                  </option>
+                  <option value="Dereva amepotea eneo au hakufika">
+                    {language === "sw" ? "Dereva amepotea eneo au hakufika" : "Driver delayed or lost"}
+                  </option>
+                  <option value="Mzigo umeharibika wakati wa safari">
+                    {language === "sw" ? "Mzigo umeharibika wakati wa safari" : "Package damaged in transit"}
+                  </option>
+                  <option value="Pesa ya malipo haikutimia">
+                    {language === "sw" ? "Pesa ya malipo haikutimia" : "Payment incomplete"}
+                  </option>
                 </select>
               </div>
 
@@ -585,13 +629,13 @@ export const OnlineStoreDeliveriesModule: React.FC = () => {
                   onClick={() => setIssueModalOrder(null)}
                   className="flex-1 py-2 rounded-xl neu-btn-secondary font-bold"
                 >
-                  Ghairi
+                  {language === "sw" ? "Ghairi" : "Cancel"}
                 </button>
                 <button
                   type="submit"
                   className="flex-1 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-black shadow-xs"
                 >
-                  Thibitisha Shida
+                  {language === "sw" ? "Thibitisha Shida" : "Confirm Issue"}
                 </button>
               </div>
             </form>

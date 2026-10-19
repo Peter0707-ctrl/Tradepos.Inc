@@ -163,7 +163,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeModule, setActiveModule,
       setPinInput("");
       setPinError("");
     } else {
-      setPinError("PIN si sahihi! Ingiza PIN ya Boss (1234).");
+      setPinError(language === "sw" ? "PIN si sahihi! Ingiza PIN ya Boss (1234)." : "Incorrect PIN! Enter Owner PIN (1234).");
     }
   };
 
@@ -218,7 +218,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeModule, setActiveModule,
                 <div>
                   <h2 className="text-sm font-black text-[#152508] tracking-tight">TradePOS</h2>
                   <span className="text-[10px] font-bold text-[#556D48] uppercase tracking-wider block">
-                    {isOwner ? "Mwenye Duka (Boss)" : `Muuzaji: ${user?.name}`}
+                    {isOwner
+                      ? language === "sw" ? "Mwenye Duka" : "Store Owner"
+                      : `${language === "sw" ? "Muuzaji" : "Cashier"}: ${user?.name}`}
                   </span>
                 </div>
               </div>
@@ -276,7 +278,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeModule, setActiveModule,
                   className="w-full flex items-center justify-center gap-1.5 px-2.5 py-2 rounded-xl text-[11px] font-black bg-[#1B2F09] hover:bg-[#26420D] text-[#E1FFAC] border border-[#8ECE28] transition cursor-pointer shadow-xs"
                 >
                   <Send className="w-3.5 h-3.5" />
-                  <span>Funga Mauzo ya Siku (End Day)</span>
+                  <span>{language === "sw" ? "Funga Mauzo ya Siku" : "Close Daily Sales"}</span>
                 </button>
               ) : (
                 <button
@@ -287,7 +289,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeModule, setActiveModule,
                   className="w-full flex items-center justify-center gap-1.5 px-2.5 py-2 rounded-xl text-[11px] font-black bg-emerald-700 hover:bg-emerald-800 text-white transition cursor-pointer shadow-xs"
                 >
                   <CheckCircle2 className="w-3.5 h-3.5" />
-                  <span>Siku Imefungwa • Anza Siku Mpya</span>
+                  <span>{language === "sw" ? "Siku Imefungwa • Anza Mpya" : "Day Closed • Start New Day"}</span>
                 </button>
               )}
 
@@ -345,10 +347,12 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeModule, setActiveModule,
               </div>
               <div>
                 <h3 className="text-sm font-black text-[#162709]">
-                  Ulinzi wa Akaunti ya Mwenye Duka (Boss)
+                  {language === "sw" ? "Ulinzi wa Akaunti ya Mwenye Duka" : "Store Owner Account Security"}
                 </h3>
                 <p className="text-[11px] text-[#5B714F]">
-                  Wauzaji hawawezi kuona faida na ripoti za Boss bila PIN.
+                  {language === "sw"
+                    ? "Wauzaji hawawezi kuona faida na ripoti za Boss bila PIN."
+                    : "Staff cannot view profit and reports without the Owner PIN."}
                 </p>
               </div>
             </div>
@@ -356,7 +360,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeModule, setActiveModule,
             <form onSubmit={handleVerifyOwnerPin} className="space-y-3 mt-3 text-xs">
               <div>
                 <label className="block font-bold text-[#334A26] mb-1">
-                  Ingiza PIN ya Siri ya Boss (Tarakimu 4):
+                  {language === "sw" ? "Ingiza PIN ya Siri ya Boss (Tarakimu 4):" : "Enter Owner PIN (4 digits):"}
                 </label>
                 <input
                   type="password"
@@ -372,7 +376,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeModule, setActiveModule,
                   className="w-full py-2.5 px-3 rounded-xl neu-input text-center font-mono text-lg font-black tracking-widest"
                 />
                 <span className="block text-[10px] text-[#637B56] mt-1">
-                  Kwa majaribio (Demo), PIN ya Boss ni: <strong>1234</strong>
+                  {language === "sw" ? "Kwa majaribio (Demo), PIN ya Boss ni: " : "Default owner PIN is: "}
+                  <strong>1234</strong>
                 </span>
                 {pinError && (
                   <span className="block text-[11px] font-bold text-rose-600 mt-1">
@@ -387,13 +392,13 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeModule, setActiveModule,
                   onClick={() => setIsPinModalOpen(false)}
                   className="flex-1 py-2.5 rounded-xl neu-btn-secondary font-bold cursor-pointer"
                 >
-                  Ghairi
+                  {language === "sw" ? "Ghairi" : "Cancel"}
                 </button>
                 <button
                   type="submit"
                   className="flex-1 py-2.5 rounded-xl neu-btn font-black cursor-pointer"
                 >
-                  Fungua Akaunti ya Boss
+                  {language === "sw" ? "Fungua Akaunti ya Boss" : "Unlock Owner Account"}
                 </button>
               </div>
             </form>

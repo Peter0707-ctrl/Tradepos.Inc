@@ -357,7 +357,7 @@ export const CashRegisterModule: React.FC = () => {
             {language === "sw" ? "Ripoti za Siku (Faida & Hasara)" : "Daily Reports (Profit & Loss)"}
           </h2>
           <span className="px-2.5 py-0.5 rounded-full text-[11px] font-black bg-[#E1FFAC] text-[#172B08] border border-[#9CE034]">
-            {user?.role === "OWNER" ? "Boss" : user?.name}
+            {user?.role === "OWNER" ? (language === "sw" ? "Boss" : "Owner") : user?.name}
           </span>
         </div>
 
@@ -372,7 +372,7 @@ export const CashRegisterModule: React.FC = () => {
             >
               {employees.map((emp) => (
                 <option key={emp.id} value={emp.id}>
-                  {emp.name} ({emp.role === "OWNER" ? "Boss" : emp.role})
+                  {emp.name} ({emp.role === "OWNER" ? (language === "sw" ? "Boss" : "Owner") : (language === "sw" ? "Muuzaji" : "Cashier")})
                 </option>
               ))}
             </select>
@@ -408,13 +408,15 @@ export const CashRegisterModule: React.FC = () => {
           className="p-3.5 rounded-2xl bg-white border border-[#D8E6CC] hover:border-[#9CE034] shadow-xs cursor-pointer transition"
         >
           <span className="text-xs font-bold text-[#566E49] block">
-            Mauzo ya Siku
+            {language === "sw" ? "Mauzo ya Siku" : "Today's Sales"}
           </span>
           <p className="text-xl font-black text-[#162709] mt-0.5">
             TZS {totalSalesAll.toLocaleString()}
           </p>
           <span className="text-[11px] text-[#5B714F] font-bold">
-            Mtaji (COGS): TZS {totalCogsToday.toLocaleString()}
+            {language === "sw"
+              ? `Mtaji (COGS): TZS ${totalCogsToday.toLocaleString()}`
+              : `Cost of Goods: TZS ${totalCogsToday.toLocaleString()}`}
           </span>
         </div>
 
@@ -423,13 +425,13 @@ export const CashRegisterModule: React.FC = () => {
           className="p-3.5 rounded-2xl bg-white border border-[#D8E6CC] hover:border-[#9CE034] shadow-xs cursor-pointer transition"
         >
           <span className="text-xs font-bold text-[#566E49] block">
-            Faida Ghafi
+            {language === "sw" ? "Faida Ghafi" : "Gross Profit"}
           </span>
           <p className="text-xl font-black text-emerald-800 mt-0.5">
             TZS {grossProfitToday.toLocaleString()}
           </p>
           <span className="text-[11px] text-emerald-700 font-bold">
-            Mauzo - Mtaji
+            {language === "sw" ? "Mauzo - Mtaji" : "Revenue - Cost"}
           </span>
         </div>
 
@@ -438,13 +440,13 @@ export const CashRegisterModule: React.FC = () => {
           className="p-3.5 rounded-2xl bg-white border border-[#D8E6CC] hover:border-[#9CE034] shadow-xs cursor-pointer transition"
         >
           <span className="text-xs font-bold text-[#566E49] block">
-            Matumizi ya Siku
+            {language === "sw" ? "Matumizi ya Siku" : "Today's Expenses"}
           </span>
           <p className="text-xl font-black text-rose-700 mt-0.5">
             -TZS {totalExpensesToday.toLocaleString()}
           </p>
           <span className="text-[11px] text-[#69825B] font-bold">
-            Rekodi {expenses.length}
+            {language === "sw" ? `Rekodi ${expenses.length}` : `${expenses.length} Records`}
           </span>
         </div>
 
@@ -457,7 +459,13 @@ export const CashRegisterModule: React.FC = () => {
           }`}
         >
           <span className="text-xs font-black uppercase text-[#162709] block">
-            {netProfitToday >= 0 ? "FAIDA HALISI" : "HASARA YA SIKU"}
+            {netProfitToday >= 0
+              ? language === "sw"
+                ? "FAIDA HALISI"
+                : "NET PROFIT"
+              : language === "sw"
+              ? "HASARA YA SIKU"
+              : "DAILY LOSS"}
           </span>
           <p
             className={`text-xl font-black mt-0.5 ${
@@ -471,7 +479,13 @@ export const CashRegisterModule: React.FC = () => {
               netProfitToday >= 0 ? "text-emerald-800" : "text-rose-800"
             }`}
           >
-            {netProfitToday >= 0 ? "Faida Halisi" : "Matumizi yamezidi"}
+            {netProfitToday >= 0
+              ? language === "sw"
+                ? "Faida Halisi"
+                : "Net Profit"
+              : language === "sw"
+              ? "Matumizi yamezidi"
+              : "Loss Incurred"}
           </span>
         </div>
       </div>
@@ -487,7 +501,7 @@ export const CashRegisterModule: React.FC = () => {
           }`}
         >
           <Wallet className="w-3.5 h-3.5" />
-          <span>Faida & Hasara</span>
+          <span>{language === "sw" ? "Faida & Hasara" : "Profit & Loss"}</span>
         </button>
 
         <button
@@ -499,7 +513,7 @@ export const CashRegisterModule: React.FC = () => {
           }`}
         >
           <Package className="w-3.5 h-3.5" />
-          <span>Mauzo ({soldProductsList.length})</span>
+          <span>{language === "sw" ? `Mauzo (${soldProductsList.length})` : `Sales (${soldProductsList.length})`}</span>
         </button>
 
         <button
@@ -511,7 +525,7 @@ export const CashRegisterModule: React.FC = () => {
           }`}
         >
           <Receipt className="w-3.5 h-3.5" />
-          <span>Matumizi ({expenses.length})</span>
+          <span>{language === "sw" ? `Matumizi (${expenses.length})` : `Expenses (${expenses.length})`}</span>
         </button>
 
         <button
@@ -523,7 +537,7 @@ export const CashRegisterModule: React.FC = () => {
           }`}
         >
           <Boxes className="w-3.5 h-3.5" />
-          <span>Stoo ({totalUnitsRemainingInStore} pcs)</span>
+          <span>{language === "sw" ? `Stoo (${totalUnitsRemainingInStore} pcs)` : `Stock (${totalUnitsRemainingInStore} pcs)`}</span>
         </button>
       </div>
 
@@ -534,7 +548,7 @@ export const CashRegisterModule: React.FC = () => {
           <div className="bg-white rounded-2xl border-2 border-[#BFE973] p-4 shadow-xs">
             <div className="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-[#EBF2E2]">
               <h3 className="font-black text-sm text-[#162709]">
-                Faida na Hasara kwa Tarehe
+                {language === "sw" ? "Faida na Hasara kwa Tarehe" : "Profit & Loss by Date"}
               </h3>
               <span
                 className={`px-3 py-1 rounded-xl text-xs font-black border ${
@@ -543,7 +557,8 @@ export const CashRegisterModule: React.FC = () => {
                     : "bg-rose-100 text-rose-950 border-rose-300"
                 }`}
               >
-                Jumla: {netProfitToday >= 0 ? `+TZS ${netProfitToday.toLocaleString()}` : `-TZS ${Math.abs(netProfitToday).toLocaleString()}`}
+                {language === "sw" ? "Jumla: " : "Total: "}
+                {netProfitToday >= 0 ? `+TZS ${netProfitToday.toLocaleString()}` : `-TZS ${Math.abs(netProfitToday).toLocaleString()}`}
               </span>
             </div>
 
@@ -551,13 +566,13 @@ export const CashRegisterModule: React.FC = () => {
               <table className="w-full text-left text-xs divide-y divide-[#EBF2E2]">
                 <thead className="bg-[#F8FAF4] font-bold text-[#4D6340]">
                   <tr>
-                    <th className="py-2.5 px-3">Tarehe</th>
-                    <th className="py-2.5 px-3 text-right">Mauzo</th>
-                    <th className="py-2.5 px-3 text-right">Mtaji (COGS)</th>
-                    <th className="py-2.5 px-3 text-right">Faida Ghafi</th>
-                    <th className="py-2.5 px-3 text-right">Matumizi</th>
-                    <th className="py-2.5 px-3 text-right">Faida Halisi</th>
-                    <th className="py-2.5 px-3 text-right">Hali</th>
+                    <th className="py-2.5 px-3">{language === "sw" ? "Tarehe" : "Date"}</th>
+                    <th className="py-2.5 px-3 text-right">{language === "sw" ? "Mauzo" : "Sales"}</th>
+                    <th className="py-2.5 px-3 text-right">{language === "sw" ? "Mtaji (COGS)" : "Cost (COGS)"}</th>
+                    <th className="py-2.5 px-3 text-right">{language === "sw" ? "Faida Ghafi" : "Gross Profit"}</th>
+                    <th className="py-2.5 px-3 text-right">{language === "sw" ? "Matumizi" : "Expenses"}</th>
+                    <th className="py-2.5 px-3 text-right">{language === "sw" ? "Faida Halisi" : "Net Profit"}</th>
+                    <th className="py-2.5 px-3 text-right">{language === "sw" ? "Hali" : "Status"}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[#F1F6EB] text-[#1A2E0A]">
@@ -597,7 +612,7 @@ export const CashRegisterModule: React.FC = () => {
                         .reduce((acc, e) => acc + e.amount, 0);
                       const netVal = grossVal - expVal;
                       return {
-                        date: dKey === todayKey ? `Leo (${dKey})` : dKey,
+                        date: dKey === todayKey ? (language === "sw" ? `Leo (${dKey})` : `Today (${dKey})`) : dKey,
                         salesVal,
                         cogsVal,
                         grossVal,
@@ -635,7 +650,7 @@ export const CashRegisterModule: React.FC = () => {
                               : "bg-rose-100 text-rose-900 border border-rose-300"
                           }`}
                         >
-                          {row.netVal >= 0 ? "✓ FAIDA" : "! HASARA"}
+                          {row.netVal >= 0 ? (language === "sw" ? "✓ FAIDA" : "✓ PROFIT") : (language === "sw" ? "! HASARA" : "! LOSS")}
                         </span>
                       </td>
                     </tr>
@@ -652,7 +667,11 @@ export const CashRegisterModule: React.FC = () => {
                 <div>
                   <h3 className="font-black text-sm text-[#162709] flex items-center gap-2">
                     <Send className="w-4 h-4 text-[#3A6112]" />
-                    <span>Ripoti za Siku Zilizotumwa kwa Mwenye Duka (Kutoka kwa Wafanyakazi)</span>
+                    <span>
+                      {language === "sw"
+                        ? "Ripoti za Siku Zilizotumwa kwa Mwenye Duka (Kutoka kwa Wafanyakazi)"
+                        : "Daily Shift Reports Sent to Store Owner"}
+                    </span>
                   </h3>
                   <p className="text-[11px] text-[#586E4C]">
                     {language === "sw"
@@ -692,20 +711,26 @@ export const CashRegisterModule: React.FC = () => {
                           }`}
                         >
                           {rep.status === "APPROVED"
-                            ? `✓ IMEHAKIKIWA (${rep.approvedBy})`
-                            : "INASUBIRI KUHAKIKIWA NA MWENYE DUKA"}
+                            ? language === "sw"
+                              ? `✓ IMEHAKIKIWA (${rep.approvedBy})`
+                              : `✓ APPROVED (${rep.approvedBy})`
+                            : language === "sw"
+                            ? "INASUBIRI KUHAKIKIWA NA MWENYE DUKA"
+                            : "PENDING OWNER APPROVAL"}
                         </span>
                       </div>
 
                       <div className="flex flex-wrap items-center gap-4 text-xs pt-1">
                         <span>
-                          Mauzo: <strong className="text-emerald-800">TZS {rep.totalSales.toLocaleString()}</strong> ({rep.totalUnitsSold} pcs)
+                          {language === "sw" ? "Mauzo: " : "Sales: "}
+                          <strong className="text-emerald-800">TZS {rep.totalSales.toLocaleString()}</strong> ({rep.totalUnitsSold} pcs)
                         </span>
                         <span>
-                          Matumizi ya Siku: <strong className="text-rose-700">TZS {rep.totalExpenses.toLocaleString()}</strong>
+                          {language === "sw" ? "Matumizi ya Siku: " : "Expenses: "}
+                          <strong className="text-rose-700">TZS {rep.totalExpenses.toLocaleString()}</strong>
                         </span>
                         <span>
-                          Stock Iliyobaki Stoo:{" "}
+                          {language === "sw" ? "Stock Iliyobaki: " : "Remaining Stock: "}
                           <strong className="text-[#162709]">{rep.remainingStockSummary.totalUnitsInStore} pcs</strong>
                         </span>
                       </div>
@@ -732,7 +757,7 @@ export const CashRegisterModule: React.FC = () => {
                           className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black flex items-center gap-1"
                         >
                           <CheckCircle2 className="w-3.5 h-3.5" />
-                          <span>{language === "sw" ? "Idhinisha (Boss)" : "Approve"}</span>
+                          <span>{language === "sw" ? "Idhinisha (Boss)" : "Approve (Owner)"}</span>
                         </button>
                       )}
                     </div>
@@ -745,33 +770,37 @@ export const CashRegisterModule: React.FC = () => {
             <div className="w-full lg:w-80 p-4 rounded-2xl bg-white border-2 border-[#b5ea62] shadow-neu-card flex flex-col justify-between">
               <div className="space-y-3">
                 <div className="pb-2 border-b border-[#dde8d2]">
-                  <h4 className="font-black text-sm text-[#182d09]">Muhtasari wa Hesabu ya Leo</h4>
-                  <p className="text-[11px] text-[#556b4b]">Hesabu ya sasa kabla ya kutuma kwa Mwenye Duka</p>
+                  <h4 className="font-black text-sm text-[#182d09]">
+                    {language === "sw" ? "Muhtasari wa Hesabu ya Leo" : "Today's Account Summary"}
+                  </h4>
+                  <p className="text-[11px] text-[#556b4b]">
+                    {language === "sw" ? "Hesabu ya sasa kabla ya kutuma kwa Mwenye Duka" : "Live summary before submitting to Owner"}
+                  </p>
                 </div>
 
                 <div className="space-y-2 text-xs">
                   <div className="flex justify-between text-[#506646]">
-                    <span>Mauzo ya Cash:</span>
+                    <span>{language === "sw" ? "Mauzo ya Cash:" : "Cash Sales:"}</span>
                     <span className="font-bold text-[#192f0b]">TZS {totalCashSales.toLocaleString()}</span>
                   </div>
                   <div className="flex justify-between text-[#506646]">
-                    <span>Mauzo ya Simu (M-Pesa):</span>
+                    <span>{language === "sw" ? "Mauzo ya Simu (M-Pesa):" : "Mobile Money Sales:"}</span>
                     <span className="font-bold text-[#192f0b]">TZS {totalMobileSales.toLocaleString()}</span>
                   </div>
                   <div className="flex justify-between text-[#506646]">
-                    <span>Mauzo ya Mkopo (Madeni):</span>
+                    <span>{language === "sw" ? "Mauzo ya Mkopo (Madeni):" : "Credit Sales (Debts):"}</span>
                     <span className="font-bold text-amber-800">TZS {totalCreditSales.toLocaleString()}</span>
                   </div>
                   <div className="flex justify-between text-[#506646]">
-                    <span>Matumizi ya Siku Hiyo:</span>
+                    <span>{language === "sw" ? "Matumizi ya Siku Hiyo:" : "Today's Expenses:"}</span>
                     <span className="font-bold text-rose-700">-TZS {totalExpensesToday.toLocaleString()}</span>
                   </div>
                   <div className="flex justify-between text-[#506646]">
-                    <span>Stock Iliyobaki Stoo:</span>
+                    <span>{language === "sw" ? "Stock Iliyobaki Stoo:" : "Remaining Stock:"}</span>
                     <span className="font-bold text-[#192f0b]">{totalUnitsRemainingInStore} pcs</span>
                   </div>
                   <div className="pt-2 border-t border-[#e2edd7] flex justify-between font-black text-sm text-[#152a08]">
-                    <span>Jumla ya Mauzo Leo:</span>
+                    <span>{language === "sw" ? "Jumla ya Mauzo Leo:" : "Total Sales Today:"}</span>
                     <span className="text-emerald-800">TZS {totalSalesAll.toLocaleString()}</span>
                   </div>
                 </div>
@@ -786,20 +815,20 @@ export const CashRegisterModule: React.FC = () => {
                   className="w-full py-3 rounded-xl neu-btn text-xs font-black shadow-neu-flat uppercase tracking-wider flex items-center justify-center gap-1.5"
                 >
                   <Send className="w-4 h-4" />
-                  <span>Tuma Mahesabu kwa Mwenye Duka</span>
+                  <span>{language === "sw" ? "Tuma Mahesabu kwa Mwenye Duka" : "Submit Report to Owner"}</span>
                 </button>
                 <div className="grid grid-cols-2 gap-2">
                   <button
                     onClick={() => setModalMode("DEPOSIT")}
                     className="py-2 rounded-xl bg-[#F4F8EC] border border-[#d2e4bb] text-[11px] font-bold text-[#273d19] hover:bg-[#E1FFAC]"
                   >
-                    + Weka Cash
+                    {language === "sw" ? "+ Weka Cash" : "+ Float In"}
                   </button>
                   <button
                     onClick={() => setModalMode("WITHDRAW")}
                     className="py-2 rounded-xl bg-rose-50 border border-rose-200 text-[11px] font-bold text-rose-800 hover:bg-rose-100"
                   >
-                    - Toa Cash
+                    {language === "sw" ? "- Toa Cash" : "- Drop Out"}
                   </button>
                 </div>
               </div>
@@ -815,16 +844,18 @@ export const CashRegisterModule: React.FC = () => {
           <div className="bg-white rounded-2xl border-2 border-[#BFE973] p-4 shadow-xs h-fit">
             <h3 className="font-black text-sm text-[#162709] mb-1 flex items-center gap-1.5">
               <PlusCircle className="w-4 h-4 text-[#3A6112]" />
-              <span>Andika Bidhaa Iliyouzwa Leo</span>
+              <span>{language === "sw" ? "Andika Bidhaa Iliyouzwa Leo" : "Record Sold Product"}</span>
             </h3>
             <p className="text-[11px] text-[#5B714F] mb-3">
-              Andika jina la bidhaa uliyouza moja kwa moja hapa. Stoo itapungua na mauzo yataingia kwenye mahesabu ya siku.
+              {language === "sw"
+                ? "Andika jina la bidhaa uliyouza moja kwa moja hapa. Stoo itapungua na mauzo yataingia kwenye mahesabu ya siku."
+                : "Type sold product name directly. Stock deducts automatically and revenue adds to today's ledger."}
             </p>
 
             <form onSubmit={handleQuickSaleSubmit} className="space-y-3 text-xs">
               <div>
                 <label className="block font-bold text-[#334A26] mb-1">
-                  Andika Jina la Bidhaa Iliyouzwa:
+                  {language === "sw" ? "Andika Jina la Bidhaa Iliyouzwa:" : "Product Name Sold:"}
                 </label>
                 <input
                   type="text"
@@ -841,14 +872,16 @@ export const CashRegisterModule: React.FC = () => {
                       setSaleUnitPrice(String(matched.sellingPrice));
                     }
                   }}
-                  placeholder="Mfano: Nivea Body Milk 400ml..."
+                  placeholder={language === "sw" ? "Mfano: Nivea Body Milk 400ml..." : "e.g. Nivea Body Milk 400ml..."}
                   className="w-full py-2 px-3 rounded-xl neu-input font-bold"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <label className="block font-bold text-[#334A26] mb-1">Idadi (Pcs)</label>
+                  <label className="block font-bold text-[#334A26] mb-1">
+                    {language === "sw" ? "Idadi (Pcs)" : "Quantity (Pcs)"}
+                  </label>
                   <input
                     type="number"
                     required
@@ -860,14 +893,16 @@ export const CashRegisterModule: React.FC = () => {
                   />
                 </div>
                 <div>
-                  <label className="block font-bold text-[#334A26] mb-1">Bei ya Kila Moja (TZS)</label>
+                  <label className="block font-bold text-[#334A26] mb-1">
+                    {language === "sw" ? "Bei ya Kila Moja (TZS)" : "Unit Price (TZS)"}
+                  </label>
                   <input
                     type="number"
                     required
                     min="1"
                     value={saleUnitPrice}
                     onChange={(e) => setSaleUnitPrice(e.target.value)}
-                    placeholder="Mfano: 15000"
+                    placeholder={language === "sw" ? "Mfano: 15000" : "e.g. 15000"}
                     className="w-full py-2 px-3 rounded-xl neu-input font-black"
                   />
                 </div>
@@ -875,31 +910,35 @@ export const CashRegisterModule: React.FC = () => {
 
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <label className="block font-bold text-[#334A26] mb-1">Malipo</label>
+                  <label className="block font-bold text-[#334A26] mb-1">
+                    {language === "sw" ? "Malipo" : "Payment"}
+                  </label>
                   <select
                     value={salePaymentMethod}
                     onChange={(e) => setSalePaymentMethod(e.target.value as "CASH" | "MPESA" | "CREDIT")}
                     className="w-full py-2 px-3 rounded-xl neu-input font-bold"
                   >
-                    <option value="CASH">Cash (Taslimu)</option>
-                    <option value="MPESA">M-Pesa / Simu</option>
-                    <option value="CREDIT">Mkopo (Deni)</option>
+                    <option value="CASH">{language === "sw" ? "Cash (Taslimu)" : "Cash"}</option>
+                    <option value="MPESA">{language === "sw" ? "M-Pesa / Simu" : "Mobile Money / M-Pesa"}</option>
+                    <option value="CREDIT">{language === "sw" ? "Mkopo (Deni)" : "Credit / Debt"}</option>
                   </select>
                 </div>
                 <div>
-                  <label className="block font-bold text-[#334A26] mb-1">Mteja (Hiari)</label>
+                  <label className="block font-bold text-[#334A26] mb-1">
+                    {language === "sw" ? "Mteja (Hiari)" : "Customer (Optional)"}
+                  </label>
                   <input
                     type="text"
                     value={saleCustomerName}
                     onChange={(e) => setSaleCustomerName(e.target.value)}
-                    placeholder="Jina la mteja..."
+                    placeholder={language === "sw" ? "Jina la mteja..." : "Customer name..."}
                     className="w-full py-2 px-3 rounded-xl neu-input"
                   />
                 </div>
               </div>
 
               <button type="submit" className="w-full py-2.5 rounded-xl neu-btn font-black text-xs">
-                + Hifadhi Mauzo ya Bidhaa Hii
+                {language === "sw" ? "+ Hifadhi Mauzo ya Bidhaa Hii" : "+ Save Sale Entry"}
               </button>
             </form>
           </div>
@@ -910,19 +949,27 @@ export const CashRegisterModule: React.FC = () => {
               <div>
                 <h3 className="font-extrabold text-sm text-[#162709] flex items-center gap-2">
                   <Package className="w-4 h-4 text-[#233f0d]" />
-                  <span>Orodha ya Bidhaa Walizouza Leo & Stock Iliyobaki Stoo</span>
+                  <span>
+                    {language === "sw"
+                      ? "Orodha ya Bidhaa Walizouza Leo & Stock Iliyobaki Stoo"
+                      : "Products Sold Today & Remaining Store Stock"}
+                  </span>
                 </h3>
                 <p className="text-xs text-[#546949]">
-                  Inaonyesha kila bidhaa iliyouzwa leo, nani aliuza, kiasi kilichopatikana, na idadi iliyobaki stoo.
+                  {language === "sw"
+                    ? "Inaonyesha kila bidhaa iliyouzwa leo, nani aliuza, kiasi kilichopatikana, na idadi iliyobaki stoo."
+                    : "Shows every item sold today, seller, revenue collected, and remaining store stock."}
                 </p>
               </div>
               <div className="flex items-center gap-3 bg-[#F4F8EE] px-3 py-1.5 rounded-xl border border-[#d4e6c1]">
                 <span className="text-xs font-bold text-[#4a5e40]">
-                  Jumla Iliyouzwa: <strong className="text-[#162709]">{totalUnitsSold} pcs</strong>
+                  {language === "sw" ? "Jumla Iliyouzwa: " : "Total Sold: "}
+                  <strong className="text-[#162709]">{totalUnitsSold} pcs</strong>
                 </span>
                 <span className="text-[#cbd9be]">|</span>
                 <span className="text-xs font-bold text-[#4a5e40]">
-                  Mapato: <strong className="text-emerald-800">TZS {totalSalesAll.toLocaleString()}</strong>
+                  {language === "sw" ? "Mapato: " : "Revenue: "}
+                  <strong className="text-emerald-800">TZS {totalSalesAll.toLocaleString()}</strong>
                 </span>
               </div>
             </div>
@@ -932,18 +979,20 @@ export const CashRegisterModule: React.FC = () => {
                 <thead className="text-[#516744] font-bold bg-[#F9FBF6]">
                   <tr>
                     <th className="py-3 px-4">#</th>
-                    <th className="py-3 px-4">Bidhaa Iliyouzwa</th>
-                    <th className="py-3 px-4">Aliyeuza (Mfanyakazi)</th>
-                    <th className="py-3 px-4 text-center">Idadi Iliyouzwa Leo</th>
-                    <th className="py-3 px-4 text-right">Jumla ya Pesa</th>
-                    <th className="py-3 px-4 text-right">Stock Iliyobaki Stoo</th>
+                    <th className="py-3 px-4">{language === "sw" ? "Bidhaa Iliyouzwa" : "Product Sold"}</th>
+                    <th className="py-3 px-4">{language === "sw" ? "Aliyeuza (Mfanyakazi)" : "Sold By"}</th>
+                    <th className="py-3 px-4 text-center">{language === "sw" ? "Idadi Iliyouzwa Leo" : "Quantity Sold"}</th>
+                    <th className="py-3 px-4 text-right">{language === "sw" ? "Jumla ya Pesa" : "Total Revenue"}</th>
+                    <th className="py-3 px-4 text-right">{language === "sw" ? "Stock Iliyobaki Stoo" : "Remaining Stock"}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[#F1F6EB] text-[#1A2E0A]">
                   {soldProductsList.length === 0 ? (
                     <tr>
                       <td colSpan={6} className="py-8 text-center text-gray-400">
-                        Hakuna bidhaa iliyouzwa bado kwa siku ya leo.
+                        {language === "sw"
+                          ? "Hakuna bidhaa iliyouzwa bado kwa siku ya leo."
+                          : "No products sold yet today."}
                       </td>
                     </tr>
                   ) : (
@@ -982,44 +1031,64 @@ export const CashRegisterModule: React.FC = () => {
           <div className="bg-white rounded-2xl border-2 border-[#BFE973] p-4 shadow-xs h-fit">
             <h3 className="font-black text-sm text-[#162709] mb-1 flex items-center gap-1.5">
               <PlusCircle className="w-4 h-4 text-[#3A6112]" />
-              <span>Rekodi Matumizi ya Siku Hiyo</span>
+              <span>{language === "sw" ? "Rekodi Matumizi ya Siku" : "Record Daily Expense"}</span>
             </h3>
             <p className="text-[11px] text-[#5B714F] mb-3">
-              Andika pesa iliyotumika dukani leo (mfano: chakula, bodaboda, umeme, mifuko). Itaonekana kwa Mwenye Duka moja kwa moja.
+              {language === "sw"
+                ? "Andika pesa iliyotumika dukani leo (mfano: chakula, bodaboda, umeme, mifuko). Itaonekana kwa Mwenye Duka moja kwa moja."
+                : "Record money spent today in the shop (e.g. transport, food, electricity, packaging)."}
             </p>
 
             <form onSubmit={handleQuickExpenseSubmit} className="space-y-3 text-xs">
               <div>
-                <label className="block font-bold text-[#334A26] mb-1">Aina ya Matumizi</label>
+                <label className="block font-bold text-[#334A26] mb-1">
+                  {language === "sw" ? "Aina ya Matumizi" : "Expense Category"}
+                </label>
                 <select
                   value={expCategory}
                   onChange={(e) => setExpCategory(e.target.value)}
                   className="w-full py-2 px-3 rounded-xl neu-input"
                 >
-                  <option value="Usafiri & Bodaboda">Usafiri & Bodaboda</option>
-                  <option value="Chakula & Maji Dukani">Chakula & Maji Dukani</option>
-                  <option value="Umeme (LUKU) & Maji">Umeme (LUKU) & Maji</option>
-                  <option value="Vifungashio & Mifuko">Vifungashio & Mifuko</option>
-                  <option value="Usafi & Ulinzi">Usafi & Ulinzi</option>
-                  <option value="Mengineyo">Mengineyo</option>
+                  <option value="Usafiri & Bodaboda">
+                    {language === "sw" ? "Usafiri & Bodaboda" : "Transport & Delivery"}
+                  </option>
+                  <option value="Chakula & Maji Dukani">
+                    {language === "sw" ? "Chakula & Maji Dukani" : "Staff Meals & Water"}
+                  </option>
+                  <option value="Umeme (LUKU) & Maji">
+                    {language === "sw" ? "Umeme (LUKU) & Maji" : "Electricity & Utilities"}
+                  </option>
+                  <option value="Vifungashio & Mifuko">
+                    {language === "sw" ? "Vifungashio & Mifuko" : "Packaging & Bags"}
+                  </option>
+                  <option value="Usafi & Ulinzi">
+                    {language === "sw" ? "Usafi & Ulinzi" : "Cleaning & Security"}
+                  </option>
+                  <option value="Mengineyo">
+                    {language === "sw" ? "Mengineyo" : "Other Expenses"}
+                  </option>
                 </select>
               </div>
 
               <div>
-                <label className="block font-bold text-[#334A26] mb-1">Maelezo ya Matumizi</label>
+                <label className="block font-bold text-[#334A26] mb-1">
+                  {language === "sw" ? "Maelezo ya Matumizi" : "Expense Description"}
+                </label>
                 <input
                   type="text"
                   required
                   value={expDesc}
                   onChange={(e) => setExpDesc(e.target.value)}
-                  placeholder="Mfano: Nauli ya bodaboda kupeleka mzigo..."
+                  placeholder={language === "sw" ? "Mfano: Nauli ya bodaboda kupeleka mzigo..." : "e.g. Transport fare for delivery..."}
                   className="w-full py-2 px-3 rounded-xl neu-input"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <label className="block font-bold text-[#334A26] mb-1">Kiasi (TZS)</label>
+                  <label className="block font-bold text-[#334A26] mb-1">
+                    {language === "sw" ? "Kiasi (TZS)" : "Amount (TZS)"}
+                  </label>
                   <input
                     type="number"
                     required
@@ -1030,20 +1099,22 @@ export const CashRegisterModule: React.FC = () => {
                   />
                 </div>
                 <div>
-                  <label className="block font-bold text-[#334A26] mb-1">Imelipwa kwa</label>
+                  <label className="block font-bold text-[#334A26] mb-1">
+                    {language === "sw" ? "Imelipwa kwa" : "Paid Via"}
+                  </label>
                   <select
                     value={expMethod}
                     onChange={(e) => setExpMethod(e.target.value as "CASH" | "MPESA")}
                     className="w-full py-2 px-3 rounded-xl neu-input"
                   >
-                    <option value="CASH">Cash ya Drooni</option>
-                    <option value="MPESA">M-Pesa / Simu</option>
+                    <option value="CASH">{language === "sw" ? "Cash ya Drooni" : "Till Cash"}</option>
+                    <option value="MPESA">{language === "sw" ? "M-Pesa / Simu" : "Mobile Money / M-Pesa"}</option>
                   </select>
                 </div>
               </div>
 
               <button type="submit" className="w-full py-2.5 rounded-xl neu-btn font-black text-xs">
-                + Hifadhi Matumizi ya Leo
+                {language === "sw" ? "+ Hifadhi Matumizi ya Leo" : "+ Save Expense"}
               </button>
             </form>
           </div>
@@ -1052,11 +1123,15 @@ export const CashRegisterModule: React.FC = () => {
           <div className="lg:col-span-2 bg-white rounded-2xl border border-[#D8E6CC] p-4 shadow-xs">
             <div className="flex items-center justify-between pb-3 border-b border-[#EBF2E2]">
               <div>
-                <h3 className="font-black text-sm text-[#162709]">Orodha ya Matumizi ya Siku</h3>
-                <p className="text-[11px] text-[#5B714F]">Matumizi yote yaliyorekodiwa dukani</p>
+                <h3 className="font-black text-sm text-[#162709]">
+                  {language === "sw" ? "Orodha ya Matumizi ya Siku" : "Daily Expenses List"}
+                </h3>
+                <p className="text-[11px] text-[#5B714F]">
+                  {language === "sw" ? "Matumizi yote yaliyorekodiwa dukani" : "All recorded shop expenses"}
+                </p>
               </div>
               <span className="px-3 py-1 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs font-black">
-                Jumla: TZS {totalExpensesToday.toLocaleString()}
+                {language === "sw" ? "Jumla: " : "Total: "}TZS {totalExpensesToday.toLocaleString()}
               </span>
             </div>
 
@@ -1064,11 +1139,11 @@ export const CashRegisterModule: React.FC = () => {
               <table className="w-full text-left text-xs divide-y divide-[#EBF2E2]">
                 <thead className="text-[#516744] font-bold bg-[#F9FBF6]">
                   <tr>
-                    <th className="py-2.5 px-3">Tarehe</th>
-                    <th className="py-2.5 px-3">Aina</th>
-                    <th className="py-2.5 px-3">Maelezo</th>
-                    <th className="py-2.5 px-3">Malipo</th>
-                    <th className="py-2.5 px-3 text-right">Kiasi (TZS)</th>
+                    <th className="py-2.5 px-3">{language === "sw" ? "Tarehe" : "Date"}</th>
+                    <th className="py-2.5 px-3">{language === "sw" ? "Aina" : "Category"}</th>
+                    <th className="py-2.5 px-3">{language === "sw" ? "Maelezo" : "Description"}</th>
+                    <th className="py-2.5 px-3">{language === "sw" ? "Malipo" : "Payment"}</th>
+                    <th className="py-2.5 px-3 text-right">{language === "sw" ? "Kiasi (TZS)" : "Amount (TZS)"}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[#F1F6EB] text-[#1A2E0A]">
@@ -1101,16 +1176,18 @@ export const CashRegisterModule: React.FC = () => {
           <div className="bg-white rounded-2xl border-2 border-[#BFE973] p-4 shadow-xs h-fit">
             <h3 className="font-black text-sm text-[#162709] mb-1 flex items-center gap-1.5">
               <ArrowDownLeft className="w-4 h-4 text-emerald-700" />
-              <span>Ingiza Stock Mpya Stoo (Stock IN)</span>
+              <span>{language === "sw" ? "Ingiza Stock Mpya Stoo" : "Add Stock to Store"}</span>
             </h3>
             <p className="text-[11px] text-[#5B714F] mb-3">
-              Andika jina la bidhaa uliyoingiza stoo moja kwa moja. Kama ni mpya itasajiliwa papo hapo.
+              {language === "sw"
+                ? "Andika jina la bidhaa uliyoingiza stoo moja kwa moja. Kama ni mpya itasajiliwa papo hapo."
+                : "Type product name entered into store directly. Automatically registers new products."}
             </p>
 
             <form onSubmit={handleQuickStockIn} className="space-y-3 text-xs">
               <div>
                 <label className="block font-bold text-[#334A26] mb-1">
-                  Andika Jina la Bidhaa:
+                  {language === "sw" ? "Andika Jina la Bidhaa:" : "Product Name:"}
                 </label>
                 <input
                   type="text"
@@ -1128,27 +1205,31 @@ export const CashRegisterModule: React.FC = () => {
                       setStockSellPrice(String(matched.sellingPrice));
                     }
                   }}
-                  placeholder="Andika jina la bidhaa hapa..."
+                  placeholder={language === "sw" ? "Andika jina la bidhaa hapa..." : "Type product name here..."}
                   className="w-full py-2 px-3 rounded-xl neu-input font-bold"
                 />
               </div>
 
               <div>
-                <label className="block font-bold text-[#334A26] mb-1">Idadi Iliyoingia (Pcs/Units)</label>
+                <label className="block font-bold text-[#334A26] mb-1">
+                  {language === "sw" ? "Idadi Iliyoingia (Pcs)" : "Quantity In (Pcs)"}
+                </label>
                 <input
                   type="number"
                   required
                   min="1"
                   value={stockQty}
                   onChange={(e) => setStockQty(e.target.value)}
-                  placeholder="Mfano: 24"
+                  placeholder={language === "sw" ? "Mfano: 24" : "e.g. 24"}
                   className="w-full py-2 px-3 rounded-xl neu-input font-black"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <label className="block font-bold text-[#334A26] mb-1">Bei ya Kununulia (TZS)</label>
+                  <label className="block font-bold text-[#334A26] mb-1">
+                    {language === "sw" ? "Bei ya Kununulia (TZS)" : "Cost Price (TZS)"}
+                  </label>
                   <input
                     type="number"
                     value={stockBuyPrice}
@@ -1158,7 +1239,9 @@ export const CashRegisterModule: React.FC = () => {
                   />
                 </div>
                 <div>
-                  <label className="block font-bold text-[#334A26] mb-1">Bei ya Kuuza (TZS)</label>
+                  <label className="block font-bold text-[#334A26] mb-1">
+                    {language === "sw" ? "Bei ya Kuuza (TZS)" : "Selling Price (TZS)"}
+                  </label>
                   <input
                     type="number"
                     value={stockSellPrice}
@@ -1170,18 +1253,20 @@ export const CashRegisterModule: React.FC = () => {
               </div>
 
               <div>
-                <label className="block font-bold text-[#334A26] mb-1">Maelezo / Msambazaji</label>
+                <label className="block font-bold text-[#334A26] mb-1">
+                  {language === "sw" ? "Maelezo / Msambazaji" : "Notes / Supplier"}
+                </label>
                 <input
                   type="text"
                   value={stockNote}
                   onChange={(e) => setStockNote(e.target.value)}
-                  placeholder="Mfano: Katoni 2 kutoka Kariakoo..."
+                  placeholder={language === "sw" ? "Mfano: Katoni 2 kutoka Kariakoo..." : "e.g. 2 boxes from supplier..."}
                   className="w-full py-2 px-3 rounded-xl neu-input"
                 />
               </div>
 
               <button type="submit" className="w-full py-2.5 rounded-xl neu-btn font-black text-xs">
-                + Ongeza Kwenye Stoo Sasa
+                {language === "sw" ? "+ Ongeza Kwenye Stoo Sasa" : "+ Add to Store Stock"}
               </button>
             </form>
           </div>
@@ -1191,15 +1276,17 @@ export const CashRegisterModule: React.FC = () => {
             <div className="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-[#EBF2E2]">
               <div>
                 <h3 className="font-black text-sm text-[#162709]">
-                  Hesabu ya Stock Iliyobaki Stoo Sasa Hivi
+                  {language === "sw" ? "Hesabu ya Stock Iliyobaki Stoo Sasa Hivi" : "Current Stock Available in Store"}
                 </h3>
                 <p className="text-[11px] text-[#5B714F]">
-                  Idadi kamili ya kila bidhaa iliyobaki dukani baada ya mauzo ya leo
+                  {language === "sw"
+                    ? "Idadi kamili ya kila bidhaa iliyobaki dukani baada ya mauzo ya leo"
+                    : "Exact remaining count of each product in shop after sales"}
                 </p>
               </div>
               <div className="flex items-center gap-2">
                 <span className="px-3 py-1 rounded-xl bg-[#F4F8EC] border border-[#C8DFB0] text-[#172B08] text-xs font-black">
-                  Jumla Iliyobaki: {totalUnitsRemainingInStore} pcs
+                  {language === "sw" ? "Jumla Iliyobaki: " : "Total Remaining: "}{totalUnitsRemainingInStore} pcs
                 </span>
               </div>
             </div>
@@ -1208,11 +1295,11 @@ export const CashRegisterModule: React.FC = () => {
               <table className="w-full text-left text-xs divide-y divide-[#EBF2E2]">
                 <thead className="text-[#516744] font-bold bg-[#F9FBF6]">
                   <tr>
-                    <th className="py-2.5 px-3">Bidhaa</th>
-                    <th className="py-2.5 px-3">Kundi</th>
-                    <th className="py-2.5 px-3 text-right">Bei ya Kuuza</th>
-                    <th className="py-2.5 px-3 text-center">Stock Iliyobaki Stoo</th>
-                    <th className="py-2.5 px-3 text-right">Hali ya Stoo</th>
+                    <th className="py-2.5 px-3">{language === "sw" ? "Bidhaa" : "Product"}</th>
+                    <th className="py-2.5 px-3">{language === "sw" ? "Kundi" : "Category"}</th>
+                    <th className="py-2.5 px-3 text-right">{language === "sw" ? "Bei ya Kuuza" : "Selling Price"}</th>
+                    <th className="py-2.5 px-3 text-center">{language === "sw" ? "Stock Iliyobaki Stoo" : "Remaining Stock"}</th>
+                    <th className="py-2.5 px-3 text-right">{language === "sw" ? "Hali ya Stoo" : "Stock Status"}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[#F1F6EB] text-[#1A2E0A]">
@@ -1238,7 +1325,9 @@ export const CashRegisterModule: React.FC = () => {
                                 : "bg-emerald-100 text-emerald-900 border border-emerald-300"
                             }`}
                           >
-                            {isLow ? "! INAISHA STOO" : "✓ IPO YA KUTOSHA"}
+                            {isLow
+                              ? language === "sw" ? "! INAISHA STOO" : "! LOW STOCK"
+                              : language === "sw" ? "✓ IPO YA KUTOSHA" : "✓ IN STOCK"}
                           </span>
                         </td>
                       </tr>
@@ -1258,10 +1347,12 @@ export const CashRegisterModule: React.FC = () => {
             <div className="flex items-center justify-between border-b border-[#E6EFE0] pb-3">
               <div>
                 <h3 className="text-base font-black text-[#162709]">
-                  Tuma Mahesabu ya Siku kwa Mwenye Duka
+                  {language === "sw" ? "Tuma Mahesabu ya Siku kwa Mwenye Duka" : "Submit Daily Report to Owner"}
                 </h3>
                 <p className="text-xs text-[#556B4B]">
-                  Inajumuisha: Walichouza leo, Matumizi ya siku hiyo, na Stock iliyobaki stoo.
+                  {language === "sw"
+                    ? "Inajumuisha: Walichouza leo, Matumizi ya siku hiyo, na Stock iliyobaki stoo."
+                    : "Includes: Sales recorded today, daily expenses, and remaining store stock."}
                 </p>
               </div>
               <button onClick={() => setIsSubmitModalOpen(false)} className="p-1 rounded-lg hover:bg-gray-100">
@@ -1271,32 +1362,46 @@ export const CashRegisterModule: React.FC = () => {
 
             <div className="grid grid-cols-3 gap-2.5 bg-[#F6FAF0] p-3 rounded-2xl border border-[#D4E6C0] text-xs">
               <div>
-                <span className="text-[10px] font-bold text-[#5A704E] block">1. Mauzo ya Leo</span>
+                <span className="text-[10px] font-bold text-[#5A704E] block">
+                  {language === "sw" ? "1. Mauzo ya Leo" : "1. Today's Sales"}
+                </span>
                 <strong className="text-sm font-black text-emerald-800">
                   TZS {totalSalesAll.toLocaleString()}
                 </strong>
-                <span className="block text-[10px] text-[#5A704E]">{totalUnitsSold} pcs zimeuzwa</span>
+                <span className="block text-[10px] text-[#5A704E]">
+                  {totalUnitsSold} {language === "sw" ? "pcs zimeuzwa" : "pcs sold"}
+                </span>
               </div>
               <div>
-                <span className="text-[10px] font-bold text-[#5A704E] block">2. Matumizi ya Leo</span>
+                <span className="text-[10px] font-bold text-[#5A704E] block">
+                  {language === "sw" ? "2. Matumizi ya Leo" : "2. Today's Expenses"}
+                </span>
                 <strong className="text-sm font-black text-rose-700">
                   TZS {totalExpensesToday.toLocaleString()}
                 </strong>
-                <span className="block text-[10px] text-[#5A704E]">{expenses.length} rekodi</span>
+                <span className="block text-[10px] text-[#5A704E]">
+                  {expenses.length} {language === "sw" ? "rekodi" : "records"}
+                </span>
               </div>
               <div>
-                <span className="text-[10px] font-bold text-[#5A704E] block">3. Stock Iliyobaki</span>
+                <span className="text-[10px] font-bold text-[#5A704E] block">
+                  {language === "sw" ? "3. Stock Iliyobaki" : "3. Remaining Stock"}
+                </span>
                 <strong className="text-sm font-black text-[#162709]">
                   {totalUnitsRemainingInStore} pcs
                 </strong>
-                <span className="block text-[10px] text-amber-800">{lowStockItems.length} zinaisha</span>
+                <span className="block text-[10px] text-amber-800">
+                  {lowStockItems.length} {language === "sw" ? "zinaisha" : "low stock"}
+                </span>
               </div>
             </div>
 
             <form onSubmit={handleConfirmSubmitReport} className="space-y-3 text-xs">
               <div>
                 <label className="block font-bold text-[#2F4620] mb-1">
-                  Pesa Taslimu (Cash) Uliyohesabu Drooni Sasa Hivi (TZS)
+                  {language === "sw"
+                    ? "Pesa Taslimu (Cash) Uliyohesabu Drooni Sasa Hivi (TZS)"
+                    : "Actual Till Cash Counted (TZS)"}
                 </label>
                 <input
                   type="number"
@@ -1306,19 +1411,27 @@ export const CashRegisterModule: React.FC = () => {
                   className="w-full py-2.5 px-3.5 rounded-xl neu-input font-black text-base"
                 />
                 <span className="text-[10px] text-[#5F7553] mt-0.5 block">
-                  Pesa inayotakiwa kuwepo drooni (Expected): TZS {expectedCash.toLocaleString()}
+                  {language === "sw"
+                    ? `Pesa inayotakiwa kuwepo drooni: TZS ${expectedCash.toLocaleString()}`
+                    : `Expected cash balance: TZS ${expectedCash.toLocaleString()}`}
                 </span>
               </div>
 
               <div>
                 <label className="block font-bold text-[#2F4620] mb-1">
-                  Maelezo / Ujumbe kwa Mwenye Duka (Hiari)
+                  {language === "sw"
+                    ? "Maelezo / Ujumbe kwa Mwenye Duka (Hiari)"
+                    : "Notes / Message to Owner (Optional)"}
                 </label>
                 <textarea
                   rows={2}
                   value={shiftNotes}
                   onChange={(e) => setShiftNotes(e.target.value)}
-                  placeholder="Mfano: Mauzo yameenda vizuri, Nivea na Garnier zimebaki chache stoo..."
+                  placeholder={
+                    language === "sw"
+                      ? "Mfano: Mauzo yameenda vizuri, Nivea na Garnier zimebaki chache stoo..."
+                      : "e.g. Sales went smoothly, stock is running low on popular brands..."
+                  }
                   className="w-full py-2 px-3 rounded-xl neu-input"
                 />
               </div>
@@ -1329,14 +1442,14 @@ export const CashRegisterModule: React.FC = () => {
                   onClick={() => setIsSubmitModalOpen(false)}
                   className="flex-1 py-2.5 rounded-xl neu-btn-secondary font-bold"
                 >
-                  Ghairi
+                  {language === "sw" ? "Ghairi" : "Cancel"}
                 </button>
                 <button
                   type="submit"
                   className="flex-1 py-2.5 rounded-xl bg-[#1C320A] hover:bg-[#28470E] text-[#E1FFAC] font-black flex items-center justify-center gap-1.5"
                 >
                   <Send className="w-4 h-4" />
-                  <span>Wasilisha kwa Mwenye Duka</span>
+                  <span>{language === "sw" ? "Wasilisha kwa Mwenye Duka" : "Submit Report"}</span>
                 </button>
               </div>
             </form>
@@ -1351,10 +1464,11 @@ export const CashRegisterModule: React.FC = () => {
             <div className="flex items-center justify-between border-b border-[#E6EFE0] pb-3">
               <div>
                 <h3 className="text-base font-black text-[#162709]">
-                  Ripoti Kamili ya Siku — {selectedReport.submittedBy} ({selectedReport.staffRole})
+                  {language === "sw" ? "Ripoti Kamili ya Siku — " : "Full Daily Report — "}
+                  {selectedReport.submittedBy} ({selectedReport.staffRole})
                 </h3>
                 <p className="text-xs text-[#556B4B]">
-                  Tarehe: {selectedReport.submittedAt} • Tawi: {selectedReport.branchName}
+                  {language === "sw" ? "Tarehe: " : "Date: "}{selectedReport.submittedAt} • {language === "sw" ? "Tawi: " : "Branch: "}{selectedReport.branchName}
                 </p>
               </div>
               <button onClick={() => setSelectedReport(null)} className="p-1.5 rounded-lg hover:bg-gray-100">
@@ -1366,10 +1480,12 @@ export const CashRegisterModule: React.FC = () => {
             <div className="p-3.5 rounded-2xl bg-[#F8FBF4] border border-[#D8E6CC] space-y-2">
               <div className="flex items-center justify-between">
                 <h4 className="text-xs font-black text-[#162709] uppercase">
-                  1. Walichouza Leo ({selectedReport.totalUnitsSold} pcs)
+                  {language === "sw"
+                    ? `1. Walichouza Leo (${selectedReport.totalUnitsSold} pcs)`
+                    : `1. Sold Items (${selectedReport.totalUnitsSold} pcs)`}
                 </h4>
                 <span className="text-xs font-black text-emerald-800">
-                  Jumla: TZS {selectedReport.totalSales.toLocaleString()}
+                  {language === "sw" ? "Jumla: " : "Total: "}TZS {selectedReport.totalSales.toLocaleString()}
                 </span>
               </div>
               <div className="divide-y divide-[#E6EFE0] text-xs">
@@ -1388,10 +1504,12 @@ export const CashRegisterModule: React.FC = () => {
             <div className="p-3.5 rounded-2xl bg-rose-50/50 border border-rose-200 space-y-2">
               <div className="flex items-center justify-between">
                 <h4 className="text-xs font-black text-rose-900 uppercase">
-                  2. Matumizi ya Siku Hiyo ({selectedReport.dailyExpenses.length})
+                  {language === "sw"
+                    ? `2. Matumizi ya Siku Hiyo (${selectedReport.dailyExpenses.length})`
+                    : `2. Daily Expenses (${selectedReport.dailyExpenses.length})`}
                 </h4>
                 <span className="text-xs font-black text-rose-800">
-                  Jumla: TZS {selectedReport.totalExpenses.toLocaleString()}
+                  {language === "sw" ? "Jumla: " : "Total: "}TZS {selectedReport.totalExpenses.toLocaleString()}
                 </span>
               </div>
               <div className="divide-y divide-rose-100 text-xs">
@@ -1410,10 +1528,13 @@ export const CashRegisterModule: React.FC = () => {
             <div className="p-3.5 rounded-2xl bg-white border border-[#D8E6CC] space-y-2">
               <div className="flex items-center justify-between">
                 <h4 className="text-xs font-black text-[#162709] uppercase">
-                  3. Stock Iliyobaki Stoo ({selectedReport.remainingStockSummary.totalUnitsInStore} pcs)
+                  {language === "sw"
+                    ? `3. Stock Iliyobaki Stoo (${selectedReport.remainingStockSummary.totalUnitsInStore} pcs)`
+                    : `3. Remaining Stock (${selectedReport.remainingStockSummary.totalUnitsInStore} pcs)`}
                 </h4>
                 <span className="text-xs font-bold text-amber-800">
-                  {selectedReport.remainingStockSummary.lowStockCount} bidhaa zinakaribia kuisha
+                  {selectedReport.remainingStockSummary.lowStockCount}{" "}
+                  {language === "sw" ? "bidhaa zinakaribia kuisha" : "items low on stock"}
                 </span>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs pt-1">
@@ -1447,14 +1568,14 @@ export const CashRegisterModule: React.FC = () => {
                   className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black flex items-center gap-1.5"
                 >
                   <CheckCircle2 className="w-4 h-4" />
-                  <span>Idhinisha Mahesabu Haya (Boss)</span>
+                  <span>{language === "sw" ? "Idhinisha Mahesabu Haya (Boss)" : "Approve This Report"}</span>
                 </button>
               )}
               <button
                 onClick={() => setSelectedReport(null)}
                 className="px-4 py-2 rounded-xl neu-btn-secondary text-xs font-bold"
               >
-                Funga
+                {language === "sw" ? "Funga" : "Close"}
               </button>
             </div>
           </div>
@@ -1466,13 +1587,15 @@ export const CashRegisterModule: React.FC = () => {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs p-4">
           <div className="w-full max-w-md bg-white rounded-3xl p-6 shadow-2xl border-2 border-[#b5ea62] animate-slide-up">
             <h3 className="text-base font-black text-[#162709] mb-1">
-              {modalMode === "DEPOSIT" && "Ongeza Pesa Kwenye Droo (Cash Float In)"}
-              {modalMode === "WITHDRAW" && "Toa Pesa Kwenye Droo (Cash Drop Out)"}
-              {modalMode === "COUNT" && "Weka Pesa Halisi Iliyohesabiwa Mkononi"}
+              {modalMode === "DEPOSIT" && (language === "sw" ? "Ongeza Pesa Kwenye Droo" : "Add Cash Float to Till")}
+              {modalMode === "WITHDRAW" && (language === "sw" ? "Toa Pesa Kwenye Droo" : "Withdraw Cash from Till")}
+              {modalMode === "COUNT" && (language === "sw" ? "Weka Pesa Halisi Iliyohesabiwa" : "Count Cash on Hand")}
             </h3>
             <form onSubmit={handleDepositOrWithdraw} className="space-y-4 mt-3">
               <div>
-                <label className="block text-xs font-bold text-[#354b28] mb-1">Kiasi cha Pesa (TZS)</label>
+                <label className="block text-xs font-bold text-[#354b28] mb-1">
+                  {language === "sw" ? "Kiasi cha Pesa (TZS)" : "Amount (TZS)"}
+                </label>
                 <input
                   type="number"
                   required
@@ -1489,10 +1612,10 @@ export const CashRegisterModule: React.FC = () => {
                   onClick={() => setModalMode(null)}
                   className="flex-1 py-2.5 rounded-xl neu-btn-secondary text-xs font-bold"
                 >
-                  Ghairi
+                  {language === "sw" ? "Ghairi" : "Cancel"}
                 </button>
                 <button type="submit" className="flex-1 py-2.5 rounded-xl neu-btn text-xs font-black">
-                  Thibitisha Hesabu
+                  {language === "sw" ? "Thibitisha Hesabu" : "Confirm"}
                 </button>
               </div>
             </form>

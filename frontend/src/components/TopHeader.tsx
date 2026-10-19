@@ -130,10 +130,10 @@ export const TopHeader: React.FC<TopHeaderProps> = ({ pageTitle, onNavigate, onL
             <button
               onClick={handleInstallPwa}
               className="px-2.5 py-1.5 rounded-xl bg-[#E1FFAC] hover:bg-[#d2f88c] border border-[#9CE034] text-[#162709] text-xs font-black flex items-center gap-1.5 shadow-xs transition cursor-pointer"
-              title="Install TradePOS App (PWA)"
+              title={language === "sw" ? "Weka TradePOS App (PWA)" : "Install TradePOS App (PWA)"}
             >
               <Download className="w-3.5 h-3.5 text-[#1B2F09]" />
-              <span className="hidden md:inline">Install App</span>
+              <span className="hidden md:inline">{language === "sw" ? "Weka App" : "Install App"}</span>
             </button>
           )}
 
@@ -229,15 +229,31 @@ export const TopHeader: React.FC<TopHeaderProps> = ({ pageTitle, onNavigate, onL
             <HelpCircle className="w-4 h-4" />
           </button>
 
-          {/* 3. Language Selector */}
-          <button
-            onClick={() => setLanguage(language === "en" ? "sw" : "en")}
-            className="px-2.5 py-1.5 rounded-xl bg-white border border-[#D5E5C4] hover:bg-[#F4F7EE] text-xs font-black text-[#2A3E1D] flex items-center gap-1.5 shadow-xs transition cursor-pointer"
-            title={language === "sw" ? "Badili kwenda Kiingereza (Switch to English)" : "Badili kwenda Kiswahili (Switch to Swahili)"}
-          >
-            <Globe className="w-3.5 h-3.5 text-[#406214]" />
-            <span>{language === "en" ? "SW" : "EN"}</span>
-          </button>
+          {/* 3. Language Selector Toggle: SW | EN */}
+          <div className="flex items-center rounded-xl bg-white border border-[#D5E5C4] p-0.5 shadow-xs">
+            <button
+              onClick={() => setLanguage("sw")}
+              className={`px-2 py-1 rounded-lg text-xs font-black transition cursor-pointer ${
+                language === "sw"
+                  ? "bg-[#1B2F09] text-[#E1FFAC]"
+                  : "text-[#556F48] hover:text-[#182C0A]"
+              }`}
+              title="Kiswahili"
+            >
+              SW
+            </button>
+            <button
+              onClick={() => setLanguage("en")}
+              className={`px-2 py-1 rounded-lg text-xs font-black transition cursor-pointer ${
+                language === "en"
+                  ? "bg-[#1B2F09] text-[#E1FFAC]"
+                  : "text-[#556F48] hover:text-[#182C0A]"
+              }`}
+              title="English"
+            >
+              EN
+            </button>
+          </div>
 
           {/* 4. User Profile Dropdown with PIN Privacy for Boss Account */}
           <div className="relative" ref={profileRef}>
@@ -249,12 +265,20 @@ export const TopHeader: React.FC<TopHeaderProps> = ({ pageTitle, onNavigate, onL
                 {user?.name ? user.name.charAt(0).toUpperCase() : "U"}
               </div>
               <div className="hidden lg:block text-left pr-1">
-                <span className="block text-xs font-black text-[#172709] leading-tight">{user?.name || "Mmiliki wa Duka"}</span>
+                <span className="block text-xs font-black text-[#172709] leading-tight">
+                  {user?.name || (language === "sw" ? "Mmiliki wa Duka" : "Store Owner")}
+                </span>
                 <span className="block text-[10px] font-bold text-[#5C724F]">
-                  {isOwner ? "Mwenye Duka (Boss)" : `Muuzaji (${user?.role})`}
+                  {isOwner
+                    ? language === "sw"
+                      ? "Mwenye Duka"
+                      : "Store Owner"
+                    : language === "sw"
+                    ? `Muuzaji (${user?.role})`
+                    : `Cashier (${user?.role})`}
                 </span>
               </div>
-              <ChevronDown className="w-3.5 h-3.5 text-[#5B6F50]" />
+              <ChevronDown className="w-3.5 h-3.5 text-[#5C724F]" />
             </button>
 
             {isProfileOpen && (
@@ -395,10 +419,12 @@ export const TopHeader: React.FC<TopHeaderProps> = ({ pageTitle, onNavigate, onL
               </div>
               <div>
                 <h3 className="text-sm font-black text-[#162709]">
-                  Ingiza PIN ya Mwenye Duka (Boss)
+                  {language === "sw" ? "Ingiza PIN ya Mwenye Duka (Boss)" : "Enter Owner (Boss) PIN"}
                 </h3>
                 <p className="text-[11px] text-[#5B714F]">
-                  Akaunti ya Boss ina siri za faida na mtaji. Ingiza PIN kuendelea.
+                  {language === "sw"
+                    ? "Akaunti ya Boss ina siri za faida na mtaji. Ingiza PIN kuendelea."
+                    : "Owner account contains confidential financial reports. Enter PIN to continue."}
                 </p>
               </div>
             </div>
@@ -406,7 +432,7 @@ export const TopHeader: React.FC<TopHeaderProps> = ({ pageTitle, onNavigate, onL
             <form onSubmit={handleConfirmBossPin} className="space-y-3 mt-3 text-xs">
               <div>
                 <label className="block font-bold text-[#334A26] mb-1">
-                  PIN ya Siri ya Boss (Tarakimu 4):
+                  {language === "sw" ? "PIN ya Siri ya Boss (Tarakimu 4):" : "Secret Owner PIN (4 digits):"}
                 </label>
                 <input
                   type="password"
@@ -422,7 +448,8 @@ export const TopHeader: React.FC<TopHeaderProps> = ({ pageTitle, onNavigate, onL
                   className="w-full py-2.5 px-3 rounded-xl neu-input text-center font-mono text-lg font-black tracking-widest"
                 />
                 <span className="block text-[10px] text-[#637B56] mt-1">
-                  PIN ya Majaribio ya Boss: <strong>1234</strong>
+                  {language === "sw" ? "PIN ya Majaribio: " : "Default Demo PIN: "}
+                  <strong>1234</strong>
                 </span>
                 {pinError && (
                   <span className="block text-[11px] font-bold text-rose-600 mt-1">
@@ -437,13 +464,13 @@ export const TopHeader: React.FC<TopHeaderProps> = ({ pageTitle, onNavigate, onL
                   onClick={() => setPendingBossEmpId(null)}
                   className="flex-1 py-2.5 rounded-xl neu-btn-secondary font-bold cursor-pointer"
                 >
-                  Ghairi
+                  {language === "sw" ? "Ghairi" : "Cancel"}
                 </button>
                 <button
                   type="submit"
                   className="flex-1 py-2.5 rounded-xl neu-btn font-black cursor-pointer"
                 >
-                  Thibitisha PIN
+                  {language === "sw" ? "Thibitisha PIN" : "Confirm PIN"}
                 </button>
               </div>
             </form>

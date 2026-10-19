@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 
 const SWAHILI_DAYS_SHORT = ["Jumapili", "Jumatatu", "Jumanne", "Jumatano", "Alhamisi", "Ijumaa", "Jumamosi"];
+const ENGLISH_DAYS_SHORT = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 const SWAHILI_MONTHS_SHORT = ["Jan", "Feb", "Mac", "Apr", "Mei", "Jun", "Jul", "Ago", "Sep", "Okt", "Nov", "Des"];
 const SWAHILI_MONTHS_FULL = [
   "Januari",
@@ -32,6 +33,20 @@ const SWAHILI_MONTHS_FULL = [
   "Oktoba",
   "Novemba",
   "Desemba",
+];
+const ENGLISH_MONTHS_FULL = [
+  "January",
+  "February",
+  "March",
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December",
 ];
 
 // Helper: parse YYYY-MM-DD safely in local time without timezone shift
@@ -178,22 +193,34 @@ export const SalesLedgerModule: React.FC = () => {
   // Format human-readable label for the selected date
   const formatSelectedDateTitle = (dateStr: string) => {
     const dObj = parseDateParts(dateStr);
-    const dayName = SWAHILI_DAYS_SHORT[dObj.getDay()];
+    const dayName = (language === "sw" ? SWAHILI_DAYS_SHORT : ENGLISH_DAYS_SHORT)[dObj.getDay()];
     const dayNum = dObj.getDate();
-    const monthName = SWAHILI_MONTHS_FULL[dObj.getMonth()];
+    const monthName = (language === "sw" ? SWAHILI_MONTHS_FULL : ENGLISH_MONTHS_FULL)[dObj.getMonth()];
     const yearNum = dObj.getFullYear();
 
     if (dateStr === todayStr) {
-      return `Leo — ${dayName}, ${dayNum} ${monthName} ${yearNum}`;
+      return language === "sw"
+        ? `Leo — ${dayName}, ${dayNum} ${monthName} ${yearNum}`
+        : `Today — ${dayName}, ${dayNum} ${monthName} ${yearNum}`;
     }
     if (dateStr === yesterdayStr) {
-      return `Jana — ${dayName}, ${dayNum} ${monthName} ${yearNum}`;
+      return language === "sw"
+        ? `Jana — ${dayName}, ${dayNum} ${monthName} ${yearNum}`
+        : `Yesterday — ${dayName}, ${dayNum} ${monthName} ${yearNum}`;
     }
     const diffDays = Math.round(
       (parseDateParts(todayStr).getTime() - dObj.getTime()) / (1000 * 60 * 60 * 24)
     );
     const relText =
-      diffDays > 0 ? `(Siku ${diffDays} zilizopita)` : diffDays < 0 ? `(Siku ${Math.abs(diffDays)} mbele)` : "";
+      diffDays > 0
+        ? language === "sw"
+          ? `(Siku ${diffDays} zilizopita)`
+          : `(${diffDays} days ago)`
+        : diffDays < 0
+        ? language === "sw"
+          ? `(Siku ${Math.abs(diffDays)} mbele)`
+          : `(${Math.abs(diffDays)} days ahead)`
+        : "";
     return `${dayName}, ${dayNum} ${monthName} ${yearNum} ${relText}`;
   };
 
@@ -343,7 +370,7 @@ export const SalesLedgerModule: React.FC = () => {
               <button
                 onClick={() => handleShiftSelectedDate(-1)}
                 className="w-7 h-7 rounded-lg bg-[#F4F7EE] hover:bg-[#E1FFAC] text-[#1B2F09] flex items-center justify-center transition cursor-pointer"
-                title="Siku Iliyopita"
+                title={language === "sw" ? "Siku Iliyopita" : "Previous Day"}
               >
                 <ChevronLeft className="w-4 h-4" />
               </button>
@@ -351,14 +378,18 @@ export const SalesLedgerModule: React.FC = () => {
               <button
                 onClick={() => setShowMonthGrid((prev) => !prev)}
                 className="px-2.5 py-1 rounded-lg bg-[#1B2F09] text-[#E1FFAC] font-black text-xs flex items-center gap-1.5 cursor-pointer"
-                title="Fungua Kalenda Ndogo"
+                title={language === "sw" ? "Fungua Kalenda" : "Open Calendar"}
               >
                 <Calendar className="w-3.5 h-3.5 text-[#A6DF52]" />
                 <span>
                   {selectedDate === todayStr
-                    ? `Leo (${selectedDate})`
+                    ? language === "sw"
+                      ? `Leo (${selectedDate})`
+                      : `Today (${selectedDate})`
                     : selectedDate === yesterdayStr
-                    ? `Jana (${selectedDate})`
+                    ? language === "sw"
+                      ? `Jana (${selectedDate})`
+                      : `Yesterday (${selectedDate})`
                     : selectedDate}
                 </span>
               </button>
@@ -366,7 +397,7 @@ export const SalesLedgerModule: React.FC = () => {
               <button
                 onClick={() => handleShiftSelectedDate(1)}
                 className="w-7 h-7 rounded-lg bg-[#F4F7EE] hover:bg-[#E1FFAC] text-[#1B2F09] flex items-center justify-center transition cursor-pointer"
-                title="Siku Inayofuata"
+                title={language === "sw" ? "Siku Inayofuata" : "Next Day"}
               >
                 <ChevronRight className="w-4 h-4" />
               </button>
@@ -376,7 +407,7 @@ export const SalesLedgerModule: React.FC = () => {
                   onClick={() => handleSelectCalendarDate(todayStr)}
                   className="px-2 py-1 rounded-lg bg-[#E1FFAC] hover:bg-[#d2f88c] text-[#162709] font-black text-[11px] transition cursor-pointer"
                 >
-                  Leo
+                  {language === "sw" ? "Leo" : "Today"}
                 </button>
               )}
             </div>
@@ -392,7 +423,7 @@ export const SalesLedgerModule: React.FC = () => {
                     <ChevronLeft className="w-3.5 h-3.5" />
                   </button>
                   <span className="font-black text-xs text-[#162709]">
-                    {SWAHILI_MONTHS_FULL[viewMonth]} {viewYear}
+                    {(language === "sw" ? SWAHILI_MONTHS_FULL : ENGLISH_MONTHS_FULL)[viewMonth]} {viewYear}
                   </span>
                   <button
                     onClick={() => handleShiftMonth(1)}
@@ -403,13 +434,12 @@ export const SalesLedgerModule: React.FC = () => {
                 </div>
 
                 <div className="grid grid-cols-7 gap-0.5 text-center text-[9px] font-black text-[#58704A] mb-1">
-                  <div>Jp</div>
-                  <div>Jt</div>
-                  <div>Jn</div>
-                  <div>Ju</div>
-                  <div>Al</div>
-                  <div>Ij</div>
-                  <div>Jm</div>
+                  {(language === "sw"
+                    ? ["Jp", "Jt", "Jn", "Ju", "Al", "Ij", "Jm"]
+                    : ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"]
+                  ).map((dayInit, idx) => (
+                    <div key={idx}>{dayInit}</div>
+                  ))}
                 </div>
 
                 <div className="grid grid-cols-7 gap-1">
@@ -460,13 +490,13 @@ export const SalesLedgerModule: React.FC = () => {
                     }}
                     className="text-[11px] font-black text-[#355B0F] hover:underline cursor-pointer"
                   >
-                    Rudi Leo ({todayStr})
+                    {language === "sw" ? `Rudi Leo (${todayStr})` : `Back to Today (${todayStr})`}
                   </button>
                   <button
                     onClick={() => setShowMonthGrid(false)}
                     className="px-2.5 py-1 rounded-lg bg-[#F4F7EE] text-[#162709] text-[10px] font-black cursor-pointer"
                   >
-                    Funga
+                    {language === "sw" ? "Funga" : "Close"}
                   </button>
                 </div>
               </div>
@@ -480,7 +510,7 @@ export const SalesLedgerModule: React.FC = () => {
               className="px-3.5 py-2 rounded-xl bg-[#1B2F09] hover:bg-[#27430D] text-[#E1FFAC] border-2 border-[#A6DF52] text-xs font-black flex items-center gap-1.5 shadow-sm transition cursor-pointer"
             >
               <Send className="w-3.5 h-3.5" />
-              <span>Funga Mauzo ya Siku</span>
+              <span>{language === "sw" ? "Funga Mauzo ya Siku" : "Close Day's Sales"}</span>
             </button>
           ) : (
             <button
@@ -492,7 +522,7 @@ export const SalesLedgerModule: React.FC = () => {
               className="px-3.5 py-2 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-black flex items-center gap-1.5 shadow-sm transition cursor-pointer"
             >
               <CheckCircle2 className="w-3.5 h-3.5" />
-              <span>Fungua Siku Mpya</span>
+              <span>{language === "sw" ? "Fungua Siku Mpya" : "Start New Day"}</span>
             </button>
           )}
         </div>
@@ -504,7 +534,9 @@ export const SalesLedgerModule: React.FC = () => {
           <div className="flex items-center gap-2 font-bold">
             <CheckCircle2 className="w-4 h-4 text-[#A6DF52] shrink-0" />
             <span>
-              Siku Imefungwa ({todayStr}) — Mauzo: TZS {todaySalesTotal.toLocaleString()} | Matumizi: TZS {todayExpensesTotal.toLocaleString()} | Stoo: {totalStoreStockRemaining} pcs
+              {language === "sw"
+                ? `Siku Imefungwa (${todayStr}) — Mauzo: TZS ${todaySalesTotal.toLocaleString()} | Matumizi: TZS ${todayExpensesTotal.toLocaleString()} | Stoo: ${totalStoreStockRemaining} pcs`
+                : `Day Closed (${todayStr}) — Sales: TZS ${todaySalesTotal.toLocaleString()} | Expenses: TZS ${todayExpensesTotal.toLocaleString()} | Store: ${totalStoreStockRemaining} pcs`}
             </span>
           </div>
           <button
@@ -515,7 +547,7 @@ export const SalesLedgerModule: React.FC = () => {
             }}
             className="px-3.5 py-1.5 rounded-xl bg-[#E1FFAC] text-[#162708] font-black text-xs shrink-0 hover:bg-white transition cursor-pointer"
           >
-            Anza Siku Mpya
+            {language === "sw" ? "Anza Siku Mpya" : "Start New Day"}
           </button>
         </div>
       )}
@@ -524,19 +556,21 @@ export const SalesLedgerModule: React.FC = () => {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
         <div className="p-3.5 rounded-2xl bg-white border-2 border-[#b2e269] shadow-xs">
           <span className="text-xs font-bold text-[#566E49] block">
-            Jumla ya Mauzo ({selectedDate === todayStr ? "Leo" : selectedDate === yesterdayStr ? "Jana" : selectedDate})
+            {language === "sw"
+              ? `Jumla ya Mauzo (${selectedDate === todayStr ? "Leo" : selectedDate === yesterdayStr ? "Jana" : selectedDate})`
+              : `Total Sales (${selectedDate === todayStr ? "Today" : selectedDate === yesterdayStr ? "Yesterday" : selectedDate})`}
           </span>
           <p className="text-xl font-black text-emerald-800 mt-0.5">
             TZS {totalSalesAmount.toLocaleString()}
           </p>
           <span className="text-[11px] text-emerald-700 font-bold">
-            {totalUnitsSold} pcs ({selectedDateSales.length} mauzo)
+            {totalUnitsSold} pcs ({selectedDateSales.length} {language === "sw" ? "mauzo" : "sales"})
           </span>
         </div>
 
         <div className="p-3.5 rounded-2xl bg-white border border-[#D8E6CC] shadow-xs">
           <span className="text-xs font-bold text-[#566E49] block">
-            Mauzo ya Cash
+            {language === "sw" ? "Mauzo ya Cash" : "Cash Sales"}
           </span>
           <p className="text-xl font-black text-[#162709] mt-0.5">
             TZS {totalCashSales.toLocaleString()}
@@ -545,7 +579,7 @@ export const SalesLedgerModule: React.FC = () => {
 
         <div className="p-3.5 rounded-2xl bg-white border border-[#D8E6CC] shadow-xs">
           <span className="text-xs font-bold text-[#566E49] block">
-            Mauzo ya Simu (M-Pesa)
+            {language === "sw" ? "Mauzo ya Simu (M-Pesa)" : "Mobile Sales (M-Pesa)"}
           </span>
           <p className="text-xl font-black text-[#162709] mt-0.5">
             TZS {totalMobileSales.toLocaleString()}
@@ -554,7 +588,7 @@ export const SalesLedgerModule: React.FC = () => {
 
         <div className="p-3.5 rounded-2xl bg-white border border-[#D8E6CC] shadow-xs">
           <span className="text-xs font-bold text-[#566E49] block">
-            Mauzo ya Mkopo
+            {language === "sw" ? "Mauzo ya Mkopo" : "Credit Sales"}
           </span>
           <p className="text-xl font-black text-amber-700 mt-0.5">
             TZS {totalCreditSales.toLocaleString()}
@@ -568,13 +602,13 @@ export const SalesLedgerModule: React.FC = () => {
         <div className="bg-white rounded-2xl border-2 border-[#BFE973] p-4 shadow-xs h-fit">
           <h3 className="font-black text-sm text-[#162709] mb-3 flex items-center gap-1.5">
             <PlusCircle className="w-4 h-4 text-[#3A6112]" />
-            <span>Andika Mauzo</span>
+            <span>{language === "sw" ? "Andika Mauzo" : "Record Sale"}</span>
           </h3>
 
           <form onSubmit={handleRecordSale} className="space-y-3 text-xs">
             <div>
               <label className="block font-bold text-[#334A26] mb-1">
-                Bidhaa Iliyouzwa:
+                {language === "sw" ? "Bidhaa Iliyouzwa:" : "Product Sold:"}
               </label>
               <input
                 type="text"
@@ -591,12 +625,14 @@ export const SalesLedgerModule: React.FC = () => {
                     setUnitPrice(String(found.sellingPrice));
                   }
                 }}
-                placeholder="Jina la bidhaa..."
+                placeholder={language === "sw" ? "Jina la bidhaa..." : "Product name..."}
                 className="w-full py-2.5 px-3 rounded-xl neu-input font-bold"
               />
               {matchedProduct && (
                 <span className="text-[10px] font-bold text-emerald-700 mt-1 block">
-                  Stoo: {matchedProduct.stockQuantity} {matchedProduct.unit} | Bei: TZS{" "}
+                  {language === "sw" ? "Stoo: " : "Stock: "}
+                  {matchedProduct.stockQuantity} {matchedProduct.unit} |{" "}
+                  {language === "sw" ? "Bei: " : "Price: "}TZS{" "}
                   {matchedProduct.sellingPrice.toLocaleString()}
                 </span>
               )}
@@ -605,7 +641,7 @@ export const SalesLedgerModule: React.FC = () => {
             <div className="grid grid-cols-2 gap-2.5">
               <div>
                 <label className="block font-bold text-[#334A26] mb-1">
-                  Idadi
+                  {language === "sw" ? "Idadi" : "Quantity"}
                 </label>
                 <input
                   type="number"
@@ -620,7 +656,7 @@ export const SalesLedgerModule: React.FC = () => {
 
               <div>
                 <label className="block font-bold text-[#334A26] mb-1">
-                  Bei (TZS)
+                  {language === "sw" ? "Bei (TZS)" : "Price (TZS)"}
                 </label>
                 <input
                   type="number"
@@ -638,7 +674,7 @@ export const SalesLedgerModule: React.FC = () => {
             <div className="p-3 rounded-xl bg-[#F4F8EC] border border-[#C6DDA8] flex items-center justify-between">
               <div className="flex items-center gap-1.5 text-[#273E14] font-bold">
                 <Calculator className="w-4 h-4 text-[#3F6315]" />
-                <span>Jumla:</span>
+                <span>{language === "sw" ? "Jumla:" : "Total:"}</span>
               </div>
               <span className="text-base font-black text-emerald-800">
                 TZS {autoLineTotal.toLocaleString()}
@@ -647,7 +683,9 @@ export const SalesLedgerModule: React.FC = () => {
 
             <div className="grid grid-cols-2 gap-2.5">
               <div>
-                <label className="block font-bold text-[#334A26] mb-1">Malipo</label>
+                <label className="block font-bold text-[#334A26] mb-1">
+                  {language === "sw" ? "Malipo" : "Payment"}
+                </label>
                 <select
                   value={paymentMethod}
                   onChange={(e) =>
@@ -656,21 +694,23 @@ export const SalesLedgerModule: React.FC = () => {
                   className="w-full py-2 px-3 rounded-xl neu-input font-bold"
                 >
                   <option value="CASH">Cash</option>
-                  <option value="MPESA">M-Pesa / Simu</option>
-                  <option value="CREDIT">Mkopo (Deni)</option>
+                  <option value="MPESA">{language === "sw" ? "M-Pesa / Simu" : "Mobile (M-Pesa)"}</option>
+                  <option value="CREDIT">{language === "sw" ? "Mkopo (Deni)" : "Credit (Debt)"}</option>
                 </select>
               </div>
 
               <div>
                 <label className="block font-bold text-[#334A26] mb-1">
-                  Mteja {paymentMethod === "CREDIT" ? "*" : "(Hiari)"}
+                  {language === "sw"
+                    ? `Mteja ${paymentMethod === "CREDIT" ? "*" : "(Hiari)"}`
+                    : `Customer ${paymentMethod === "CREDIT" ? "*" : "(Optional)"}`}
                 </label>
                 <input
                   type="text"
                   required={paymentMethod === "CREDIT"}
                   value={customerName}
                   onChange={(e) => setCustomerName(e.target.value)}
-                  placeholder="Jina la mteja..."
+                  placeholder={language === "sw" ? "Jina la mteja..." : "Customer name..."}
                   className="w-full py-2 px-3 rounded-xl neu-input font-semibold"
                 />
               </div>
@@ -680,7 +720,7 @@ export const SalesLedgerModule: React.FC = () => {
               type="submit"
               className="w-full py-3 rounded-xl neu-btn font-black text-xs uppercase tracking-wider cursor-pointer"
             >
-              + Hifadhi Mauzo
+              {language === "sw" ? "+ Hifadhi Mauzo" : "+ Save Sale"}
             </button>
           </form>
         </div>
@@ -690,7 +730,9 @@ export const SalesLedgerModule: React.FC = () => {
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-[#EBF2E2]">
             <h3 className="font-black text-sm text-[#162709] flex items-center gap-1.5">
               <ShoppingBag className="w-4 h-4 text-[#233F0D]" />
-              <span>Mauzo ({selectedDate})</span>
+              <span>
+                {language === "sw" ? `Mauzo (${selectedDate})` : `Sales (${selectedDate})`}
+              </span>
             </h3>
 
             <div className="flex items-center gap-2">
@@ -700,7 +742,7 @@ export const SalesLedgerModule: React.FC = () => {
                   type="text"
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  placeholder="Tafuta bidhaa au mteja..."
+                  placeholder={language === "sw" ? "Tafuta bidhaa au mteja..." : "Search product or customer..."}
                   className="py-1.5 pl-8 pr-3 rounded-xl neu-input text-xs"
                 />
               </div>
@@ -709,10 +751,10 @@ export const SalesLedgerModule: React.FC = () => {
                 onChange={(e) => setPaymentFilter(e.target.value)}
                 className="py-1.5 px-2.5 rounded-xl neu-input text-xs font-bold"
               >
-                <option value="ALL">Malipo Yote</option>
+                <option value="ALL">{language === "sw" ? "Malipo Yote" : "All Payments"}</option>
                 <option value="CASH">Cash</option>
                 <option value="MPESA">M-Pesa</option>
-                <option value="CREDIT">Mkopo</option>
+                <option value="CREDIT">{language === "sw" ? "Mkopo" : "Credit"}</option>
               </select>
             </div>
           </div>
@@ -721,21 +763,23 @@ export const SalesLedgerModule: React.FC = () => {
             <table className="w-full text-left text-xs divide-y divide-[#EBF2E2]">
               <thead className="bg-[#F8FAF4] font-bold text-[#4D6340]">
                 <tr>
-                  <th className="py-2.5 px-3">Tarehe</th>
-                  <th className="py-2.5 px-3">Bidhaa Iliyouzwa</th>
-                  <th className="py-2.5 px-3 text-center">Idadi</th>
-                  <th className="py-2.5 px-3">Mteja</th>
-                  <th className="py-2.5 px-3">Aliyeuza</th>
-                  <th className="py-2.5 px-3">Malipo</th>
-                  <th className="py-2.5 px-3 text-right">Jumla (TZS)</th>
-                  <th className="py-2.5 px-3 text-right">Hatua</th>
+                  <th className="py-2.5 px-3">{language === "sw" ? "Tarehe" : "Date"}</th>
+                  <th className="py-2.5 px-3">{language === "sw" ? "Bidhaa Iliyouzwa" : "Product Sold"}</th>
+                  <th className="py-2.5 px-3 text-center">{language === "sw" ? "Idadi" : "Qty"}</th>
+                  <th className="py-2.5 px-3">{language === "sw" ? "Mteja" : "Customer"}</th>
+                  <th className="py-2.5 px-3">{language === "sw" ? "Aliyeuza" : "Cashier"}</th>
+                  <th className="py-2.5 px-3">{language === "sw" ? "Malipo" : "Payment"}</th>
+                  <th className="py-2.5 px-3 text-right">{language === "sw" ? "Jumla (TZS)" : "Total (TZS)"}</th>
+                  <th className="py-2.5 px-3 text-right">{language === "sw" ? "Hatua" : "Action"}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#F1F6EB] text-[#1A2E0A]">
                 {filteredSales.length === 0 ? (
                   <tr>
                     <td colSpan={8} className="py-8 text-center text-gray-400">
-                      Hakuna mauzo ({selectedDate}).
+                      {language === "sw"
+                        ? `Hakuna mauzo (${selectedDate}).`
+                        : `No sales recorded (${selectedDate}).`}
                     </td>
                   </tr>
                 ) : (
@@ -751,7 +795,17 @@ export const SalesLedgerModule: React.FC = () => {
                             {saleDate}
                           </span>
                           <span className="text-[10px] font-bold text-[#617A54]">
-                            {isSaleToday ? "Leo" : isSaleYesterday ? "Jana" : "Kalenda"}
+                            {isSaleToday
+                              ? language === "sw"
+                                ? "Leo"
+                                : "Today"
+                              : isSaleYesterday
+                              ? language === "sw"
+                                ? "Jana"
+                                : "Yesterday"
+                              : language === "sw"
+                              ? "Kalenda"
+                              : "Past"}
                           </span>
                         </td>
                         <td className="py-3 px-3 font-extrabold text-[#162709]">
@@ -763,7 +817,7 @@ export const SalesLedgerModule: React.FC = () => {
                           </span>
                         </td>
                         <td className="py-3 px-3 font-semibold">
-                          {s.customerName || "Mteja wa Dukani"}
+                          {s.customerName || (language === "sw" ? "Mteja wa Dukani" : "Walk-in Customer")}
                         </td>
                         <td className="py-3 px-3 text-[#48603C]">{s.cashierName}</td>
                         <td className="py-3 px-3">
@@ -774,7 +828,11 @@ export const SalesLedgerModule: React.FC = () => {
                                 : "bg-[#EDF3E6] text-[#20360B]"
                             }`}
                           >
-                            {s.paymentMethod === "CREDIT" ? "MKOPO (DENI)" : s.paymentMethod}
+                            {s.paymentMethod === "CREDIT"
+                              ? language === "sw"
+                                ? "MKOPO"
+                                : "CREDIT"
+                              : s.paymentMethod}
                           </span>
                         </td>
                         <td className="py-3 px-3 text-right font-black text-emerald-800 whitespace-nowrap">
@@ -784,7 +842,7 @@ export const SalesLedgerModule: React.FC = () => {
                           <button
                             onClick={() => refundSale(s.id)}
                             className="p-1.5 rounded-lg text-rose-700 hover:bg-rose-50 transition cursor-pointer"
-                            title="Futa / Rudisha Mauzo"
+                            title={language === "sw" ? "Futa / Rudisha Mauzo" : "Refund / Remove Sale"}
                           >
                             <RotateCcw className="w-3.5 h-3.5" />
                           </button>

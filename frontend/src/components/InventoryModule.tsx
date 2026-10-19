@@ -315,7 +315,7 @@ export const InventoryModule: React.FC = () => {
       <datalist id="inventory-products-datalist">
         {products.map((p) => (
           <option key={p.id} value={p.name}>
-            Stoo Iliyopo: {p.stockQuantity} {p.unit} | Bei: TZS {p.sellingPrice.toLocaleString()}
+            {language === "sw" ? "Stoo Iliyopo:" : "Current Stock:"} {p.stockQuantity} {p.unit} | {language === "sw" ? "Bei:" : "Price:"} TZS {p.sellingPrice.toLocaleString()}
           </option>
         ))}
       </datalist>
@@ -323,7 +323,7 @@ export const InventoryModule: React.FC = () => {
       {/* Top Header */}
       <div className="flex flex-wrap items-center justify-between gap-2.5">
         <h2 className="text-lg sm:text-xl font-black text-[#172709] tracking-tight">
-          {language === "sw" ? "Stoo & Bidhaa" : "Store Stock"}
+          {language === "sw" ? "Stoo & Bidhaa" : "Store & Inventory"}
         </h2>
 
         <div className="flex flex-wrap items-center gap-2">
@@ -332,7 +332,7 @@ export const InventoryModule: React.FC = () => {
             className="px-3.5 py-2 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-black flex items-center gap-1.5 shadow-xs transition cursor-pointer"
           >
             <Plus className="w-4 h-4" />
-            <span>+ Weka Stock</span>
+            <span>{language === "sw" ? "+ Weka Stock" : "+ Add Stock"}</span>
           </button>
 
           <button
@@ -340,7 +340,7 @@ export const InventoryModule: React.FC = () => {
             className="px-3.5 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-black flex items-center gap-1.5 shadow-xs transition cursor-pointer"
           >
             <ArrowUpRight className="w-4 h-4" />
-            <span>- Toa Stock</span>
+            <span>{language === "sw" ? "- Toa Stock" : "- Issue Stock"}</span>
           </button>
         </div>
       </div>
@@ -350,47 +350,49 @@ export const InventoryModule: React.FC = () => {
         <div className="neu-card-flat p-3.5 rounded-2xl border border-emerald-200 bg-emerald-50/40">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-black text-emerald-900 uppercase">
-              Stock Iliyoingizwa (+ IN)
+              {language === "sw" ? "Stock Iliyoingizwa (+ IN)" : "Stock Received (+ IN)"}
             </span>
             <TrendingUp className="w-4 h-4 text-emerald-700" />
           </div>
           <p className="text-xl font-black text-emerald-950 mt-1">
-            +{totalStockInQty} <span className="text-xs font-bold">Pcs</span>
+            +{totalStockInQty} <span className="text-xs font-bold">{language === "sw" ? "Vipande" : "Pcs"}</span>
           </p>
           <span className="text-[11px] font-semibold text-emerald-800">
             {!user || user.role === "OWNER" || user.role === "SUPER_ADMIN"
-              ? `Mtaji: TZS ${totalStockInValue.toLocaleString()}`
-              : `Bidhaa: ${products.length}`}
+              ? `${language === "sw" ? "Mtaji:" : "Cost:"} TZS ${totalStockInValue.toLocaleString()}`
+              : `${language === "sw" ? "Bidhaa:" : "Products:"} ${products.length}`}
           </span>
         </div>
 
         <div className="neu-card-flat p-3.5 rounded-2xl border border-rose-200 bg-rose-50/40">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-black text-rose-900 uppercase">
-              Stock Iliyotoka (- OUT)
+              {language === "sw" ? "Stock Iliyotoka (- OUT)" : "Stock Issued (- OUT)"}
             </span>
             <TrendingDown className="w-4 h-4 text-rose-700" />
           </div>
           <p className="text-xl font-black text-rose-950 mt-1">
-            -{totalStockOutQty} <span className="text-xs font-bold">Pcs</span>
+            -{totalStockOutQty} <span className="text-xs font-bold">{language === "sw" ? "Vipande" : "Pcs"}</span>
           </p>
           <span className="text-[11px] font-bold text-rose-800">
-            Mauzo: {totalSoldOutQty} | Manual: {totalManualOutQty}
+            {language === "sw"
+              ? `Mauzo: ${totalSoldOutQty} | Nje ya Mauzo: ${totalManualOutQty}`
+              : `Sales: ${totalSoldOutQty} | Other: ${totalManualOutQty}`}
           </span>
         </div>
 
         <div className="neu-card-flat p-3.5 rounded-2xl border-2 border-[#b2e269] bg-white">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-black text-[#172709] uppercase">
-              Stock Iliyobaki Sasa
+              {language === "sw" ? "Stock Iliyobaki Sasa" : "Current Stock Available"}
             </span>
             <Boxes className="w-4 h-4 text-[#253f0e]" />
           </div>
           <p className="text-xl font-black text-[#152508] mt-1">
-            {totalCurrentStockUnits} <span className="text-xs font-bold text-[#52654c]">Pcs</span>
+            {totalCurrentStockUnits} <span className="text-xs font-bold text-[#52654c]">{language === "sw" ? "Vipande" : "Pcs"}</span>
           </p>
           <span className="text-[11px] font-semibold text-[#42553a]">
-            Salio halisi lililopo stoo
+            {language === "sw" ? "Salio halisi lililopo stoo" : "Physical stock on hand"}
           </span>
         </div>
       </div>
@@ -403,7 +405,7 @@ export const InventoryModule: React.FC = () => {
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Tafuta bidhaa..."
+            placeholder={language === "sw" ? "Tafuta bidhaa..." : "Search products..."}
             className="w-full py-2.5 pl-10 pr-4 rounded-xl neu-input text-xs font-medium text-[#18260d]"
           />
         </div>
@@ -414,19 +416,21 @@ export const InventoryModule: React.FC = () => {
         <table className="w-full text-left text-xs divide-y divide-[#e8f0df]">
           <thead className="bg-[#F8FAF4] font-bold text-[#44573d]">
             <tr>
-              <th className="py-3 px-4">Bidhaa</th>
-              <th className="py-3 px-4">Bei</th>
-              <th className="py-3 px-4 text-center">Iliyoingizwa</th>
-              <th className="py-3 px-4 text-center">Iliyotoka</th>
-              <th className="py-3 px-4 text-center">Stock Iliyobaki</th>
-              <th className="py-3 px-4 text-right">Hatua</th>
+              <th className="py-3 px-4">{language === "sw" ? "Bidhaa" : "Product"}</th>
+              <th className="py-3 px-4">{language === "sw" ? "Bei" : "Price"}</th>
+              <th className="py-3 px-4 text-center">{language === "sw" ? "Iliyoingizwa" : "In"}</th>
+              <th className="py-3 px-4 text-center">{language === "sw" ? "Iliyotoka" : "Out"}</th>
+              <th className="py-3 px-4 text-center">{language === "sw" ? "Stock Iliyobaki" : "Remaining Stock"}</th>
+              <th className="py-3 px-4 text-right">{language === "sw" ? "Hatua" : "Action"}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-[#eff5e9] text-[#1c2c0e]">
             {filteredBreakdowns.length === 0 ? (
               <tr>
                 <td colSpan={6} className="py-8 text-center text-gray-400">
-                  Hakuna bidhaa stoo. Bonyeza &quot;+ Weka Stock&quot; kuongeza.
+                  {language === "sw"
+                    ? 'Hakuna bidhaa stoo. Bonyeza "+ Weka Stock" kuongeza.'
+                    : 'No items in stock. Click "+ Add Stock" to add.'}
                 </td>
               </tr>
             ) : (
@@ -452,7 +456,7 @@ export const InventoryModule: React.FC = () => {
                       <td className="py-3 px-4">
                         <span className="font-extrabold text-[#162709] block">{p.name}</span>
                         <span className="inline-block mt-0.5 px-2 py-0.5 rounded-md bg-[#EDF3E6] text-[#263E12] font-bold text-[10px]">
-                          Bando 1 = {unitsPerBundle} {p.unit}
+                          {language === "sw" ? `Bando 1 = ${unitsPerBundle} ${p.unit}` : `1 Bundle = ${unitsPerBundle} ${p.unit}`}
                         </span>
                       </td>
 
@@ -463,7 +467,7 @@ export const InventoryModule: React.FC = () => {
                         </div>
                         {isOwnerView && (
                           <div className="text-[11px] text-[#5B714F]">
-                            Mtaji: TZS {p.buyingPrice.toLocaleString()}
+                            {language === "sw" ? "Mtaji:" : "Cost:"} TZS {p.buyingPrice.toLocaleString()}
                           </div>
                         )}
                       </td>
@@ -474,7 +478,7 @@ export const InventoryModule: React.FC = () => {
                           +{totalEnteredIn} {p.unit}
                         </span>
                         <span className="block text-[10px] text-emerald-800 font-bold mt-0.5">
-                          Bando {totalBundlesEntered}
+                          {language === "sw" ? `Bando ${totalBundlesEntered}` : `${totalBundlesEntered} Bundles`}
                         </span>
                       </td>
 
@@ -484,7 +488,9 @@ export const InventoryModule: React.FC = () => {
                           -{totalOut} {p.unit}
                         </span>
                         <span className="block text-[10px] text-[#5C7250] font-semibold mt-0.5">
-                          Mauzo: {totalSoldOut} | Manual: {manualOut}
+                          {language === "sw"
+                            ? `Mauzo: ${totalSoldOut} | Nje ya Mauzo: ${manualOut}`
+                            : `Sales: ${totalSoldOut} | Other: ${manualOut}`}
                         </span>
                       </td>
 
@@ -503,12 +509,14 @@ export const InventoryModule: React.FC = () => {
                           </span>
                         </span>
                         <span className="block text-[10px] font-bold text-[#3D542E] mt-1">
-                          Bando {fullBundlesRemainingInStore}
+                          {language === "sw" ? `Bando ${fullBundlesRemainingInStore}` : `${fullBundlesRemainingInStore} Bundles`}
                           {loosePiecesInOpenedBundle > 0 ? ` + ${loosePiecesInOpenedBundle} ${p.unit}` : ""}
                         </span>
                         {unrecordedBundlesFromStore > 0 && totalSoldOut > 0 && (
                           <span className="inline-block mt-0.5 px-1.5 py-0.5 rounded bg-amber-100 text-amber-900 text-[9px] font-black">
-                            Bando {unrecordedBundlesFromStore} imetoka auto
+                            {language === "sw"
+                              ? `Bando ${unrecordedBundlesFromStore} imetoka auto`
+                              : `${unrecordedBundlesFromStore} bundles auto-issued`}
                           </span>
                         )}
                       </td>
@@ -520,13 +528,13 @@ export const InventoryModule: React.FC = () => {
                             onClick={() => openQuickModal("IN", p)}
                             className="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-black text-[11px] transition cursor-pointer"
                           >
-                            + Weka
+                            {language === "sw" ? "+ Weka" : "+ Add"}
                           </button>
                           <button
                             onClick={() => openQuickModal("OUT", p)}
                             className="px-2.5 py-1 rounded-lg bg-rose-600 hover:bg-rose-700 text-white font-black text-[11px] transition cursor-pointer"
                           >
-                            - Toa
+                            {language === "sw" ? "- Toa" : "- Issue"}
                           </button>
                           {isOwnerView && (
                             <button
@@ -566,8 +574,12 @@ export const InventoryModule: React.FC = () => {
                 </div>
                 <h3 className="text-base font-black text-[#17270a]">
                   {movementType === "IN"
-                    ? "Weka Stock Stoo (Kwa Bando au Vipande)"
-                    : "Toa Stock Stoo Mwenyewe (Bando au Vipande)"}
+                    ? language === "sw"
+                      ? "Weka Stock Stoo (Bando au Vipande)"
+                      : "Add Stock to Store (Bundles or Pieces)"
+                    : language === "sw"
+                    ? "Toa Stock Stoo (Bando au Vipande)"
+                    : "Issue Stock from Store (Bundles or Pieces)"}
                 </h3>
               </div>
               <button
@@ -581,7 +593,7 @@ export const InventoryModule: React.FC = () => {
             <form onSubmit={handleSaveMovement} className="space-y-3 text-xs mt-3">
               <div>
                 <label className="block font-bold text-[#35482c] mb-1">
-                  Andika Jina la Bidhaa:
+                  {language === "sw" ? "Andika Jina la Bidhaa:" : "Enter Product Name:"}
                 </label>
                 <input
                   type="text"
@@ -602,7 +614,7 @@ export const InventoryModule: React.FC = () => {
                       setMovUnitsPerBundle(String(bundleSizes[matched.name] || 10));
                     }
                   }}
-                  placeholder="Mfano: Viatu vya Ngozi au Nivea..."
+                  placeholder={language === "sw" ? "Mfano: Viatu vya Ngozi au Nivea..." : "e.g. Leather Shoes or Nivea lotion..."}
                   className="w-full py-2.5 px-3 rounded-xl neu-input font-bold"
                 />
               </div>
@@ -610,7 +622,7 @@ export const InventoryModule: React.FC = () => {
               {/* Choose whether entering by Bando/Carton or Individual Pieces */}
               <div className="p-2.5 rounded-xl bg-[#F4F8EC] border border-[#C6DDA8] space-y-2">
                 <div className="flex items-center justify-between">
-                  <span className="font-bold text-[#253C12]">Unaingiza/Kutoa kwa:</span>
+                  <span className="font-bold text-[#253C12]">{language === "sw" ? "Kipimo cha Stock:" : "Stock Unit Type:"}</span>
                   <div className="flex gap-1">
                     <button
                       type="button"
@@ -621,7 +633,7 @@ export const InventoryModule: React.FC = () => {
                           : "bg-white text-[#35482c] border border-[#C6DDA8]"
                       }`}
                     >
-                      Kwa Bando / Katoni
+                      {language === "sw" ? "Kwa Bando / Katoni" : "By Bundle / Carton"}
                     </button>
                     <button
                       type="button"
@@ -632,7 +644,7 @@ export const InventoryModule: React.FC = () => {
                           : "bg-white text-[#35482c] border border-[#C6DDA8]"
                       }`}
                     >
-                      Kwa Vipande (Pcs)
+                      {language === "sw" ? "Kwa Vipande" : "By Single Pieces"}
                     </button>
                   </div>
                 </div>
@@ -640,7 +652,13 @@ export const InventoryModule: React.FC = () => {
                 <div className="grid grid-cols-2 gap-2.5">
                   <div>
                     <label className="block font-bold text-[#35482c] mb-1">
-                      {movInputMode === "BUNDLE" ? "Idadi ya Bando" : "Idadi ya Vipande (Pcs)"}
+                      {movInputMode === "BUNDLE"
+                        ? language === "sw"
+                          ? "Idadi ya Bando"
+                          : "Number of Bundles"
+                        : language === "sw"
+                        ? "Idadi ya Vipande"
+                        : "Number of Pieces"}
                     </label>
                     <input
                       type="number"
@@ -648,14 +666,22 @@ export const InventoryModule: React.FC = () => {
                       required
                       value={movQuantity}
                       onChange={(e) => setMovQuantity(e.target.value)}
-                      placeholder={movInputMode === "BUNDLE" ? "Mfano: 10 (Bando)" : "Mfano: 20"}
+                      placeholder={
+                        movInputMode === "BUNDLE"
+                          ? language === "sw"
+                            ? "Mfano: 10 (Bando)"
+                            : "e.g. 10 (Bundles)"
+                          : language === "sw"
+                          ? "Mfano: 20"
+                          : "e.g. 20"
+                      }
                       className="w-full py-2 px-3 rounded-xl neu-input font-black"
                     />
                   </div>
 
                   <div>
                     <label className="block font-bold text-[#35482c] mb-1">
-                      Bando 1 Ina Vipande Ngapi?
+                      {language === "sw" ? "Bando 1 Ina Vipande Ngapi?" : "Units per Bundle / Box:"}
                     </label>
                     <input
                       type="number"
@@ -671,15 +697,15 @@ export const InventoryModule: React.FC = () => {
 
                 {movQuantity && (
                   <span className="block text-[11px] font-bold text-emerald-800">
-                    Hesabu ya Mfumo:{" "}
+                    {language === "sw" ? "Hesabu ya Mfumo: " : "Calculated Total: "}
                     {movInputMode === "BUNDLE"
-                      ? `Bando ${movQuantity} × ${movUnitsPerBundle || 10} = Vipande ${
+                      ? `${language === "sw" ? "Bando" : "Bundles"} ${movQuantity} × ${movUnitsPerBundle || 10} = ${
                           (parseInt(movQuantity) || 0) * (parseInt(movUnitsPerBundle) || 10)
-                        } (Pcs)`
-                      : `Vipande ${movQuantity} (Sawa na Bando ${(
+                        } ${language === "sw" ? "Vipande" : "Pieces"}`
+                      : `${movQuantity} ${language === "sw" ? "Vipande" : "Pieces"} (${(
                           (parseInt(movQuantity) || 0) /
                           Math.max(1, parseInt(movUnitsPerBundle) || 10)
-                        ).toFixed(1)})`}
+                        ).toFixed(1)} ${language === "sw" ? "Bando" : "Bundles"})`}
                   </span>
                 )}
               </div>
@@ -688,7 +714,7 @@ export const InventoryModule: React.FC = () => {
                 {(!user || user.role === "OWNER" || user.role === "SUPER_ADMIN") && (
                   <div>
                     <label className="block font-bold text-[#35482c] mb-1">
-                      Bei ya Kununua 1 Pc (TZS)
+                      {language === "sw" ? "Bei ya Kununua 1 Pc (TZS)" : "Cost Price per Unit (TZS)"}
                     </label>
                     <input
                       type="number"
@@ -701,7 +727,7 @@ export const InventoryModule: React.FC = () => {
                 )}
                 <div className={!user || user.role === "OWNER" || user.role === "SUPER_ADMIN" ? "" : "col-span-2"}>
                   <label className="block font-bold text-[#35482c] mb-1">
-                    Bei ya Kuuza 1 Pc (TZS)
+                    {language === "sw" ? "Bei ya Kuuza 1 Pc (TZS)" : "Selling Price per Unit (TZS)"}
                   </label>
                   <input
                     type="number"
@@ -714,7 +740,7 @@ export const InventoryModule: React.FC = () => {
               </div>
 
               <div>
-                <label className="block font-bold text-[#35482c] mb-1">Sababu</label>
+                <label className="block font-bold text-[#35482c] mb-1">{language === "sw" ? "Sababu" : "Reason"}</label>
                 <select
                   value={movReason}
                   onChange={(e) => setMovReason(e.target.value)}
@@ -722,16 +748,24 @@ export const InventoryModule: React.FC = () => {
                 >
                   {movementType === "IN" ? (
                     <>
-                      <option value="Mzigo Mpya Ulioingia Stoo">Mzigo Mpya Ulioingia Stoo</option>
-                      <option value="Kurudishwa Stoo (Return)">Kurudishwa Stoo (Return)</option>
+                      <option value="Mzigo Mpya Ulioingia Stoo">
+                        {language === "sw" ? "Mzigo Mpya Ulioingia Stoo" : "New Stock Delivery"}
+                      </option>
+                      <option value="Kurudishwa Stoo (Return)">
+                        {language === "sw" ? "Kurudishwa Stoo (Return)" : "Stock Return"}
+                      </option>
                     </>
                   ) : (
                     <>
                       <option value="Imetolewa Stoo Kwenda Dukani">
-                        Imetolewa Stoo Kwenda Dukani
+                        {language === "sw" ? "Imetolewa Stoo Kwenda Dukani" : "Transferred to Counter"}
                       </option>
-                      <option value="Mauzo ya Siku (Imeuzwa)">Mauzo ya Siku (Imeuzwa)</option>
-                      <option value="Imeharibika (Damage)">Imeharibika (Damage)</option>
+                      <option value="Mauzo ya Siku (Imeuzwa)">
+                        {language === "sw" ? "Mauzo ya Siku (Imeuzwa)" : "Direct Sale"}
+                      </option>
+                      <option value="Imeharibika (Damage)">
+                        {language === "sw" ? "Imeharibika (Damage)" : "Damaged / Expired"}
+                      </option>
                     </>
                   )}
                 </select>
@@ -743,7 +777,7 @@ export const InventoryModule: React.FC = () => {
                   onClick={() => setIsMovementModalOpen(false)}
                   className="flex-1 py-2.5 rounded-xl neu-btn-secondary font-bold"
                 >
-                  Ghairi
+                  {language === "sw" ? "Ghairi" : "Cancel"}
                 </button>
                 <button
                   type="submit"
@@ -753,7 +787,13 @@ export const InventoryModule: React.FC = () => {
                       : "bg-rose-600 hover:bg-rose-700"
                   }`}
                 >
-                  {movementType === "IN" ? "+ Hifadhi Stock IN" : "- Hifadhi Stock OUT"}
+                  {movementType === "IN"
+                    ? language === "sw"
+                      ? "+ Hifadhi Stock"
+                      : "+ Save Stock In"
+                    : language === "sw"
+                    ? "- Toa Stock"
+                    : "- Issue Stock Out"}
                 </button>
               </div>
             </form>
