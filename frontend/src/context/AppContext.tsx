@@ -329,11 +329,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         if (storedView === "app" || !storedView) {
           setViewStateInternal("app");
         }
-        if (storedModule) {
+        const isSuper = parsedUser.role === "SUPER_ADMIN";
+        const isValidSuperMod = storedModule && ["super-admin", "audit-logs", "notifications", "settings", "help"].includes(storedModule);
+        if (isSuper) {
+          setActiveModuleInternal(isValidSuperMod ? storedModule : "super-admin");
+        } else if (storedModule) {
           setActiveModuleInternal(storedModule);
         } else {
-          const isBoss = parsedUser.role === "OWNER" || parsedUser.role === "SUPER_ADMIN";
-          setActiveModuleInternal(isBoss ? "dashboard" : "sales");
+          setActiveModuleInternal(parsedUser.role === "OWNER" ? "dashboard" : "sales");
         }
       } else {
         setViewStateInternal("landing");
@@ -700,8 +703,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       branchId: currentBranch?.id || "",
     };
     setUser(switchedUser);
-    const isBoss = switchedUser.role === "OWNER" || switchedUser.role === "SUPER_ADMIN";
-    setActiveModule(isBoss ? "dashboard" : "sales");
+    const nextMod = switchedUser.role === "SUPER_ADMIN" ? "super-admin" : switchedUser.role === "OWNER" ? "dashboard" : "sales";
+    setActiveModule(nextMod);
     notifyCenter(
       "Akaunti Imebadilishwa",
       `Sasa unatumia akaunti ya ${switchedUser.name} (${switchedUser.role}).`,

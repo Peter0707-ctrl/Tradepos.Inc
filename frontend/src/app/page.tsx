@@ -51,7 +51,9 @@ import {
   User,
   MoreHorizontal,
   Sparkles,
-  X
+  X,
+  ShieldAlert,
+  Activity
 } from "lucide-react";
 
 class AppErrorBoundary extends React.Component<
@@ -124,17 +126,34 @@ function MainApp() {
   }, [user]);
 
   const isLoggedIn = !!user;
-  const isOwner = !user || user.role === "OWNER" || user.role === "SUPER_ADMIN";
+  const isSuperAdmin = user?.role === "SUPER_ADMIN";
+  const isOwner = user?.role === "OWNER" || (!user && !isSuperAdmin);
 
-  // Strict privacy guard: Sellers never see Boss pages (dashboard, cash-register/reports, employees, settings, subscription)
+  // Strict isolation:
+  // 1. Super Admin: SaaS platform only (super-admin, audit-logs, notifications, settings, help)
+  // 2. Boss/Owner: Full store management (dashboard, sales, expenses, inventory, customers, reports, etc.)
+  // 3. Cashier/Seller: POS and daily sales only
+  const superAdminModules = ["super-admin", "audit-logs", "notifications", "settings", "help"];
   const bossOnlyModules = ["dashboard", "cash-register", "reports", "employees", "settings", "subscription"];
-  const effectiveModule = !isOwner && bossOnlyModules.includes(activeModule) ? "sales" : activeModule;
+
+  let effectiveModule = activeModule;
+  if (isSuperAdmin) {
+    if (!superAdminModules.includes(activeModule)) {
+      effectiveModule = "super-admin";
+    }
+  } else if (!isOwner && bossOnlyModules.includes(activeModule)) {
+    effectiveModule = "sales";
+  }
 
   React.useEffect(() => {
-    if (isHydrated && !isOwner && bossOnlyModules.includes(activeModule)) {
-      setActiveModule("sales");
+    if (isHydrated) {
+      if (isSuperAdmin && !superAdminModules.includes(activeModule)) {
+        setActiveModule("super-admin");
+      } else if (!isSuperAdmin && !isOwner && bossOnlyModules.includes(activeModule)) {
+        setActiveModule("sales");
+      }
     }
-  }, [isHydrated, isOwner, activeModule, setActiveModule]);
+  }, [isHydrated, isSuperAdmin, isOwner, activeModule, setActiveModule]);
 
 
   // Human readable title lookup
@@ -228,94 +247,150 @@ function MainApp() {
 
             {/* CENTER BUSINESS WORKSPACE */}
             <main className="flex-1 overflow-hidden relative">
-              {isOwner && (effectiveModule === "dashboard" || effectiveModule === "ai-assistant") && (
-                <DashboardOverview onNavigate={(m) => setActiveModule(m)} />
+              {isSuperAdmin ? (
+                <>
+                  {effectiveModule === "super-admin" && <SuperAdminPanel />}
+                  {effectiveModule === "audit-logs" && <AuditLogsModule />}
+                  {effectiveModule === "notifications" && <NotificationCenterModule onNavigate={(m) => setActiveModule(m)} />}
+                  {effectiveModule === "settings" && <BusinessSettingsModule />}
+                  {effectiveModule === "help" && <HelpSupportModule />}
+                </>
+              ) : (
+                <>
+                  {isOwner && (effectiveModule === "dashboard" || effectiveModule === "ai-assistant") && (
+                    <DashboardOverview onNavigate={(m) => setActiveModule(m)} />
+                  )}
+                  {(effectiveModule === "sales" || effectiveModule === "pos") && <SalesLedgerModule />}
+                  {(effectiveModule === "expenses" || effectiveModule === "accounting") && <ExpensesAccountingModule />}
+                  {(effectiveModule === "products" || effectiveModule === "inventory") && <InventoryModule />}
+                  {(effectiveModule === "online-store" || effectiveModule === "orders" || effectiveModule === "deliveries") && (
+                    <OnlineStoreDeliveriesModule />
+                  )}
+                  {effectiveModule === "customers" && <CustomersModule />}
+                  {isOwner && (effectiveModule === "cash-register" || effectiveModule === "reports") && <CashRegisterModule />}
+                  {(effectiveModule === "purchases" || effectiveModule === "suppliers") && <PurchasesSuppliersModule />}
+                  {isOwner && effectiveModule === "employees" && <EmployeesRolesModule onNavigate={(m) => setActiveModule(m)} />}
+                  {(effectiveModule === "branches" || effectiveModule === "warehouses") && <MultiBranchWarehouseModule />}
+                  {effectiveModule === "notifications" && <NotificationCenterModule onNavigate={(m) => setActiveModule(m)} />}
+                  {isOwner && effectiveModule === "settings" && <BusinessSettingsModule />}
+                  {effectiveModule === "help" && <HelpSupportModule />}
+                  {isOwner && effectiveModule === "subscription" && <SubscriptionBillingModule />}
+                  {effectiveModule === "profile" && <ProfileSecurityModule />}
+                  {effectiveModule === "audit-logs" && <AuditLogsModule />}
+                </>
               )}
-              {(effectiveModule === "sales" || effectiveModule === "pos") && <SalesLedgerModule />}
-              {(effectiveModule === "expenses" || effectiveModule === "accounting") && <ExpensesAccountingModule />}
-              {(effectiveModule === "products" || effectiveModule === "inventory") && <InventoryModule />}
-              {(effectiveModule === "online-store" || effectiveModule === "orders" || effectiveModule === "deliveries") && (
-                <OnlineStoreDeliveriesModule />
-              )}
-              {effectiveModule === "customers" && <CustomersModule />}
-              {isOwner && (effectiveModule === "cash-register" || effectiveModule === "reports") && <CashRegisterModule />}
-              {(effectiveModule === "purchases" || effectiveModule === "suppliers") && <PurchasesSuppliersModule />}
-              {isOwner && effectiveModule === "employees" && <EmployeesRolesModule onNavigate={(m) => setActiveModule(m)} />}
-              {(effectiveModule === "branches" || effectiveModule === "warehouses") && <MultiBranchWarehouseModule />}
-              {effectiveModule === "notifications" && <NotificationCenterModule onNavigate={(m) => setActiveModule(m)} />}
-              {isOwner && effectiveModule === "settings" && <BusinessSettingsModule />}
-              {effectiveModule === "help" && <HelpSupportModule />}
-              {isOwner && effectiveModule === "subscription" && <SubscriptionBillingModule />}
-              {effectiveModule === "profile" && <ProfileSecurityModule />}
-              {effectiveModule === "super-admin" && <SuperAdminPanel />}
-              {effectiveModule === "audit-logs" && <AuditLogsModule />}
             </main>
 
-            {/* FLOATING ASK AI BUTTON */}
-            <button
-              onClick={() => setIsAiModalOpen(true)}
-              className="fixed bottom-16 md:bottom-6 right-6 z-40 px-4 py-2.5 rounded-2xl bg-[#1B2F09] text-[#E1FFAC] font-black text-xs shadow-xl border-2 border-[#A6DF52] flex items-center gap-2 hover:scale-105 active:scale-95 transition"
-            >
-              <Sparkles className="w-4 h-4 text-[#E1FFAC]" />
-              <span>Ask AI</span>
-            </button>
+            {/* FLOATING ASK AI BUTTON (STORE MANAGEMENT ONLY) */}
+            {!isSuperAdmin && (
+              <button
+                onClick={() => setIsAiModalOpen(true)}
+                className="fixed bottom-16 md:bottom-6 right-6 z-40 px-4 py-2.5 rounded-2xl bg-[#1B2F09] text-[#E1FFAC] font-black text-xs shadow-xl border-2 border-[#A6DF52] flex items-center gap-2 hover:scale-105 active:scale-95 transition"
+              >
+                <Sparkles className="w-4 h-4 text-[#E1FFAC]" />
+                <span>Ask AI</span>
+              </button>
+            )}
 
-            {/* MOBILE BOTTOM NAVIGATION BAR (SEPARATE BUTTONS FOR MAUZO, MATUMIZI, STOO, WATEJA) */}
+            {/* MOBILE BOTTOM NAVIGATION BAR */}
             <div className="md:hidden h-14 bg-white border-t border-[#D8E6CC] px-2 flex items-center justify-around z-30 shrink-0">
-              {isOwner && (
-                <button
-                  onClick={() => setActiveModule("dashboard")}
-                  className={`flex flex-col items-center text-[10px] font-bold ${
-                    effectiveModule === "dashboard" ? "text-[#1C350A] font-black" : "text-[#627956]"
-                  }`}
-                >
-                  <Store className="w-4 h-4" />
-                  <span>{language === "sw" ? "Dashibodi" : "Dashboard"}</span>
-                </button>
+              {isSuperAdmin ? (
+                <>
+                  <button
+                    onClick={() => setActiveModule("super-admin")}
+                    className={`flex flex-col items-center text-[10px] font-bold ${
+                      effectiveModule === "super-admin" ? "text-[#1C350A] font-black" : "text-[#627956]"
+                    }`}
+                  >
+                    <ShieldAlert className="w-4 h-4" />
+                    <span>{language === "sw" ? "Jukwaa" : "Platform"}</span>
+                  </button>
+                  <button
+                    onClick={() => setActiveModule("audit-logs")}
+                    className={`flex flex-col items-center text-[10px] font-bold ${
+                      effectiveModule === "audit-logs" ? "text-[#1C350A] font-black" : "text-[#627956]"
+                    }`}
+                  >
+                    <Activity className="w-4 h-4" />
+                    <span>{language === "sw" ? "Audit" : "Logs"}</span>
+                  </button>
+                  <button
+                    onClick={() => setActiveModule("notifications")}
+                    className={`flex flex-col items-center text-[10px] font-bold ${
+                      effectiveModule === "notifications" ? "text-[#1C350A] font-black" : "text-[#627956]"
+                    }`}
+                  >
+                    <Bell className="w-4 h-4" />
+                    <span>{language === "sw" ? "Taarifa" : "Notifs"}</span>
+                  </button>
+                  <button
+                    onClick={() => setActiveModule("settings")}
+                    className={`flex flex-col items-center text-[10px] font-bold ${
+                      effectiveModule === "settings" ? "text-[#1C350A] font-black" : "text-[#627956]"
+                    }`}
+                  >
+                    <Settings className="w-4 h-4" />
+                    <span>{language === "sw" ? "Mfumo" : "Settings"}</span>
+                  </button>
+                </>
+              ) : (
+                <>
+                  {isOwner && (
+                    <button
+                      onClick={() => setActiveModule("dashboard")}
+                      className={`flex flex-col items-center text-[10px] font-bold ${
+                        effectiveModule === "dashboard" ? "text-[#1C350A] font-black" : "text-[#627956]"
+                      }`}
+                    >
+                      <Store className="w-4 h-4" />
+                      <span>{language === "sw" ? "Dashibodi" : "Dashboard"}</span>
+                    </button>
+                  )}
+
+                  <button
+                    onClick={() => setActiveModule("sales")}
+                    className={`flex flex-col items-center text-[10px] font-bold ${
+                      effectiveModule === "sales" ? "text-[#1C350A] font-black" : "text-[#627956]"
+                    }`}
+                  >
+                    <ShoppingBag className="w-4 h-4" />
+                    <span>{language === "sw" ? "Mauzo" : "Sales"}</span>
+                  </button>
+
+                  <button
+                    onClick={() => setActiveModule("expenses")}
+                    className={`flex flex-col items-center text-[10px] font-bold ${
+                      effectiveModule === "expenses" ? "text-[#1C350A] font-black" : "text-[#627956]"
+                    }`}
+                  >
+                    <DollarSign className="w-4 h-4" />
+                    <span>{language === "sw" ? "Matumizi" : "Expenses"}</span>
+                  </button>
+
+                  <button
+                    onClick={() => setActiveModule("inventory")}
+                    className={`flex flex-col items-center text-[10px] font-bold ${
+                      effectiveModule === "inventory" || effectiveModule === "products" ? "text-[#1C350A] font-black" : "text-[#627956]"
+                    }`}
+                  >
+                    <Layers className="w-4 h-4" />
+                    <span>{language === "sw" ? "Stoo" : "Store"}</span>
+                  </button>
+
+                  <button
+                    onClick={() => setIsMobileMoreOpen(true)}
+                    className="flex flex-col items-center text-[10px] font-bold text-[#627956]"
+                  >
+                    <MoreHorizontal className="w-4 h-4" />
+                    <span>{t.nav.allMenu}</span>
+                  </button>
+                </>
               )}
-
-              <button
-                onClick={() => setActiveModule("sales")}
-                className={`flex flex-col items-center text-[10px] font-bold ${
-                  effectiveModule === "sales" ? "text-[#1C350A] font-black" : "text-[#627956]"
-                }`}
-              >
-                <ShoppingBag className="w-4 h-4" />
-                <span>{language === "sw" ? "Mauzo" : "Sales"}</span>
-              </button>
-
-              <button
-                onClick={() => setActiveModule("expenses")}
-                className={`flex flex-col items-center text-[10px] font-bold ${
-                  effectiveModule === "expenses" ? "text-[#1C350A] font-black" : "text-[#627956]"
-                }`}
-              >
-                <DollarSign className="w-4 h-4" />
-                <span>{language === "sw" ? "Matumizi" : "Expenses"}</span>
-              </button>
-
-              <button
-                onClick={() => setActiveModule("inventory")}
-                className={`flex flex-col items-center text-[10px] font-bold ${
-                  effectiveModule === "inventory" || effectiveModule === "products" ? "text-[#1C350A] font-black" : "text-[#627956]"
-                }`}
-              >
-                <Layers className="w-4 h-4" />
-                <span>{language === "sw" ? "Stoo" : "Store"}</span>
-              </button>
-
-              <button
-                onClick={() => setIsMobileMoreOpen(true)}
-                className="flex flex-col items-center text-[10px] font-bold text-[#627956]"
-              >
-                <MoreHorizontal className="w-4 h-4" />
-                <span>{t.nav.allMenu}</span>
-              </button>
             </div>
           </div>
 
-          {/* MOBILE "MORE" DRAWER MODAL (RESPECTS OWNER VS SELLER PRIVACY) */}
-          {isMobileMoreOpen && (
+          {/* MOBILE "MORE" DRAWER MODAL */}
+          {isMobileMoreOpen && !isSuperAdmin && (
             <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 backdrop-blur-xs md:hidden">
               <div className="w-full bg-white rounded-t-3xl p-5 border-t-2 border-[#BFE973] shadow-2xl max-h-[75vh] overflow-y-auto animate-slide-up">
                 <div className="flex items-center justify-between pb-3 border-b border-[#EDF4E4] mb-3">

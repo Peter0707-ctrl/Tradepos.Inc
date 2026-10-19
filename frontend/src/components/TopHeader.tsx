@@ -48,7 +48,8 @@ export const TopHeader: React.FC<TopHeaderProps> = ({ pageTitle, onNavigate, onL
   const notifRef = useRef<HTMLDivElement>(null);
   const profileRef = useRef<HTMLDivElement>(null);
 
-  const isOwner = !user || user.role === "OWNER" || user.role === "SUPER_ADMIN";
+  const isSuperAdmin = user?.role === "SUPER_ADMIN";
+  const isOwner = user?.role === "OWNER" || (!user && !isSuperAdmin);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -120,13 +121,17 @@ export const TopHeader: React.FC<TopHeaderProps> = ({ pageTitle, onNavigate, onL
         {/* Left: Dynamic Page Title */}
         <div className="flex items-center gap-2 min-w-0">
           <h1 className="text-sm sm:text-base lg:text-xl font-black text-[#17260A] tracking-tight truncate max-w-[160px] sm:max-w-[320px] lg:max-w-none">
-            {pageTitle}
+            {isSuperAdmin
+              ? language === "sw"
+                ? "Paneli Kuu ya Jukwaa (TradePOS Cloud)"
+                : "Platform Super Admin Console"
+              : pageTitle}
           </h1>
         </div>
 
         {/* Right Controls: Install App (PWA), Notifications, Help, Language, Profile */}
         <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
-          {!isStandalone && (
+          {!isStandalone && !isSuperAdmin && (
             <button
               onClick={handleInstallPwa}
               className="px-2.5 py-1.5 rounded-xl bg-[#E1FFAC] hover:bg-[#d2f88c] border border-[#9CE034] text-[#162709] text-xs font-black flex items-center gap-1.5 shadow-xs transition cursor-pointer"
@@ -269,7 +274,9 @@ export const TopHeader: React.FC<TopHeaderProps> = ({ pageTitle, onNavigate, onL
                   {user?.name || (language === "sw" ? "Mmiliki wa Duka" : "Store Owner")}
                 </span>
                 <span className="block text-[10px] font-bold text-[#5C724F]">
-                  {isOwner
+                  {isSuperAdmin
+                    ? "Platform Admin (ROOT)"
+                    : isOwner
                     ? language === "sw"
                       ? "Mwenye Duka"
                       : "Store Owner"
@@ -283,102 +290,113 @@ export const TopHeader: React.FC<TopHeaderProps> = ({ pageTitle, onNavigate, onL
 
             {isProfileOpen && (
               <div className="absolute right-0 mt-2 w-64 rounded-2xl bg-white border-2 border-[#C2E880] shadow-xl p-2 z-50 animate-fade-in text-xs font-bold text-[#2C401E]">
-                <div className="px-3 py-2 border-b border-[#EDF4E4]">
-                  <span className="block font-black text-[#162708]">{user?.name}</span>
-                  <span className="block text-[11px] text-[#697E5D] font-normal">
-                    {isOwner ? "Mwenye Duka — Anaona Vyote" : "Akaunti ya Muuzaji — Siri ya Boss Imelindwa"}
-                  </span>
-                </div>
+                {isSuperAdmin ? (
+                  <div className="px-3 py-2 border-b border-[#EDF4E4]">
+                    <span className="block font-black text-[#162708]">Platform Super Admin</span>
+                    <span className="block text-[11px] text-[#476B19] font-bold mt-0.5">
+                      Usimamizi Mkuu wa Jukwaa &amp; Maduka (ROOT)
+                    </span>
+                  </div>
+                ) : (
+                  <>
+                    <div className="px-3 py-2 border-b border-[#EDF4E4]">
+                      <span className="block font-black text-[#162708]">{user?.name}</span>
+                      <span className="block text-[11px] text-[#697E5D] font-normal">
+                        {isOwner ? "Mwenye Duka — Anaona Vyote" : "Akaunti ya Muuzaji — Siri ya Boss Imelindwa"}
+                      </span>
+                    </div>
 
-                {/* Quick Switch Between Owner & Staff Accounts (Protected by Boss PIN) */}
-                <div className="py-1.5 px-2 border-b border-[#EDF4E4] bg-[#F8FBF4] rounded-xl my-1">
-                  <span className="block text-[10px] font-black text-[#58704A] uppercase px-1 mb-1">
-                    {language === "sw" ? "Badili Akaunti ya Duka" : "Switch Shop Account"}
-                  </span>
-                  <div className="space-y-1">
-                    {employees.map((emp) => {
-                      const isActive = user?.id === emp.id;
-                      const isTargetBoss = emp.role === "OWNER";
-                      return (
+                    {/* Quick Switch Between Owner & Staff Accounts (Protected by Boss PIN) */}
+                    <div className="py-1.5 px-2 border-b border-[#EDF4E4] bg-[#F8FBF4] rounded-xl my-1">
+                      <span className="block text-[10px] font-black text-[#58704A] uppercase px-1 mb-1">
+                        {language === "sw" ? "Badili Akaunti ya Duka" : "Switch Shop Account"}
+                      </span>
+                      <div className="space-y-1">
+                        {employees.map((emp) => {
+                          const isActive = user?.id === emp.id;
+                          const isTargetBoss = emp.role === "OWNER";
+                          return (
+                            <button
+                              key={emp.id}
+                              onClick={() => {
+                                setIsProfileOpen(false);
+                                if (isTargetBoss && !isOwner) {
+                                  // Require Boss PIN when switching from Seller -> Owner!
+                                  setPendingBossEmpId(emp.id);
+                                  setPinInput("");
+                                  setPinError("");
+                                  return;
+                                }
+                                switchEmployeeAccount(emp.id);
+                                onNavigate(isTargetBoss ? "dashboard" : "sales");
+                              }}
+                              className={`w-full flex items-center justify-between px-2 py-1.5 rounded-lg text-[11px] transition cursor-pointer ${
+                                isActive
+                                  ? "bg-[#E1FFAC] text-[#162808] font-black border border-[#9CE034]"
+                                  : "hover:bg-white text-[#334A24]"
+                              }`}
+                            >
+                              <span className="truncate flex items-center gap-1">
+                                {isTargetBoss && !isOwner && <Lock className="w-3 h-3 text-[#3F6315]" />}
+                                <span>{emp.name}</span>
+                              </span>
+                              <span className="text-[9px] px-1.5 py-0.5 rounded bg-white/80 text-[#3F582E] font-bold">
+                                {isTargetBoss ? "Boss (PIN)" : emp.role}
+                              </span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {isOwner && (
+                      <div className="py-1 space-y-0.5">
                         <button
-                          key={emp.id}
                           onClick={() => {
                             setIsProfileOpen(false);
-                            if (isTargetBoss && !isOwner) {
-                              // Require Boss PIN when switching from Seller -> Owner!
-                              setPendingBossEmpId(emp.id);
-                              setPinInput("");
-                              setPinError("");
-                              return;
-                            }
-                            switchEmployeeAccount(emp.id);
-                            onNavigate(isTargetBoss ? "dashboard" : "sales");
+                            onNavigate("profile");
                           }}
-                          className={`w-full flex items-center justify-between px-2 py-1.5 rounded-lg text-[11px] transition cursor-pointer ${
-                            isActive
-                              ? "bg-[#E1FFAC] text-[#162808] font-black border border-[#9CE034]"
-                              : "hover:bg-white text-[#334A24]"
-                          }`}
+                          className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-[#F2F7EB] transition text-left"
                         >
-                          <span className="truncate flex items-center gap-1">
-                            {isTargetBoss && !isOwner && <Lock className="w-3 h-3 text-[#3F6315]" />}
-                            <span>{emp.name}</span>
-                          </span>
-                          <span className="text-[9px] px-1.5 py-0.5 rounded bg-white/80 text-[#3F582E] font-bold">
-                            {isTargetBoss ? "Boss (PIN)" : emp.role}
-                          </span>
+                          <User className="w-4 h-4 text-[#476517]" />
+                          <span>{language === "sw" ? "Wasifu Wangu" : "My Profile"}</span>
                         </button>
-                      );
-                    })}
-                  </div>
-                </div>
 
-                {isOwner && (
-                  <div className="py-1 space-y-0.5">
-                    <button
-                      onClick={() => {
-                        setIsProfileOpen(false);
-                        onNavigate("profile");
-                      }}
-                      className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-[#F2F7EB] transition text-left"
-                    >
-                      <User className="w-4 h-4 text-[#476517]" />
-                      <span>{language === "sw" ? "Wasifu Wangu" : "My Profile"}</span>
-                    </button>
+                        <button
+                          onClick={() => {
+                            setIsProfileOpen(false);
+                            onNavigate("employees");
+                          }}
+                          className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-[#F2F7EB] transition text-left"
+                        >
+                          <Shield className="w-4 h-4 text-[#476517]" />
+                          <span>{language === "sw" ? "Akaunti za Wafanyakazi" : "Staff Accounts"}</span>
+                        </button>
 
-                    <button
-                      onClick={() => {
-                        setIsProfileOpen(false);
-                        onNavigate("employees");
-                      }}
-                      className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-[#F2F7EB] transition text-left"
-                    >
-                      <Shield className="w-4 h-4 text-[#476517]" />
-                      <span>{language === "sw" ? "Akaunti za Wafanyakazi" : "Staff Accounts"}</span>
-                    </button>
+                        <button
+                          onClick={() => {
+                            setIsProfileOpen(false);
+                            onNavigate("settings");
+                          }}
+                          className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-[#F2F7EB] transition text-left"
+                        >
+                          <Settings className="w-4 h-4 text-[#476517]" />
+                          <span>{language === "sw" ? "Mipangilio ya Biashara" : "Business Settings"}</span>
+                        </button>
 
-                    <button
-                      onClick={() => {
-                        setIsProfileOpen(false);
-                        onNavigate("settings");
-                      }}
-                      className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-[#F2F7EB] transition text-left"
-                    >
-                      <Settings className="w-4 h-4 text-[#476517]" />
-                      <span>{language === "sw" ? "Mipangilio ya Biashara" : "Business Settings"}</span>
-                    </button>
-
-                    <button
-                      onClick={() => {
-                        setIsProfileOpen(false);
-                        onNavigate("subscription");
-                      }}
-                      className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-[#F2F7EB] transition text-left"
-                    >
-                      <CreditCard className="w-4 h-4 text-[#476517]" />
-                      <span>{language === "sw" ? "Vifurushi & Malipo" : "Subscription & Billing"}</span>
-                    </button>
-                  </div>
+                        <button
+                          onClick={() => {
+                            setIsProfileOpen(false);
+                            onNavigate("subscription");
+                          }}
+                          className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-[#F2F7EB] transition text-left"
+                        >
+                          <CreditCard className="w-4 h-4 text-[#476517]" />
+                          <span>{language === "sw" ? "Vifurushi & Malipo" : "Subscription & Billing"}</span>
+                        </button>
+                      </div>
+                    )}
+                  </>
                 )}
 
                 <div className="pt-1 border-t border-[#EDF4E4]">

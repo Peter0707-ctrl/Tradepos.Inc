@@ -22,7 +22,8 @@ import {
   TrendingUp,
   Lock,
   CheckCircle2,
-  Send
+  Send,
+  Activity
 } from "lucide-react";
 
 interface SidebarProps {
@@ -52,8 +53,39 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeModule, setActiveModule,
   const [pinError, setPinError] = useState("");
 
   const isSuperAdmin = user?.role === "SUPER_ADMIN";
-  const isOwner = !user || user.role === "OWNER" || isSuperAdmin;
+  const isOwner = user?.role === "OWNER" || (!user && !isSuperAdmin);
   const pendingReportsCount = (dailyReports || []).filter((r) => r.status === "PENDING_REVIEW").length;
+
+  // DEDICATED SAAS NAVIGATION FOR PLATFORM SUPER ADMIN (ZERO SHOP ITEMS)
+  const superAdminNav: { id: string; label: string; icon: any; badge?: string }[] = [
+    {
+      id: "super-admin",
+      label: language === "sw" ? "Paneli Kuu ya Jukwaa" : "Platform Overview",
+      icon: ShieldAlert,
+      badge: "ROOT",
+    },
+    {
+      id: "audit-logs",
+      label: language === "sw" ? "Kumbukumbu za Mfumo" : "Global Audit Logs",
+      icon: Activity,
+    },
+    {
+      id: "notifications",
+      label: language === "sw" ? "Matangazo na Taarifa" : "System Broadcasts",
+      icon: Bell,
+      badge: unreadNotificationCount > 0 ? String(unreadNotificationCount) : undefined,
+    },
+    {
+      id: "settings",
+      label: language === "sw" ? "Mipangilio ya Jukwaa" : "Platform Settings",
+      icon: Settings,
+    },
+    {
+      id: "help",
+      label: language === "sw" ? "Msaada & Nyaraka" : "Help & Documentation",
+      icon: HelpCircle,
+    },
+  ];
 
   // SEPARATE SIDEBAR BUTTONS FOR OWNER VS SELLERS (STRICT PRIVACY):
   // - Owner sees all 7 sections (including Dashibodi Kuu & Ripoti za Faida na Hasara)
@@ -140,10 +172,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeModule, setActiveModule,
     { id: "help", label: t.nav.help, icon: HelpCircle },
   ];
 
-  if (isSuperAdmin) {
-    mainDailyWorkflowNav.unshift({ id: "super-admin", label: t.nav.superAdmin, icon: ShieldAlert, badge: "ROOT" });
-  }
-
   const handleNavClick = (id: string) => {
     if (id === "ai-assistant") {
       setIsAiModalOpen(true);
@@ -212,21 +240,25 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeModule, setActiveModule,
           <div className="p-4 border-b border-[#D8E6CC] flex items-center justify-between">
             {!collapsed ? (
               <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-xl bg-[#E1FFAC] border border-[#A6DF52] flex items-center justify-center text-[#182C08] shadow-xs">
-                  <ShoppingBag className="w-5 h-5" />
+                <div className={`w-9 h-9 rounded-xl ${isSuperAdmin ? "bg-[#1B2F09] border border-[#8ECE28] text-[#E1FFAC]" : "bg-[#E1FFAC] border border-[#A6DF52] text-[#182C08]"} flex items-center justify-center shadow-xs`}>
+                  {isSuperAdmin ? <ShieldAlert className="w-5 h-5" /> : <ShoppingBag className="w-5 h-5" />}
                 </div>
                 <div>
-                  <h2 className="text-sm font-black text-[#152508] tracking-tight">TradePOS</h2>
+                  <h2 className="text-sm font-black text-[#152508] tracking-tight">
+                    {isSuperAdmin ? "TradePOS Cloud" : "TradePOS"}
+                  </h2>
                   <span className="text-[10px] font-bold text-[#556D48] uppercase tracking-wider block">
-                    {isOwner
+                    {isSuperAdmin
+                      ? "Super Admin (ROOT)"
+                      : isOwner
                       ? language === "sw" ? "Mwenye Duka" : "Store Owner"
                       : `${language === "sw" ? "Muuzaji" : "Cashier"}: ${user?.name}`}
                   </span>
                 </div>
               </div>
             ) : (
-              <div className="w-9 h-9 rounded-xl bg-[#E1FFAC] border border-[#A6DF52] flex items-center justify-center text-[#182C08] mx-auto shadow-xs">
-                <ShoppingBag className="w-5 h-5" />
+              <div className={`w-9 h-9 rounded-xl ${isSuperAdmin ? "bg-[#1B2F09] border border-[#8ECE28] text-[#E1FFAC]" : "bg-[#E1FFAC] border border-[#A6DF52] text-[#182C08]"} flex items-center justify-center mx-auto shadow-xs`}>
+                {isSuperAdmin ? <ShieldAlert className="w-5 h-5" /> : <ShoppingBag className="w-5 h-5" />}
               </div>
             )}
 
@@ -241,25 +273,36 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeModule, setActiveModule,
 
           {/* Scrollable Navigation Items */}
           <div className="overflow-y-auto max-h-[calc(100vh-230px)] p-2.5 space-y-1">
-            <div className="px-2 py-1 text-[10px] font-extrabold text-[#4E683D] uppercase tracking-wider">
-              {!collapsed
-                ? isOwner
-                  ? language === "sw"
-                    ? "Mtiririko wa Biashara (Owner)"
-                    : "Owner Business Workflow"
-                  : language === "sw"
-                  ? "Sehemu za Muuzaji Kila Siku"
-                  : "Seller Daily Tasks"
-                : "•"}
-            </div>
-            {mainDailyWorkflowNav.map(renderNavItem)}
-
-            {isOwner && (
+            {isSuperAdmin ? (
               <>
-                <div className="pt-2 px-2 pb-1 text-[10px] font-extrabold text-[#6E8560] uppercase tracking-wider border-t border-[#DDE9D1] mt-2">
-                  {!collapsed ? (language === "sw" ? "Usimamizi wa Boss" : "Owner Management") : "•"}
+                <div className="px-2 py-1 text-[10px] font-extrabold text-[#4E683D] uppercase tracking-wider">
+                  {!collapsed ? (language === "sw" ? "USIMAMIZI WA JUKWAA (SAAS)" : "PLATFORM MANAGEMENT") : "•"}
                 </div>
-                {lowUsageNav.map(renderNavItem)}
+                {superAdminNav.map(renderNavItem)}
+              </>
+            ) : (
+              <>
+                <div className="px-2 py-1 text-[10px] font-extrabold text-[#4E683D] uppercase tracking-wider">
+                  {!collapsed
+                    ? isOwner
+                      ? language === "sw"
+                        ? "Mtiririko wa Biashara (Owner)"
+                        : "Owner Business Workflow"
+                      : language === "sw"
+                      ? "Sehemu za Muuzaji Kila Siku"
+                      : "Seller Daily Tasks"
+                    : "•"}
+                </div>
+                {mainDailyWorkflowNav.map(renderNavItem)}
+
+                {isOwner && (
+                  <>
+                    <div className="pt-2 px-2 pb-1 text-[10px] font-extrabold text-[#6E8560] uppercase tracking-wider border-t border-[#DDE9D1] mt-2">
+                      {!collapsed ? (language === "sw" ? "Usimamizi wa Boss" : "Owner Management") : "•"}
+                    </div>
+                    {lowUsageNav.map(renderNavItem)}
+                  </>
+                )}
               </>
             )}
           </div>
@@ -267,7 +310,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeModule, setActiveModule,
 
         {/* Footer Controls: Funga Mauzo ya Siku + Protected Switch Owner/Staff & Logout */}
         <div className="p-3 border-t border-[#D8E6CC] bg-[#EDF3E4] space-y-1.5">
-          {!collapsed && (
+          {!isSuperAdmin && !collapsed && (
             <>
               {/* Quick "Funga Mauzo ya Siku" button so Seller/Owner can end the day and auto-send to Boss */}
               {!isDayClosed ? (
@@ -329,10 +372,10 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeModule, setActiveModule,
             title={collapsed ? (language === "sw" ? "Toka Nje" : "Sign Out") : undefined}
             className={`w-full flex items-center ${
               collapsed ? "justify-center" : "gap-2.5 px-3"
-            } py-2 rounded-xl text-xs font-bold text-rose-700 hover:bg-rose-50 transition cursor-pointer`}
+            } py-2.5 rounded-xl text-xs font-bold text-rose-700 hover:bg-rose-50 border border-rose-200/50 transition cursor-pointer`}
           >
             <LogOut className="w-4 h-4 shrink-0" />
-            {!collapsed && <span>{language === "sw" ? "Toka Nje" : "Sign Out"}</span>}
+            {!collapsed && <span>{language === "sw" ? "Toka Kwenye Mfumo" : "Sign Out"}</span>}
           </button>
         </div>
       </aside>
