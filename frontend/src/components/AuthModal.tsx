@@ -36,28 +36,23 @@ export const AuthModal: React.FC<AuthModalProps> = ({ initialMode, onClose, onSu
   const [paymentPhone, setPaymentPhone] = useState("");
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
 
-  const handleLogin = (e: React.FormEvent) => {
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
+
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!loginIdentifier) return;
+    if (!loginIdentifier || isLoggingIn) return;
     setLoginError("");
+    setIsLoggingIn(true);
 
-    const trimmed = loginIdentifier.trim().toLowerCase();
-    const isAdmin = trimmed === "crestgroup@gmail.com" || trimmed === "admin@tradepos.cloud";
-
-    if (isAdmin) {
-      if (loginPassword !== "CREST@132026") {
-        setLoginError(
-          language === "sw"
-            ? "Nenosiri la Admin si sahihi. Tafadhali ingiza nenosiri sahihi."
-            : "Invalid Admin password. Please check your credentials."
-        );
-        return;
+    try {
+      const ok = await loginUser(loginIdentifier, "OWNER", loginPassword);
+      if (ok) {
+        onSuccess();
       }
-    }
-
-    const ok = loginUser(loginIdentifier, "OWNER", loginPassword);
-    if (ok) {
-      onSuccess();
+    } catch (err: any) {
+      setLoginError(err?.message || (language === "sw" ? "Hitilafu ya kuingia." : "Login error occurred."));
+    } finally {
+      setIsLoggingIn(false);
     }
   };
 
@@ -171,9 +166,16 @@ export const AuthModal: React.FC<AuthModalProps> = ({ initialMode, onClose, onSu
 
             <button
               type="submit"
-              className="w-full py-4 rounded-2xl auth-neu-btn text-sm font-black shadow-md mt-3 cursor-pointer"
+              disabled={isLoggingIn}
+              className="w-full py-4 rounded-2xl auth-neu-btn text-sm font-black shadow-md mt-3 cursor-pointer disabled:opacity-60 flex items-center justify-center gap-2"
             >
-              {language === "sw" ? "Ingia Kwenye Mfumo" : "Sign In to TradePOS"}
+              {isLoggingIn
+                ? language === "sw"
+                  ? "Inathibitisha..."
+                  : "Verifying..."
+                : language === "sw"
+                ? "Ingia Kwenye Mfumo"
+                : "Sign In to TradePOS"}
             </button>
 
             <div className="text-center pt-3 border-t border-[#d5e2cb]">

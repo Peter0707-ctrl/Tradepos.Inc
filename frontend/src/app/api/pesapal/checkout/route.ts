@@ -146,9 +146,9 @@ export async function POST(request: Request) {
       { status: 400 }
     );
   } catch (error: any) {
-    console.error("Checkout API handler error:", error);
+    console.error("Checkout API handler error:", error?.message || error);
     return NextResponse.json(
-      { error: "Internal checkout server error", message: error?.message },
+      { error: "Hitilafu ya seva wakati wa kuanzisha malipo. Tafadhali jaribu tena." },
       { status: 500 }
     );
   }

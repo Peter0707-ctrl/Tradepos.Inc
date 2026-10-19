@@ -70,7 +70,7 @@ interface AppContextType {
   adminExitImpersonation: () => void;
   updateUserProfile: (updates: Partial<User> & { newPassword?: string; newPin?: string }) => void;
   // Methods
-  loginUser: (emailOrPhone: string, role?: string, password?: string) => boolean;
+  loginUser: (emailOrPhone: string, role?: string, password?: string) => Promise<boolean>;
   logoutUser: () => void;
   registerBusiness: (accountData: any, businessData: any, plan: any) => void;
   addEmployee: (emp: Omit<EmployeeAccount, "id" | "tenantId" | "status" | "lastActive">) => void;
@@ -548,40 +548,45 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     appendAuditLog("WAREHOUSE_CREATED", `Added warehouse ${newWh.name}`);
   };
 
-  const loginUser = (emailOrPhone: string, role = "OWNER", password?: string) => {
+  const loginUser = async (emailOrPhone: string, role = "OWNER", password?: string): Promise<boolean> => {
     const cleanInput = emailOrPhone.trim();
     if (!cleanInput) return false;
 
-    const lower = cleanInput.toLowerCase();
-    const isCrestAdmin = lower === "crestgroup@gmail.com";
-    const isLegacyAdmin = lower === "admin@tradepos.cloud";
+    // 1. Authenticate against server-side endpoint with timing-attack & brute-force protection
+    try {
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ identifier: cleanInput, password }),
+      });
 
-    if (isCrestAdmin || isLegacyAdmin) {
-      if (password && password !== "CREST@132026") {
-        notifyCenter("Hitilafu ya Kuingia", "Nenosiri la Admin si sahihi.", "ERROR");
+      const data = await res.json().catch(() => ({}));
+
+      if (res.status === 429) {
+        notifyCenter("Ulinzi wa Mfumo", data.error || "Majaribio mengi mno. Subiri sekunde 60.", "WARNING");
         return false;
       }
 
-      const superAdminUser: User = {
-        id: "usr-admin",
-        name: "Platform Super Admin (Crest Group)",
-        email: "crestgroup@gmail.com",
-        phone: "+255 700 000 000",
-        role: "SUPER_ADMIN",
-        businessId: "system",
-        branchId: "global",
-      };
-      setUser(superAdminUser);
-      setViewState("app");
-      setActiveModule("admin-dashboard");
-      appendAuditLog("LOGIN_SUCCESS", "Super Admin signed in (crestgroup@gmail.com)", "Platform Super Admin");
-      notifyCenter("Super Admin", "Umeingia kama Platform Super Admin.", "SUCCESS");
-      try {
-        localStorage.setItem(PROD_USER_KEY, JSON.stringify(superAdminUser));
-        localStorage.setItem(PROD_VIEW_KEY, "app");
-        localStorage.setItem(PROD_MODULE_KEY, "admin-dashboard");
-      } catch (e) {}
-      return true;
+      if (data.success && data.user && data.user.role === "SUPER_ADMIN") {
+        setUser(data.user);
+        setViewState("app");
+        setActiveModule("admin-dashboard");
+        appendAuditLog("LOGIN_SUCCESS", `Super Admin signed in (${data.user.email})`, "Platform Super Admin");
+        notifyCenter("Super Admin", "Umeingia kama Platform Super Admin.", "SUCCESS");
+        try {
+          localStorage.setItem(PROD_USER_KEY, JSON.stringify(data.user));
+          localStorage.setItem(PROD_VIEW_KEY, "app");
+          localStorage.setItem(PROD_MODULE_KEY, "admin-dashboard");
+        } catch (e) {}
+        return true;
+      }
+
+      if (res.status === 401) {
+        notifyCenter("Hitilafu ya Kuingia", data.error || "Nenosiri la Admin si sahihi.", "ERROR");
+        return false;
+      }
+    } catch (err) {
+      console.warn("Server auth unreachable, checking registered staff credentials:", err);
     }
 
     const lowerInput = cleanInput.toLowerCase();

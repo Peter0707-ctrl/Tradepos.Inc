@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 
+export const dynamic = "force-dynamic";
+
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
@@ -77,6 +79,7 @@ export async function GET(request: Request) {
       message: "Pesapal credentials not configured",
     });
   } catch (error: any) {
-    return NextResponse.json({ completed: false, error: error.message }, { status: 500 });
+    console.error("Status API handler error:", error?.message || error);
+    return NextResponse.json({ completed: false, error: "Hitilafu ya kuangalia hali ya malipo." }, { status: 500 });
   }
 }
