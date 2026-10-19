@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useId } from "react";
+import React, { useState } from "react";
 import { useApp } from "@/context/AppContext";
 import {
   CreditCard,
@@ -18,14 +18,14 @@ import {
   Receipt,
   Printer,
   Check,
-  ChevronRight,
   X,
   Smartphone,
-  ExternalLink,
+  Lock,
 } from "lucide-react";
 
 type PlanType = "STARTER" | "PROFESSIONAL" | "BUSINESS" | "ENTERPRISE" | "CUSTOM";
 type BillingCycle = 1 | 6 | 12;
+type MobileCarrier = "mpesa" | "tigopesa" | "airtel" | "halopesa";
 
 interface CustomConfig {
   branches: number;
@@ -47,8 +47,6 @@ interface InvoiceRecord {
   payerEmail?: string;
 }
 
-type MobileCarrier = "mpesa" | "tigopesa" | "airtel" | "halopesa";
-
 const detectCarrier = (phoneStr: string): MobileCarrier => {
   const clean = phoneStr.replace(/\D/g, "");
   let p = clean;
@@ -63,55 +61,19 @@ const detectCarrier = (phoneStr: string): MobileCarrier => {
   return "mpesa";
 };
 
-const CARRIERS: {
-  id: MobileCarrier;
-  name: string;
-  operator: string;
-  prefixDesc: string;
-  activeBg: string;
-}[] = [
-  {
-    id: "mpesa",
-    name: "M-Pesa",
-    operator: "Vodacom",
-    prefixDesc: "074, 075, 076",
-    activeBg: "bg-red-500 text-white",
-  },
-  {
-    id: "tigopesa",
-    name: "Tigo Pesa",
-    operator: "Tigo / Yas",
-    prefixDesc: "071, 065, 067",
-    activeBg: "bg-blue-600 text-white",
-  },
-  {
-    id: "airtel",
-    name: "Airtel Money",
-    operator: "Airtel",
-    prefixDesc: "078, 068, 069",
-    activeBg: "bg-rose-600 text-white",
-  },
-  {
-    id: "halopesa",
-    name: "HaloPesa",
-    operator: "Halotel",
-    prefixDesc: "062, 061",
-    activeBg: "bg-orange-500 text-white",
-  },
-];
-
 export const SubscriptionBillingModule: React.FC = () => {
-  const { business, renewSubscription, updateBusinessProfile, auditLogs, language } = useApp();
+  const { business, renewSubscription, auditLogs, language } = useApp();
 
   const isSw = language === "sw";
 
-  // Modal states
+  // Modal & Selection States
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<PlanType>(
     (business?.subscriptionPlan as PlanType) || "PROFESSIONAL"
   );
   const [billingCycle, setBillingCycle] = useState<BillingCycle>(1);
-  const [paymentTab, setPaymentTab] = useState<"pesapal" | "lipa_namba">("pesapal");
+  const [showCustomConfig, setShowCustomConfig] = useState(false);
+  const [paymentMethodMode, setPaymentMethodMode] = useState<"mobile" | "lipa_namba">("mobile");
 
   // Custom Plan Configurator state
   const [customConfig, setCustomConfig] = useState<CustomConfig>({
@@ -126,7 +88,7 @@ export const SubscriptionBillingModule: React.FC = () => {
   const [selectedCarrier, setSelectedCarrier] = useState<MobileCarrier>(() =>
     detectCarrier(business?.phone || "0754123456")
   );
-  const [payerEmail, setPayerEmail] = useState(business?.email || "owner@tradepos.co.tz");
+  const [payerEmail, setPayerEmail] = useState(business?.email || "billing@tradepos.co.tz");
   const [lipaReferenceCode, setLipaReferenceCode] = useState("");
 
   const handlePhoneChange = (val: string) => {
@@ -170,14 +132,16 @@ export const SubscriptionBillingModule: React.FC = () => {
     return 0;
   };
 
-  const monthlyRate = calculatePlanMonthlyBase(selectedPlan);
-  const discountPercent = getDiscountPercent(billingCycle);
-  const subtotalBeforeDiscount = monthlyRate * billingCycle;
-  const oneTimeTrainingFee =
-    (selectedPlan === "CUSTOM" || selectedPlan === "ENTERPRISE") && customConfig.staffTraining ? 100000 : 0;
-  const discountAmount = Math.round(subtotalBeforeDiscount * (discountPercent / 100));
-  const finalTotal = subtotalBeforeDiscount - discountAmount + oneTimeTrainingFee;
-  const vatAmount = Math.round(finalTotal * (18 / 118)); // 18% inclusive
+  const calculateTotal = (plan: PlanType, cycle: BillingCycle): number => {
+    const base = calculatePlanMonthlyBase(plan);
+    const subtotal = base * cycle;
+    const discount = Math.round(subtotal * (getDiscountPercent(cycle) / 100));
+    const oneTime = (plan === "CUSTOM" || plan === "ENTERPRISE") && customConfig.staffTraining ? 100000 : 0;
+    return subtotal - discount + oneTime;
+  };
+
+  const finalTotal = calculateTotal(selectedPlan, billingCycle);
+  const vatAmount = Math.round(finalTotal * (18 / 118));
 
   // Expiry calculation
   const getExpiryDaysRemaining = (): number => {
@@ -186,11 +150,10 @@ export const SubscriptionBillingModule: React.FC = () => {
     return Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24)));
   };
 
-  // Payment History extracted from logs + current session
+  // Payment History
   const paymentHistory: InvoiceRecord[] = auditLogs
     .filter((log) => log.action === "SUBSCRIPTION_RENEWED" || log.action === "BUSINESS_REGISTERED")
     .map((log, idx) => {
-      // Parse details from audit description if present
       const matchInvoice = log.details.match(/INV-[\w-]+/);
       const matchAmt = log.details.match(/TZS\s*([\d,]+)/);
       const invoiceNumber = matchInvoice ? matchInvoice[0] : `INV-${new Date().getFullYear()}-${100000 + idx}`;
@@ -212,18 +175,17 @@ export const SubscriptionBillingModule: React.FC = () => {
         plan: planName,
         durationMonths: 1,
         amount: isNaN(parsedAmount) ? 150000 : parsedAmount,
-        paymentMethod: log.details.includes("LIPA") ? "Lipa Namba" : "Pesapal Gateway",
+        paymentMethod: log.details.includes("LIPA") ? "Lipa Namba" : "Pesapal Mobile Money",
         status: "PAID",
         taxVat: Math.round(parsedAmount * (18 / 118)),
       };
     });
 
-  const handleOpenCheckout = (planToSelect?: PlanType) => {
-    if (planToSelect) {
-      setSelectedPlan(planToSelect);
-    }
+  const handleOpenCheckout = (planToSelect: PlanType) => {
+    setSelectedPlan(planToSelect);
     setErrorMessage("");
     setPesapalSimulationStep("idle");
+    setSelectedCarrier(detectCarrier(payerPhone));
     setIsCheckoutOpen(true);
   };
 
@@ -253,7 +215,6 @@ export const SubscriptionBillingModule: React.FC = () => {
         throw new Error(data.error || (isSw ? "Hitilafu kwenye lango la malipo" : "Payment gateway error"));
       }
 
-      // If live Pesapal redirect URL returned
       if (data.redirectUrl) {
         window.open(data.redirectUrl, "_blank");
         setPesapalSimulationStep("awaiting_pin");
@@ -261,7 +222,6 @@ export const SubscriptionBillingModule: React.FC = () => {
         return;
       }
 
-      // Simulated local STK Push verification
       setPesapalSimulationStep("awaiting_pin");
       setIsProcessing(false);
     } catch (err: any) {
@@ -299,6 +259,7 @@ export const SubscriptionBillingModule: React.FC = () => {
 
       setActiveReceipt(receiptRecord);
       setIsProcessing(false);
+      setIsCheckoutOpen(false);
       setPesapalSimulationStep("idle");
     }, 700);
   };
@@ -319,353 +280,387 @@ export const SubscriptionBillingModule: React.FC = () => {
   const currentExpiry = business?.subscriptionExpiry || new Date(Date.now() + 30 * 86400000).toISOString().split("T")[0];
   const daysLeft = getExpiryDaysRemaining();
 
+  const formatCycleText = (cycle: BillingCycle) => {
+    if (cycle === 1) return isSw ? "Mwezi 1 (Siku 30)" : "Monthly (30 Days)";
+    if (cycle === 6) return isSw ? "Miezi 6 (10% Punguzo)" : "6 Months (10% Off)";
+    return isSw ? "Mwaka 1 (20% Punguzo)" : "1 Year (20% Off)";
+  };
+
   return (
     <div className="flex-1 flex flex-col h-full p-4 lg:p-6 overflow-y-auto space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h2 className="text-xl font-black text-[#162709] tracking-tight">
-            {isSw ? "Vifurushi, Malipo & Leseni ya Mfumo" : "Subscription, Billing & License Management"}
-          </h2>
-          <p className="text-xs text-[#526848] mt-0.5">
-            {isSw
-              ? "Dhibiti leseni ya biashara yako, fanya malipo ya Pesapal au Lipa Namba, na pakua risiti halisi za kodi."
-              : "Manage your business tier, process real Pesapal or Lipa Namba payments, and access official tax invoices."}
-          </p>
-        </div>
-
-        <button
-          onClick={() => handleOpenCheckout(currentPlan)}
-          className="px-5 py-2.5 rounded-xl neu-btn text-xs font-black shadow-xs flex items-center justify-center gap-2 shrink-0"
-        >
-          <CreditCard className="w-4 h-4" />
-          <span>{isSw ? "Huisha / Lipa Kifurushi" : "Renew / Upgrade License"}</span>
-        </button>
+      {/* Header (AjiraMarket Style Image 3) */}
+      <div>
+        <h2 className="text-2xl font-black text-[#0F172A] tracking-tight">
+          {isSw ? "Vifurushi, Malipo & Hali ya Leseni" : "Subscription & Billing License"}
+        </h2>
+        <p className="text-xs text-slate-500 mt-1">
+          {isSw
+            ? "Lipa mara moja na upate huduma zote za TradePOS, usimamizi wa matawi na risiti za kodi moja kwa moja."
+            : "Review your business tier, billing cycles, automated mobile money receipts, and multi-branch feature quotas."}
+        </p>
       </div>
 
-      {/* Active Subscription Banner */}
-      <div className="p-6 rounded-3xl bg-gradient-to-r from-white via-[#F9FCF3] to-[#F1F9E4] border-2 border-[#BEE674] shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-6">
-        <div className="space-y-3">
-          <div className="flex items-center gap-2">
-            <span className="text-[11px] font-black uppercase tracking-wider text-[#345214]">
-              {isSw ? "Kifurushi Kinachotumika Sasa" : "Active Business License"}
-            </span>
-            <span className="px-2.5 py-0.5 rounded-full bg-[#E1FFAC] text-[#192E08] text-[11px] font-black border border-[#9EDE31]">
-              {business?.subscriptionStatus || "ACTIVE"}
-            </span>
-            {daysLeft <= 5 && (
-              <span className="px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-800 text-[11px] font-bold border border-amber-300 flex items-center gap-1">
-                <AlertTriangle className="w-3 h-3 text-amber-600" />
-                {isSw ? `Zimesalia siku ${daysLeft}` : `${daysLeft} days remaining`}
-              </span>
-            )}
-          </div>
-
-          <h3 className="text-3xl font-black text-[#152709] tracking-tight">
-            {currentPlan} {isSw ? "TIER" : "PLAN"}
-          </h3>
-
-          <div className="flex flex-wrap items-center gap-4 text-xs text-[#4F6742]">
-            <span className="flex items-center gap-1.5">
-              <Clock className="w-3.5 h-3.5 text-[#3E6517]" />
-              <span>{isSw ? "Mwisho wa Leseni:" : "Next Billing Date:"}</span>
-              <strong className="text-[#152709] font-mono">{currentExpiry}</strong>
-            </span>
-            <span>•</span>
-            <span>
-              {isSw ? "Muda Uliobaki:" : "Time Left:"}{" "}
-              <strong className="text-[#152709]">
-                {daysLeft} {isSw ? "Siku" : "Days"}
-              </strong>
-            </span>
-            <span>•</span>
-            <span>
-              {isSw ? "Lango la Malipo:" : "Gateway:"}{" "}
-              <strong className="text-[#152709]">Pesapal &amp; Lipa Namba (TZS)</strong>
-            </span>
-          </div>
+      {/* Billing Cycle Switcher Pills on the Page (Image 3 Reference) */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-3xl bg-slate-50 border border-slate-200/80">
+        <div className="flex items-center gap-2">
+          <span className="text-xs font-black text-slate-700 uppercase tracking-wider">
+            {isSw ? "Muda wa Malipo:" : "Billing Period:"}
+          </span>
+          <span className="text-xs text-slate-500">
+            {isSw ? "(Pata punguzo kwa kulipia miezi mingi)" : "(Save more on long-term subscriptions)"}
+          </span>
         </div>
 
-        <div className="flex flex-col sm:flex-row gap-2 shrink-0">
+        <div className="inline-flex bg-white p-1 rounded-2xl border border-slate-200 shadow-xs">
+          {[
+            { cycle: 1 as BillingCycle, label: isSw ? "Mwezi 1" : "1 Month", discount: "" },
+            { cycle: 6 as BillingCycle, label: isSw ? "Miezi 6" : "6 Months", discount: "10% OFF" },
+            { cycle: 12 as BillingCycle, label: isSw ? "Mwaka 1" : "1 Year", discount: "20% OFF" },
+          ].map((item) => {
+            const isSelected = billingCycle === item.cycle;
+            return (
+              <button
+                key={item.cycle}
+                type="button"
+                onClick={() => setBillingCycle(item.cycle)}
+                className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 ${
+                  isSelected
+                    ? "bg-[#0284C7] text-white shadow-xs"
+                    : "text-slate-600 hover:text-slate-900 hover:bg-slate-50"
+                }`}
+              >
+                <span>{item.label}</span>
+                {item.discount && (
+                  <span
+                    className={`text-[9px] font-black px-1.5 py-0.2 rounded-md ${
+                      isSelected ? "bg-white/20 text-white" : "bg-emerald-100 text-emerald-800"
+                    }`}
+                  >
+                    {item.discount}
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Plan Cards Grid (Exactly like AjiraMarket Image 3 Reference) */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 items-stretch pt-2">
+        {/* CARD 1: STARTER */}
+        <div className="bg-white rounded-3xl p-6 border-2 border-slate-200 shadow-xs flex flex-col justify-between transition hover:shadow-md">
+          <div>
+            <div className="flex items-center justify-between gap-2 mb-3">
+              <span className="px-3 py-1 rounded-full bg-slate-100 text-slate-600 text-[10px] font-black uppercase tracking-wider">
+                {isSw ? "KIFURUSHI CHA AWALI" : "STARTER TIER"}
+              </span>
+              <span className="text-[10px] text-slate-500 font-bold">
+                {formatCycleText(billingCycle)}
+              </span>
+            </div>
+
+            <h3 className="text-xl font-black text-slate-900">
+              {isSw ? "Starter POS" : "Starter POS"}
+            </h3>
+            <p className="text-xs text-slate-500 mt-1 mb-5">
+              {isSw ? "Inafaa kwa maduka madogo, vijiwe vya mauzo na wajasiriamali wapya." : "Ideal for single retail shops, kiosks and upcoming traders."}
+            </p>
+
+            <div className="mb-6">
+              <span className="text-3xl font-black text-slate-900">
+                TZS {calculateTotal("STARTER", billingCycle).toLocaleString()}
+              </span>
+              <span className="text-xs text-slate-500 font-medium">
+                {" "}
+                / {billingCycle === 1 ? (isSw ? "mwezi" : "month") : `${billingCycle} ${isSw ? "miezi" : "months"}`}
+              </span>
+            </div>
+
+            <ul className="space-y-3 text-xs text-slate-600">
+              <li className="flex items-start gap-2.5">
+                <CheckCircle2 className="w-4 h-4 text-[#0284C7] shrink-0 mt-0.5" />
+                <span>{isSw ? "Tawi 1 la Biashara (Single Branch)" : "1 Business Branch"}</span>
+              </li>
+              <li className="flex items-start gap-2.5">
+                <CheckCircle2 className="w-4 h-4 text-[#0284C7] shrink-0 mt-0.5" />
+                <span>{isSw ? "Wafanyakazi hadi 2 (Wauzaji)" : "Up to 2 Staff Accounts"}</span>
+              </li>
+              <li className="flex items-start gap-2.5">
+                <CheckCircle2 className="w-4 h-4 text-[#0284C7] shrink-0 mt-0.5" />
+                <span>{isSw ? "Stoo, Bidhaa & Mauzo ya Kila Siku" : "Basic Inventory & Daily Sales"}</span>
+              </li>
+              <li className="flex items-start gap-2.5">
+                <CheckCircle2 className="w-4 h-4 text-[#0284C7] shrink-0 mt-0.5" />
+                <span>{isSw ? "Ripoti za Z-Report ya Kufunga Siku" : "Daily Z-Report & Receipt Print"}</span>
+              </li>
+            </ul>
+          </div>
+
           <button
-            onClick={() => handleOpenCheckout(currentPlan)}
-            className="px-5 py-3 rounded-2xl bg-[#233C0D] hover:bg-[#182C08] text-white text-xs font-black shadow-xs flex items-center justify-center gap-2 transition"
+            onClick={() => handleOpenCheckout("STARTER")}
+            className="mt-8 w-full py-3.5 rounded-2xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-black tracking-wider uppercase transition shadow-xs"
           >
-            <RefreshCw className="w-4 h-4" />
-            <span>{isSw ? "Ongeza Muda (Renew)" : "Renew License"}</span>
+            {currentPlan === "STARTER"
+              ? isSw
+                ? "Huisha Kifurushi Hiki"
+                : "Renew Starter"
+              : isSw
+              ? "Chagua Starter"
+              : "Select Starter"}
           </button>
+        </div>
+
+        {/* CARD 2: PROFESSIONAL (RECOMMENDED BADGE LIKE AJIRAMARKET IMAGE 3) */}
+        <div className="bg-white rounded-3xl p-6 border-2 border-[#0284C7] shadow-lg flex flex-col justify-between relative transition hover:shadow-xl">
+          <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 bg-[#0284C7] text-white text-[11px] font-black px-4 py-0.5 rounded-full uppercase tracking-wider shadow-xs">
+            {isSw ? "INAYOPENDEKEZWA" : "RECOMMENDED"}
+          </div>
+
+          <div>
+            <div className="flex items-center justify-between gap-2 mb-3 pt-1">
+              <span className="px-3 py-1 rounded-full bg-blue-50 text-[#0284C7] text-[10px] font-black uppercase tracking-wider">
+                {isSw ? "MPANGO WA KAWAIDA" : "STANDARD PLAN"}
+              </span>
+              <span className="text-[10px] text-slate-500 font-bold">
+                {formatCycleText(billingCycle)}
+              </span>
+            </div>
+
+            <h3 className="text-xl font-black text-slate-900">
+              {isSw ? "Professional Retail" : "Professional Retail"}
+            </h3>
+            <p className="text-xs text-slate-500 mt-1 mb-5">
+              {isSw ? "Maduka ya kati, jumla na mnyororo unaokua kwa kasi." : "Medium retail stores, wholesale & fast-growing chains."}
+            </p>
+
+            <div className="mb-6">
+              <span className="text-3xl font-black text-[#0284C7]">
+                TZS {calculateTotal("PROFESSIONAL", billingCycle).toLocaleString()}
+              </span>
+              <span className="text-xs text-slate-500 font-medium">
+                {" "}
+                / {billingCycle === 1 ? (isSw ? "mwezi" : "month") : `${billingCycle} ${isSw ? "miezi" : "months"}`}
+              </span>
+            </div>
+
+            <ul className="space-y-3 text-xs text-slate-600">
+              <li className="flex items-start gap-2.5">
+                <CheckCircle2 className="w-4 h-4 text-[#0284C7] shrink-0 mt-0.5" />
+                <span>{isSw ? "Matawi hadi 5 & Maghala ya Bidhaa" : "Up to 5 Branches & Warehouses"}</span>
+              </li>
+              <li className="flex items-start gap-2.5">
+                <CheckCircle2 className="w-4 h-4 text-[#0284C7] shrink-0 mt-0.5" />
+                <span>{isSw ? "Wafanyakazi Bila Kikomo" : "Unlimited Staff Accounts & Roles"}</span>
+              </li>
+              <li className="flex items-start gap-2.5">
+                <CheckCircle2 className="w-4 h-4 text-[#0284C7] shrink-0 mt-0.5" />
+                <span>{isSw ? "Msaidizi wa AI (Copetra AI Coach)" : "AI Business Assistant (Copetra)"}</span>
+              </li>
+              <li className="flex items-start gap-2.5">
+                <CheckCircle2 className="w-4 h-4 text-[#0284C7] shrink-0 mt-0.5" />
+                <span>{isSw ? "Duka la Mtandaoni & Utoaji Oda" : "Online Store & Dispatch Tracker"}</span>
+              </li>
+              <li className="flex items-start gap-2.5">
+                <CheckCircle2 className="w-4 h-4 text-[#0284C7] shrink-0 mt-0.5" />
+                <span>{isSw ? "Uhasibu wa Faida & Hasara (P&L)" : "Full P&L Accounting & Audit"}</span>
+              </li>
+            </ul>
+          </div>
+
+          <button
+            onClick={() => handleOpenCheckout("PROFESSIONAL")}
+            className="mt-8 w-full py-3.5 rounded-2xl bg-[#0284C7] hover:bg-[#0369A1] text-white text-xs font-black tracking-wider uppercase transition shadow-md"
+          >
+            {currentPlan === "PROFESSIONAL"
+              ? isSw
+                ? "Huisha Professional"
+                : "Renew Professional"
+              : isSw
+              ? "Chagua Professional"
+              : "Select Professional"}
+          </button>
+        </div>
+
+        {/* CARD 3: BUSINESS CHAIN (ALL-IN-ONE BADGE LIKE AJIRAMARKET IMAGE 3) */}
+        <div className="bg-white rounded-3xl p-6 border-2 border-slate-900 shadow-lg flex flex-col justify-between relative transition hover:shadow-xl">
+          <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 bg-slate-900 text-white text-[11px] font-black px-4 py-0.5 rounded-full uppercase tracking-wider shadow-xs">
+            {isSw ? "MFUMO MZIMA WA MATAWI" : "ALL-IN-ONE CHAIN SUITE"}
+          </div>
+
+          <div>
+            <div className="flex items-center justify-between gap-2 mb-3 pt-1">
+              <span className="px-3 py-1 rounded-full bg-slate-100 text-slate-800 text-[10px] font-black uppercase tracking-wider">
+                {isSw ? "MATAWI MENGI" : "CHAIN ENTERPRISE"}
+              </span>
+              <span className="text-[10px] text-slate-500 font-bold">
+                {formatCycleText(billingCycle)}
+              </span>
+            </div>
+
+            <h3 className="text-xl font-black text-slate-900">
+              {isSw ? "Business Chain" : "Business Chain"}
+            </h3>
+            <p className="text-xs text-slate-500 mt-1 mb-5">
+              {isSw ? "Matawi mengi, usambazaji wa jumla na ripoti za WhatsApp kwa bosi." : "Large retail chains, multi-warehouse & distribution."}
+            </p>
+
+            <div className="mb-6">
+              <span className="text-3xl font-black text-slate-900">
+                TZS {calculateTotal("BUSINESS", billingCycle).toLocaleString()}
+              </span>
+              <span className="text-xs text-slate-500 font-medium">
+                {" "}
+                / {billingCycle === 1 ? (isSw ? "mwezi" : "month") : `${billingCycle} ${isSw ? "miezi" : "months"}`}
+              </span>
+            </div>
+
+            <ul className="space-y-3 text-xs text-slate-600">
+              <li className="flex items-start gap-2.5">
+                <CheckCircle2 className="w-4 h-4 text-slate-900 shrink-0 mt-0.5" />
+                <span>{isSw ? "Matawi & Maghala Bila Kikomo" : "Unlimited Branches & Warehouses"}</span>
+              </li>
+              <li className="flex items-start gap-2.5">
+                <CheckCircle2 className="w-4 h-4 text-slate-900 shrink-0 mt-0.5" />
+                <span>{isSw ? "Uhamishaji wa Bidhaa Baina ya Matawi" : "Inter-Branch Stock Transfers"}</span>
+              </li>
+              <li className="flex items-start gap-2.5">
+                <CheckCircle2 className="w-4 h-4 text-slate-900 shrink-0 mt-0.5" />
+                <span>{isSw ? "Bei za Jumla & Rejareja (Multi-Tier)" : "Multi-Tier Wholesale Pricing"}</span>
+              </li>
+              <li className="flex items-start gap-2.5">
+                <CheckCircle2 className="w-4 h-4 text-slate-900 shrink-0 mt-0.5" />
+                <span>{isSw ? "Ripoti za WhatsApp kwa Bosi Kiotomatiki" : "Automated WhatsApp Boss Alerts"}</span>
+              </li>
+              <li className="flex items-start gap-2.5">
+                <CheckCircle2 className="w-4 h-4 text-slate-900 shrink-0 mt-0.5" />
+                <span>{isSw ? "Usaidizi Maalum wa Kiufundi (24/7)" : "24/7 Priority Support Specialist"}</span>
+              </li>
+            </ul>
+          </div>
+
+          <button
+            onClick={() => handleOpenCheckout("BUSINESS")}
+            className="mt-8 w-full py-3.5 rounded-2xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-black tracking-wider uppercase transition shadow-md"
+          >
+            {currentPlan === "BUSINESS"
+              ? isSw
+                ? "Huisha Business Chain"
+                : "Renew Business Chain"
+              : isSw
+              ? "Chagua Business Chain"
+              : "Select Business Chain"}
+          </button>
+        </div>
+
+        {/* CARD 4: CUSTOM PLAN (ENTERPRISE / TRA INTEGRATION) */}
+        <div className="bg-white rounded-3xl p-6 border-2 border-slate-200 shadow-xs flex flex-col justify-between transition hover:shadow-md">
+          <div>
+            <div className="flex items-center justify-between gap-2 mb-3">
+              <span className="px-3 py-1 rounded-full bg-slate-100 text-slate-600 text-[10px] font-black uppercase tracking-wider">
+                {isSw ? "KIFURUSHI MAALUM" : "CUSTOM ENTERPRISE"}
+              </span>
+              <span className="text-[10px] text-slate-500 font-bold">
+                {formatCycleText(billingCycle)}
+              </span>
+            </div>
+
+            <h3 className="text-xl font-black text-slate-900">
+              {isSw ? "Custom Plan" : "Custom Plan"}
+            </h3>
+            <p className="text-xs text-slate-500 mt-1 mb-5">
+              {isSw ? "Sanidi matawi, muunganisho wa TRA EFD na seva binafsi." : "Tailored to your exact branch size, TRA integration & server SLA."}
+            </p>
+
+            <div className="mb-4">
+              <span className="text-3xl font-black text-slate-900">
+                TZS {calculateTotal("CUSTOM", billingCycle).toLocaleString()}
+              </span>
+              <span className="text-xs text-slate-500 font-medium">
+                {" "}
+                / {billingCycle === 1 ? (isSw ? "mwezi" : "month") : `${billingCycle} ${isSw ? "miezi" : "months"}`}
+              </span>
+            </div>
+
+            {/* Quick in-card branch configurator toggle */}
+            <div className="mb-4 p-3 rounded-2xl bg-slate-50 text-xs space-y-2">
+              <div className="flex justify-between font-bold text-slate-700">
+                <span>{isSw ? "Matawi ya Biashara:" : "Configured Branches:"}</span>
+                <span className="text-[#0284C7] font-black">{customConfig.branches}</span>
+              </div>
+              <input
+                type="range"
+                min={5}
+                max={50}
+                step={1}
+                value={customConfig.branches}
+                onChange={(e) =>
+                  setCustomConfig((prev) => ({ ...prev, branches: parseInt(e.target.value, 10) }))
+                }
+                className="w-full accent-[#0284C7] cursor-pointer"
+              />
+              <div className="flex items-center justify-between pt-1">
+                <label className="flex items-center gap-1.5 cursor-pointer text-[11px] text-slate-600 font-bold">
+                  <input
+                    type="checkbox"
+                    checked={customConfig.traFiscalSync}
+                    onChange={(e) =>
+                      setCustomConfig((prev) => ({ ...prev, traFiscalSync: e.target.checked }))
+                    }
+                    className="w-3.5 h-3.5 accent-[#0284C7] rounded"
+                  />
+                  <span>TRA EFD/VFD</span>
+                </label>
+                <label className="flex items-center gap-1.5 cursor-pointer text-[11px] text-slate-600 font-bold">
+                  <input
+                    type="checkbox"
+                    checked={customConfig.dedicatedDb}
+                    onChange={(e) =>
+                      setCustomConfig((prev) => ({ ...prev, dedicatedDb: e.target.checked }))
+                    }
+                    className="w-3.5 h-3.5 accent-[#0284C7] rounded"
+                  />
+                  <span>Private DB</span>
+                </label>
+              </div>
+            </div>
+
+            <ul className="space-y-2 text-xs text-slate-600">
+              <li className="flex items-start gap-2.5">
+                <CheckCircle2 className="w-4 h-4 text-[#0284C7] shrink-0 mt-0.5" />
+                <span>{isSw ? "Matawi 5 hadi 50+ kulingana na mahitaji" : "Configurable 5 to 50+ Branches"}</span>
+              </li>
+              <li className="flex items-start gap-2.5">
+                <CheckCircle2 className="w-4 h-4 text-[#0284C7] shrink-0 mt-0.5" />
+                <span>{isSw ? "Muunganisho Rasmi wa TRA EFD / VFD" : "TRA EFD / VFD Fiscal Integration"}</span>
+              </li>
+              <li className="flex items-start gap-2.5">
+                <CheckCircle2 className="w-4 h-4 text-[#0284C7] shrink-0 mt-0.5" />
+                <span>{isSw ? "Seva Binafsi & Backup Maalum (99.99%)" : "Dedicated Database & Backup Partition"}</span>
+              </li>
+              <li className="flex items-start gap-2.5">
+                <CheckCircle2 className="w-4 h-4 text-[#0284C7] shrink-0 mt-0.5" />
+                <span>{isSw ? "Mafunzo ya Wafanyakazi Dukani" : "On-Site Staff Setup & Training"}</span>
+              </li>
+            </ul>
+          </div>
+
           <button
             onClick={() => handleOpenCheckout("CUSTOM")}
-            className="px-4 py-3 rounded-2xl bg-white hover:bg-[#F3F8EA] border border-[#C5D8B2] text-[#22390C] text-xs font-bold transition flex items-center justify-center gap-2"
+            className="mt-8 w-full py-3.5 rounded-2xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-black tracking-wider uppercase transition shadow-xs"
           >
-            <Sliders className="w-4 h-4 text-[#3D6417]" />
-            <span>{isSw ? "Kifurushi cha Custom" : "Configure Custom Plan"}</span>
+            {isSw ? "Lipa Custom Plan" : "Checkout Custom Plan"}
           </button>
-        </div>
-      </div>
-
-      {/* Available Plans & Custom Plan Option */}
-      <div>
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
-          <div>
-            <h3 className="text-base font-black text-[#162709]">
-              {isSw ? "Chagua Kifurushi Kinachofaa Biashara Yako" : "Select Subscription Plan"}
-            </h3>
-            <p className="text-xs text-[#526848]">
-              {isSw
-                ? "Pata huduma zote za TradePOS kulingana na ukubwa wa biashara yako."
-                : "Choose the scale that matches your business branch structure and accounting workflow."}
-            </p>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {/* STARTER */}
-          <div
-            className={`p-5 rounded-2xl bg-white border flex flex-col justify-between transition ${
-              currentPlan === "STARTER" ? "border-2 border-[#8ECE28] bg-[#FDFFF9] shadow-xs" : "border-[#D8E6CC]"
-            }`}
-          >
-            <div>
-              <div className="flex justify-between items-center mb-1.5">
-                <h4 className="font-black text-sm text-[#162709]">STARTER</h4>
-                {currentPlan === "STARTER" && (
-                  <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-[#E1FFAC] text-[#192E08]">
-                    {isSw ? "Inatumika" : "Current"}
-                  </span>
-                )}
-              </div>
-              <p className="text-xs text-[#556C4B] mb-3">
-                {isSw ? "Inafaa kwa maduka madogo na biashara changa" : "Ideal for single shops and retail starters"}
-              </p>
-              <div className="mb-4">
-                <span className="text-2xl font-black text-[#152708]">TZS 50,000</span>
-                <span className="text-xs text-[#556C4B]"> / {isSw ? "mwezi" : "mo"}</span>
-              </div>
-              <ul className="space-y-2 text-xs text-[#4F6742]">
-                <li className="flex items-center gap-2">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-[#3E6517] shrink-0" />
-                  <span>{isSw ? "Tawi 1 la Biashara (Single Branch)" : "1 Business Branch"}</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-[#3E6517] shrink-0" />
-                  <span>{isSw ? "Wafanyakazi hadi 2" : "Up to 2 Staff Accounts"}</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-[#3E6517] shrink-0" />
-                  <span>{isSw ? "Stoo & Mauzo ya Kila Siku" : "Basic Inventory & Sales"}</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-[#3E6517] shrink-0" />
-                  <span>{isSw ? "Ripoti za Z-Report ya Siku" : "Daily Z-Report & Receipt Print"}</span>
-                </li>
-              </ul>
-            </div>
-
-            <button
-              onClick={() => handleOpenCheckout("STARTER")}
-              className="mt-6 w-full py-2.5 rounded-xl text-xs font-black bg-white hover:bg-[#E1FFAC] border border-[#C5D8B2] text-[#22390C] transition"
-            >
-              {currentPlan === "STARTER"
-                ? isSw
-                  ? "Huisha Kifurushi Hiki"
-                  : "Renew Starter"
-                : isSw
-                ? "Chagua Starter"
-                : "Select Starter"}
-            </button>
-          </div>
-
-          {/* PROFESSIONAL */}
-          <div
-            className={`p-5 rounded-2xl bg-white border flex flex-col justify-between transition relative ${
-              currentPlan === "PROFESSIONAL" ? "border-2 border-[#8ECE28] bg-[#FDFFF9] shadow-xs" : "border-[#D8E6CC]"
-            }`}
-          >
-            <div className="absolute -top-2.5 right-4 bg-[#21390A] text-white text-[10px] font-black px-2.5 py-0.5 rounded-full">
-              {isSw ? "Maarufu Zaidi" : "Most Popular"}
-            </div>
-            <div>
-              <div className="flex justify-between items-center mb-1.5">
-                <h4 className="font-black text-sm text-[#162709]">PROFESSIONAL</h4>
-                {currentPlan === "PROFESSIONAL" && (
-                  <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-[#E1FFAC] text-[#192E08]">
-                    {isSw ? "Inatumika" : "Current"}
-                  </span>
-                )}
-              </div>
-              <p className="text-xs text-[#556C4B] mb-3">
-                {isSw ? "Maduka ya kati, jumla na mnyororo wa matawi" : "Medium retail stores, wholesale & chains"}
-              </p>
-              <div className="mb-4">
-                <span className="text-2xl font-black text-[#152708]">TZS 150,000</span>
-                <span className="text-xs text-[#556C4B]"> / {isSw ? "mwezi" : "mo"}</span>
-              </div>
-              <ul className="space-y-2 text-xs text-[#4F6742]">
-                <li className="flex items-center gap-2">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-[#3E6517] shrink-0" />
-                  <span>{isSw ? "Matawi hadi 5 & Ghala za Bidhaa" : "Up to 5 Branches & Warehouses"}</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-[#3E6517] shrink-0" />
-                  <span>{isSw ? "Wafanyakazi Bila Kikomo" : "Unlimited Staff Accounts"}</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-[#3E6517] shrink-0" />
-                  <span>{isSw ? "Msaidizi wa AI (Copetra)" : "AI Assistant (Copetra)"}</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-[#3E6517] shrink-0" />
-                  <span>{isSw ? "Duka la Mtandaoni & Utoaji Oda" : "Online Store & Dispatch Tracker"}</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-[#3E6517] shrink-0" />
-                  <span>{isSw ? "Uhasibu wa Faida & Hasara (P&L)" : "Full P&L Accounting & Audit"}</span>
-                </li>
-              </ul>
-            </div>
-
-            <button
-              onClick={() => handleOpenCheckout("PROFESSIONAL")}
-              className="mt-6 w-full py-2.5 rounded-xl text-xs font-black neu-btn shadow-xs transition"
-            >
-              {currentPlan === "PROFESSIONAL"
-                ? isSw
-                  ? "Huisha Kifurushi Hiki"
-                  : "Renew Professional"
-                : isSw
-                ? "Chagua Professional"
-                : "Select Professional"}
-            </button>
-          </div>
-
-          {/* BUSINESS CHAIN */}
-          <div
-            className={`p-5 rounded-2xl bg-white border flex flex-col justify-between transition ${
-              currentPlan === "BUSINESS" ? "border-2 border-[#8ECE28] bg-[#FDFFF9] shadow-xs" : "border-[#D8E6CC]"
-            }`}
-          >
-            <div>
-              <div className="flex justify-between items-center mb-1.5">
-                <h4 className="font-black text-sm text-[#162709]">BUSINESS CHAIN</h4>
-                {currentPlan === "BUSINESS" && (
-                  <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-[#E1FFAC] text-[#192E08]">
-                    {isSw ? "Inatumika" : "Current"}
-                  </span>
-                )}
-              </div>
-              <p className="text-xs text-[#556C4B] mb-3">
-                {isSw ? "Matawi mengi, usambazaji wa jumla na ripoti za kiotomatiki" : "Large retail chains & distribution"}
-              </p>
-              <div className="mb-4">
-                <span className="text-2xl font-black text-[#152708]">TZS 300,000</span>
-                <span className="text-xs text-[#556C4B]"> / {isSw ? "mwezi" : "mo"}</span>
-              </div>
-              <ul className="space-y-2 text-xs text-[#4F6742]">
-                <li className="flex items-center gap-2">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-[#3E6517] shrink-0" />
-                  <span>{isSw ? "Matawi & Maghala Bila Kikomo" : "Unlimited Branches & Warehouses"}</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-[#3E6517] shrink-0" />
-                  <span>{isSw ? "Uhamishaji wa Bidhaa Baina ya Matawi" : "Inter-Branch Stock Transfers"}</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-[#3E6517] shrink-0" />
-                  <span>{isSw ? "Bei za Jumla & Rejareja (Multi-Tier)" : "Multi-Tier Wholesale Pricing"}</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-[#3E6517] shrink-0" />
-                  <span>{isSw ? "Ripoti za WhatsApp kwa Bosi Moja kwa Moja" : "Automated WhatsApp Boss Alerts"}</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-[#3E6517] shrink-0" />
-                  <span>{isSw ? "Usaidizi Maalum wa Kiufundi (24/7)" : "24/7 Priority Support Specialist"}</span>
-                </li>
-              </ul>
-            </div>
-
-            <button
-              onClick={() => handleOpenCheckout("BUSINESS")}
-              className="mt-6 w-full py-2.5 rounded-xl text-xs font-black bg-white hover:bg-[#E1FFAC] border border-[#C5D8B2] text-[#22390C] transition"
-            >
-              {currentPlan === "BUSINESS"
-                ? isSw
-                  ? "Huisha Kifurushi Hiki"
-                  : "Renew Business Chain"
-                : isSw
-                ? "Chagua Business Chain"
-                : "Select Business Chain"}
-            </button>
-          </div>
-
-          {/* CUSTOM / ENTERPRISE */}
-          <div
-            className={`p-5 rounded-2xl bg-white border flex flex-col justify-between transition ${
-              currentPlan === "CUSTOM" || currentPlan === "ENTERPRISE"
-                ? "border-2 border-[#8ECE28] bg-[#FDFFF9] shadow-xs"
-                : "border-[#D8E6CC]"
-            }`}
-          >
-            <div>
-              <div className="flex justify-between items-center mb-1.5">
-                <h4 className="font-black text-sm text-[#162709]">{isSw ? "CUSTOM PLAN" : "CUSTOM / ENTERPRISE"}</h4>
-                {(currentPlan === "CUSTOM" || currentPlan === "ENTERPRISE") && (
-                  <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-[#E1FFAC] text-[#192E08]">
-                    {isSw ? "Inatumika" : "Current"}
-                  </span>
-                )}
-              </div>
-              <p className="text-xs text-[#556C4B] mb-3">
-                {isSw
-                  ? "Kifurushi maalum kinachorekebishwa kulingana na mahitaji yako"
-                  : "Tailored to your exact branch size, TRA integration & server SLA"}
-              </p>
-              <div className="mb-4">
-                <span className="text-2xl font-black text-[#152708]">
-                  {isSw ? "Kuanzia " : "From "}TZS 250,000
-                </span>
-                <span className="text-xs text-[#556C4B]"> / {isSw ? "mwezi" : "mo"}</span>
-              </div>
-              <ul className="space-y-2 text-xs text-[#4F6742]">
-                <li className="flex items-center gap-2">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-[#3E6517] shrink-0" />
-                  <span>{isSw ? "Idadi ya Matawi unayotaka (5 - 50+)" : "Configurable Branches (5 - 50+)"}</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-[#3E6517] shrink-0" />
-                  <span>{isSw ? "Kuunganishwa na TRA EFD / VFD" : "TRA EFD / VFD Fiscal Integration"}</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-[#3E6517] shrink-0" />
-                  <span>{isSw ? "Database Binafsi & Backup Maalum" : "Dedicated Database & Backup"}</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-[#3E6517] shrink-0" />
-                  <span>{isSw ? "Mafunzo ya Wafanyakazi Dukani" : "On-Site Staff Training & Setup"}</span>
-                </li>
-              </ul>
-            </div>
-
-            <button
-              onClick={() => handleOpenCheckout("CUSTOM")}
-              className="mt-6 w-full py-2.5 rounded-xl text-xs font-black bg-[#1E350A] hover:bg-[#28480C] text-white transition flex items-center justify-center gap-2"
-            >
-              <Sliders className="w-3.5 h-3.5" />
-              <span>{isSw ? "Sanidi & Lipa Custom" : "Configure & Checkout"}</span>
-            </button>
-          </div>
         </div>
       </div>
 
       {/* Payment History & Invoices Ledger */}
-      <div className="bg-white rounded-3xl p-5 lg:p-6 border border-[#D8E6CC] shadow-xs">
+      <div className="bg-white rounded-3xl p-5 lg:p-6 border border-slate-200 shadow-xs">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
           <div>
-            <h4 className="font-extrabold text-sm text-[#162709]">
+            <h4 className="font-extrabold text-sm text-slate-900">
               {isSw ? "Kumbukumbu za Malipo & Risiti za Leseni" : "Billing & Payment Transaction Records"}
             </h4>
-            <p className="text-xs text-[#526848]">
+            <p className="text-xs text-slate-500">
               {isSw
                 ? "Orodha kamili ya malipo yaliyothibitishwa kupitia Pesapal au Lipa Namba."
                 : "Official ledger of verified payments via Pesapal gateway or Lipa Namba."}
@@ -674,8 +669,8 @@ export const SubscriptionBillingModule: React.FC = () => {
         </div>
 
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs divide-y divide-[#EBF2E2]">
-            <thead className="bg-[#F8FAF4] font-bold text-[#4D6340]">
+          <table className="w-full text-left text-xs divide-y divide-slate-100">
+            <thead className="bg-slate-50 font-bold text-slate-600">
               <tr>
                 <th className="py-3 px-3.5">{isSw ? "Nambari ya Ankara / Risiti" : "Invoice / Receipt #"}</th>
                 <th className="py-3 px-3.5">{isSw ? "Tarehe" : "Billing Date"}</th>
@@ -686,21 +681,21 @@ export const SubscriptionBillingModule: React.FC = () => {
                 <th className="py-3 px-3.5 text-right">{isSw ? "Kitendo" : "Action"}</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-[#F1F6EB] text-[#1A2E0A]">
+            <tbody className="divide-y divide-slate-100 text-slate-800">
               {paymentHistory.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="py-8 text-center text-[#65795e]">
+                  <td colSpan={7} className="py-8 text-center text-slate-400">
                     {isSw ? "Bado hakuna kumbukumbu za malipo." : "No billing history recorded yet."}
                   </td>
                 </tr>
               ) : (
                 paymentHistory.map((p, idx) => (
-                  <tr key={idx} className="hover:bg-[#F9FBF6] transition">
-                    <td className="py-3 px-3.5 font-bold font-mono text-[#182C08]">{p.invoice}</td>
-                    <td className="py-3 px-3.5 text-[#58704D]">{p.date}</td>
+                  <tr key={idx} className="hover:bg-slate-50 transition">
+                    <td className="py-3 px-3.5 font-bold font-mono text-slate-900">{p.invoice}</td>
+                    <td className="py-3 px-3.5 text-slate-500">{p.date}</td>
                     <td className="py-3 px-3.5 font-bold">{p.plan}</td>
-                    <td className="py-3 px-3.5 text-[#4A613E]">{p.paymentMethod}</td>
-                    <td className="py-3 px-3.5 font-black text-[#152709]">TZS {p.amount.toLocaleString()}</td>
+                    <td className="py-3 px-3.5 text-slate-600">{p.paymentMethod}</td>
+                    <td className="py-3 px-3.5 font-black text-slate-900">TZS {p.amount.toLocaleString()}</td>
                     <td className="py-3 px-3.5">
                       <span className="font-black text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200 text-[11px]">
                         {isSw ? "IMELIPWA" : "PAID"}
@@ -709,7 +704,7 @@ export const SubscriptionBillingModule: React.FC = () => {
                     <td className="py-3 px-3.5 text-right">
                       <button
                         onClick={() => setActiveReceipt(p)}
-                        className="px-2.5 py-1 text-[11px] font-bold text-[#233C0D] hover:bg-[#EAF3DE] rounded-lg transition inline-flex items-center gap-1"
+                        className="px-2.5 py-1 text-[11px] font-bold text-[#0284C7] hover:bg-blue-50 rounded-lg transition inline-flex items-center gap-1"
                       >
                         <Receipt className="w-3.5 h-3.5" />
                         <span>{isSw ? "Tazama Risiti" : "View Receipt"}</span>
@@ -723,34 +718,38 @@ export const SubscriptionBillingModule: React.FC = () => {
         </div>
       </div>
 
-      {/* CHECKOUT MODAL (CLEAN, NO FRAME, AUTO-SELECTING CARRIER BADGES) */}
+      {/* CHECKOUT MODAL (EXACT MATCH TO AJIRAMARKET IMAGE 2 REFERENCE) */}
       {isCheckoutOpen && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 lg:p-6 overflow-y-auto">
-          <div className="bg-white rounded-3xl max-w-xl w-full shadow-2xl overflow-hidden flex flex-col my-auto max-h-[92vh]">
-            {/* Modal Header */}
-            <div className="p-5 flex items-center justify-between bg-[#F8FAF4]">
+          {/* Modal Container with soft ice-cyan gradient like AjiraMarket Image 2 */}
+          <div className="bg-[#EBF6FE] rounded-3xl max-w-lg w-full shadow-2xl overflow-hidden flex flex-col my-auto border border-sky-100">
+            {/* Modal Header Bar */}
+            <div className="p-6 pb-3 flex items-start justify-between">
               <div>
-                <h3 className="text-base font-black text-[#162709]">
-                  {isSw ? "Malipo ya Leseni ya TradePOS" : "TradePOS License Checkout"}
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/80 text-[#0284C7] text-[10px] font-black uppercase tracking-wider mb-2 shadow-xs">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#0284C7] animate-pulse" />
+                  <span>TRADEPOS DIRECT CHECKOUT</span>
+                </div>
+                <h3 className="text-xl font-black text-slate-900 tracking-tight">
+                  TradePOS {selectedPlan} License
                 </h3>
-                <p className="text-xs text-[#526848]">
-                  {isSw
-                    ? "Chagua kifurushi, weka namba yako ya simu na ukamilishe malipo."
-                    : "Select your plan, enter mobile payment number and complete renewal."}
+                <p className="text-xs text-slate-500 mt-0.5">
+                  {formatCycleText(billingCycle)}
                 </p>
               </div>
+
               <button
                 onClick={() => {
                   setIsCheckoutOpen(false);
                   setPesapalSimulationStep("idle");
                 }}
-                className="p-2 rounded-full hover:bg-[#E5EFE0] text-[#4A613E] transition"
+                className="p-2 rounded-full bg-white/80 hover:bg-white text-slate-500 hover:text-slate-900 transition shadow-xs"
               >
-                <X className="w-5 h-5" />
+                <X className="w-4 h-4" />
               </button>
             </div>
 
-            <div className="p-5 lg:p-6 overflow-y-auto space-y-5">
+            <div className="p-6 pt-2 space-y-4">
               {errorMessage && (
                 <div className="p-3 rounded-2xl bg-red-50 text-red-800 text-xs font-semibold flex items-center gap-2">
                   <AlertTriangle className="w-4 h-4 shrink-0 text-red-600" />
@@ -758,307 +757,152 @@ export const SubscriptionBillingModule: React.FC = () => {
                 </div>
               )}
 
-              {/* Step 1: Select Plan (CLEAN, NO FRAME, AUTO BACKGROUND ON SELECTION) */}
-              <div>
-                <label className="block text-xs font-black text-[#1F3609] uppercase tracking-wider mb-2">
-                  {isSw ? "1. Chagua Kifurushi" : "1. Select Plan"}
-                </label>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                  {(["STARTER", "PROFESSIONAL", "BUSINESS", "CUSTOM"] as PlanType[]).map((p) => {
-                    const isSelected = selectedPlan === p;
-                    return (
-                      <button
-                        key={p}
-                        type="button"
-                        onClick={() => setSelectedPlan(p)}
-                        className={`p-3 rounded-2xl text-left transition border-0 ${
-                          isSelected
-                            ? "bg-[#D9F4A4] text-[#142A06] font-black shadow-xs scale-[1.01]"
-                            : "bg-[#F3F6EE] text-[#4F6444] hover:bg-[#E8EFE1]"
-                        }`}
-                      >
-                        <div className="text-xs font-black">{p}</div>
-                        <div className={`text-[11px] mt-0.5 ${isSelected ? "text-[#28480C]" : "text-[#627757]"}`}>
-                          {p === "STARTER" && "50k / mo"}
-                          {p === "PROFESSIONAL" && "150k / mo"}
-                          {p === "BUSINESS" && "300k / mo"}
-                          {p === "CUSTOM" && (isSw ? "Maalum" : "Tailored")}
-                        </div>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* CUSTOM PLAN CONFIGURATOR (Shown when CUSTOM is selected) */}
-              {(selectedPlan === "CUSTOM" || selectedPlan === "ENTERPRISE") && (
-                <div className="p-4 rounded-2xl bg-[#F6FBF0] space-y-4">
-                  <div className="flex items-center gap-2">
-                    <Sliders className="w-4 h-4 text-[#2E4F10]" />
-                    <h4 className="text-xs font-black text-[#1D320B] uppercase tracking-wider">
-                      {isSw ? "Mipangilio ya Custom Plan (Enterprise)" : "Custom Plan Configurator"}
-                    </h4>
-                  </div>
-
-                  {/* Branches Slider */}
-                  <div>
-                    <div className="flex justify-between items-center text-xs mb-1.5 font-bold text-[#2A4315]">
-                      <span>{isSw ? "Idadi ya Matawi ya Biashara:" : "Number of Business Branches:"}</span>
-                      <span className="font-black text-sm bg-white px-2.5 py-0.5 rounded-xl shadow-xs">
-                        {customConfig.branches} {isSw ? "Matawi" : "Branches"}
-                      </span>
-                    </div>
-                    <input
-                      type="range"
-                      min={5}
-                      max={50}
-                      step={1}
-                      value={customConfig.branches}
-                      onChange={(e) =>
-                        setCustomConfig((prev) => ({ ...prev, branches: parseInt(e.target.value, 10) }))
-                      }
-                      className="w-full accent-[#48791B] cursor-pointer"
-                    />
-                    <div className="flex justify-between text-[10px] text-[#5F7651] mt-1">
-                      <span>5 {isSw ? "Matawi (Base)" : "Branches"}</span>
-                      <span>25 {isSw ? "Matawi" : "Branches"}</span>
-                      <span>50 {isSw ? "Matawi (Max)" : "Branches"}</span>
-                    </div>
-                  </div>
-
-                  {/* Feature Addon Toggles */}
-                  <div className="space-y-2 pt-2">
-                    <label
-                      className={`flex items-center justify-between p-3 rounded-2xl cursor-pointer transition ${
-                        customConfig.traFiscalSync ? "bg-[#E5F7C7] text-[#142807]" : "bg-[#F3F6EE] text-[#4F6444]"
-                      }`}
-                    >
-                      <div className="flex items-center gap-2.5">
-                        <Building2 className="w-4 h-4 text-[#3C6416]" />
-                        <div>
-                          <div className="text-xs font-bold">
-                            {isSw ? "Uunganishaji wa TRA EFD / VFD" : "TRA EFD / VFD Fiscal Integration"}
-                          </div>
-                          <div className="text-[11px] opacity-80">
-                            {isSw ? "Utoaji wa risiti za kiotomatiki za TRA" : "Automated fiscal signature & TRA receipts"}
-                          </div>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-[11px] font-black">+50k/mo</span>
-                        <input
-                          type="checkbox"
-                          checked={customConfig.traFiscalSync}
-                          onChange={(e) =>
-                            setCustomConfig((prev) => ({ ...prev, traFiscalSync: e.target.checked }))
-                          }
-                          className="w-4 h-4 accent-[#48791B] rounded"
-                        />
-                      </div>
-                    </label>
-
-                    <label
-                      className={`flex items-center justify-between p-3 rounded-2xl cursor-pointer transition ${
-                        customConfig.dedicatedDb ? "bg-[#E5F7C7] text-[#142807]" : "bg-[#F3F6EE] text-[#4F6444]"
-                      }`}
-                    >
-                      <div className="flex items-center gap-2.5">
-                        <Server className="w-4 h-4 text-[#3C6416]" />
-                        <div>
-                          <div className="text-xs font-bold">
-                            {isSw ? "Database Binafsi & Backup Maalum" : "Dedicated Database & Backup Partition"}
-                          </div>
-                          <div className="text-[11px] opacity-80">
-                            {isSw ? "Ulinzi wa juu na seva inayojitegemea" : "Isolated server partition with 99.99% SLA"}
-                          </div>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-[11px] font-black">+50k/mo</span>
-                        <input
-                          type="checkbox"
-                          checked={customConfig.dedicatedDb}
-                          onChange={(e) =>
-                            setCustomConfig((prev) => ({ ...prev, dedicatedDb: e.target.checked }))
-                          }
-                          className="w-4 h-4 accent-[#48791B] rounded"
-                        />
-                      </div>
-                    </label>
-
-                    <label
-                      className={`flex items-center justify-between p-3 rounded-2xl cursor-pointer transition ${
-                        customConfig.staffTraining ? "bg-[#E5F7C7] text-[#142807]" : "bg-[#F3F6EE] text-[#4F6444]"
-                      }`}
-                    >
-                      <div className="flex items-center gap-2.5">
-                        <BookOpen className="w-4 h-4 text-[#3C6416]" />
-                        <div>
-                          <div className="text-xs font-bold">
-                            {isSw ? "Mafunzo ya Wafanyakazi Dukani" : "On-Site Staff Setup & Training"}
-                          </div>
-                          <div className="text-[11px] opacity-80">
-                            {isSw ? "Mtaalamu anakuja kutoa mafunzo kwa timu" : "Engineer on-site training for cashier team"}
-                          </div>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-[11px] font-black">+100k (mara 1)</span>
-                        <input
-                          type="checkbox"
-                          checked={customConfig.staffTraining}
-                          onChange={(e) =>
-                            setCustomConfig((prev) => ({ ...prev, staffTraining: e.target.checked }))
-                          }
-                          className="w-4 h-4 accent-[#48791B] rounded"
-                        />
-                      </div>
-                    </label>
-                  </div>
-                </div>
-              )}
-
-              {/* Step 2: Select Duration / Cycle (CLEAN, NO FRAME, AUTO BACKGROUND ON SELECTION) */}
-              <div>
-                <label className="block text-xs font-black text-[#1F3609] uppercase tracking-wider mb-2">
-                  {isSw ? "2. Muda wa Leseni (Billing Period)" : "2. Billing Period"}
-                </label>
-                <div className="grid grid-cols-3 gap-2">
-                  {[
-                    { cycle: 1 as BillingCycle, label: isSw ? "Mwezi 1" : "1 Month", discount: "" },
-                    { cycle: 6 as BillingCycle, label: isSw ? "Miezi 6" : "6 Months", discount: "10% Punguzo" },
-                    { cycle: 12 as BillingCycle, label: isSw ? "Mwaka 1 (Miezi 12)" : "1 Year (12 Mo)", discount: "20% Punguzo" },
-                  ].map((item) => {
-                    const isSelected = billingCycle === item.cycle;
-                    return (
-                      <button
-                        key={item.cycle}
-                        type="button"
-                        onClick={() => setBillingCycle(item.cycle)}
-                        className={`p-3 rounded-2xl text-center transition border-0 ${
-                          isSelected
-                            ? "bg-[#D9F4A4] text-[#142A06] font-black shadow-xs scale-[1.01]"
-                            : "bg-[#F3F6EE] text-[#4F6444] hover:bg-[#E8EFE1]"
-                        }`}
-                      >
-                        <div className="text-xs font-black">{item.label}</div>
-                        {item.discount && (
-                          <div className="text-[10px] font-bold text-emerald-800 bg-white/70 rounded-full px-2 py-0.5 mt-1 inline-block">
-                            {item.discount}
-                          </div>
-                        )}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Step 3: Payment Phone & Carrier Detection (CLEAN, NO FRAME, AUTO DETECT) */}
-              <div className="space-y-2.5">
+              {/* PAYMENT AMOUNT BOX (EXACT MATCH TO IMAGE 2) */}
+              <div className="bg-white rounded-2xl p-5 shadow-xs flex flex-col justify-between">
                 <div className="flex items-center justify-between">
-                  <label className="block text-xs font-black text-[#1F3609] uppercase tracking-wider">
-                    {isSw ? "3. Nambari ya Simu ya Malipo" : "3. Mobile Payment Number"}
-                  </label>
-                  <span className="text-[11px] text-[#556D48] font-semibold">
-                    {isSw ? "Inatambua mtandao kiotomatiki" : "Auto-detects carrier"}
+                  <div>
+                    <span className="text-[11px] font-black text-slate-400 uppercase tracking-wider block">
+                      {isSw ? "KIASI CHA MALIPO" : "PAYMENT AMOUNT"}
+                    </span>
+                    <span className="text-3xl font-black text-slate-900 tracking-tight mt-1 block">
+                      TZS {finalTotal.toLocaleString()}
+                    </span>
+                  </div>
+                  <div className="text-right">
+                    <span className="text-[11px] font-bold text-slate-400 block">
+                      {isSw ? "Kifurushi:" : "Selected:"}
+                    </span>
+                    <span className="text-xs font-black text-slate-800">
+                      {selectedPlan}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="pt-4 mt-3 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400 font-semibold">
+                  <span>{isSw ? "Uthibitisho Papo Hapo" : "Instant Confirmation"}</span>
+                  <span className="flex items-center gap-1 text-[#0284C7] font-bold">
+                    <Lock className="w-3 h-3" />
+                    <span>256-Bit SSL Encrypted</span>
+                  </span>
+                </div>
+              </div>
+
+              {/* SELECT NETWORK BOXES (EXACT MATCH TO IMAGE 2 WITH REALISTIC BRAND LOGOS) */}
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-bold text-slate-700">
+                    {isSw ? "Chagua Mtandao:" : "Select Network:"}
+                  </span>
+                  <span className="text-[11px] text-[#0284C7] font-semibold">
+                    {isSw ? "Chagua au Weka Namba" : "Select or Enter Number"}
                   </span>
                 </div>
 
+                <div className="grid grid-cols-4 gap-2">
+                  {/* M-PESA */}
+                  <button
+                    type="button"
+                    onClick={() => setSelectedCarrier("mpesa")}
+                    className={`p-3 rounded-2xl bg-white text-center transition ${
+                      selectedCarrier === "mpesa"
+                        ? "border-2 border-[#0284C7] ring-2 ring-[#0284C7]/20 shadow-xs"
+                        : "border border-slate-200/80 hover:border-slate-300"
+                    }`}
+                  >
+                    <div className="text-sm font-black tracking-tight leading-none mb-1">
+                      <span className="text-[#00853F]">M-</span>
+                      <span className="text-[#E60000]">Pesa</span>
+                    </div>
+                    <div className="text-[10px] text-slate-400 font-medium">Vodacom</div>
+                  </button>
+
+                  {/* TIGO PESA */}
+                  <button
+                    type="button"
+                    onClick={() => setSelectedCarrier("tigopesa")}
+                    className={`p-3 rounded-2xl bg-white text-center transition ${
+                      selectedCarrier === "tigopesa"
+                        ? "border-2 border-[#0284C7] ring-2 ring-[#0284C7]/20 shadow-xs"
+                        : "border border-slate-200/80 hover:border-slate-300"
+                    }`}
+                  >
+                    <div className="text-sm font-black text-[#00377B] tracking-tight leading-none mb-1">
+                      Tigo Pesa
+                    </div>
+                    <div className="text-[10px] text-slate-400 font-medium">Mixx / Tigo</div>
+                  </button>
+
+                  {/* AIRTEL */}
+                  <button
+                    type="button"
+                    onClick={() => setSelectedCarrier("airtel")}
+                    className={`p-3 rounded-2xl bg-white text-center transition ${
+                      selectedCarrier === "airtel"
+                        ? "border-2 border-[#0284C7] ring-2 ring-[#0284C7]/20 shadow-xs"
+                        : "border border-slate-200/80 hover:border-slate-300"
+                    }`}
+                  >
+                    <div className="text-sm font-black text-[#E60000] tracking-tight leading-none mb-1">
+                      Airtel
+                    </div>
+                    <div className="text-[10px] text-slate-400 font-medium">Money</div>
+                  </button>
+
+                  {/* HALOPESA */}
+                  <button
+                    type="button"
+                    onClick={() => setSelectedCarrier("halopesa")}
+                    className={`p-3 rounded-2xl bg-white text-center transition ${
+                      selectedCarrier === "halopesa"
+                        ? "border-2 border-[#0284C7] ring-2 ring-[#0284C7]/20 shadow-xs"
+                        : "border border-slate-200/80 hover:border-slate-300"
+                    }`}
+                  >
+                    <div className="text-sm font-black text-[#FF6600] tracking-tight leading-none mb-1">
+                      HaloPesa
+                    </div>
+                    <div className="text-[10px] text-slate-400 font-medium">Halotel</div>
+                  </button>
+                </div>
+              </div>
+
+              {/* PAYMENT PHONE NUMBER INPUT (EXACT MATCH TO IMAGE 2) */}
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                  {isSw
+                    ? "Namba ya Simu ya Malipo (M-Pesa, Tigo Pesa, Airtel, HaloPesa)"
+                    : "Payment Phone Number (M-Pesa, Tigo Pesa, Airtel, HaloPesa)"}
+                </label>
                 <div className="relative">
                   <input
                     type="tel"
                     value={payerPhone}
                     onChange={(e) => handlePhoneChange(e.target.value)}
-                    placeholder="0754123456"
-                    className="w-full bg-[#F3F6EE] rounded-2xl px-4 py-3.5 text-sm font-bold text-[#142807] focus:outline-hidden focus:bg-[#EBF2E2] transition border-0"
+                    placeholder="0754123456 / 0654123456"
+                    className="w-full bg-white rounded-2xl px-4 py-3.5 text-sm font-bold text-slate-900 placeholder:text-slate-400 border border-slate-200 focus:outline-hidden focus:ring-2 focus:ring-[#0284C7] shadow-xs"
                   />
-                  <div className="absolute right-3.5 top-1/2 -translate-y-1/2 flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-xs font-black bg-white shadow-xs">
-                    <Check className="w-3.5 h-3.5 text-[#3E6517]" />
-                    <span>
-                      {selectedCarrier === "mpesa" && "Vodacom M-Pesa"}
-                      {selectedCarrier === "tigopesa" && "Tigo Pesa"}
-                      {selectedCarrier === "airtel" && "Airtel Money"}
-                      {selectedCarrier === "halopesa" && "HaloPesa"}
-                    </span>
+                  <div className="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs font-black text-[#0284C7]">
+                    {selectedCarrier === "mpesa" && "Vodacom"}
+                    {selectedCarrier === "tigopesa" && "Tigo"}
+                    {selectedCarrier === "airtel" && "Airtel"}
+                    {selectedCarrier === "halopesa" && "Halotel"}
                   </div>
                 </div>
-
-                {/* 4 Carrier Boxes with clean background colors and NO frame */}
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1">
-                  {CARRIERS.map((carrier) => {
-                    const isSelected = selectedCarrier === carrier.id;
-                    return (
-                      <button
-                        key={carrier.id}
-                        type="button"
-                        onClick={() => setSelectedCarrier(carrier.id)}
-                        className={`p-3 rounded-2xl text-left transition border-0 ${
-                          isSelected
-                            ? `${carrier.activeBg} font-black shadow-xs scale-[1.02]`
-                            : "bg-[#F3F6EE] text-[#4F6444] hover:bg-[#EAEFE4]"
-                        }`}
-                      >
-                        <div className="flex items-center justify-between">
-                          <span className="text-xs font-black">{carrier.name}</span>
-                          {isSelected && <Check className="w-3.5 h-3.5 shrink-0" />}
-                        </div>
-                        <div className={`text-[10px] mt-0.5 ${isSelected ? "text-white/90" : "text-[#718667]"}`}>
-                          {carrier.operator}
-                        </div>
-                        <div className={`text-[9px] mt-1 font-mono ${isSelected ? "text-white/80" : "text-[#83977A]"}`}>
-                          {carrier.prefixDesc}
-                        </div>
-                      </button>
-                    );
-                  })}
-                </div>
+                <p className="text-[11px] text-slate-500 mt-1.5">
+                  {isSw
+                    ? "Simu yako itapokea ujumbe wa kuweka namba yako ya siri (PIN) kukamilisha malipo."
+                    : "Your phone will receive a prompt to enter your PIN to complete payment."}
+                </p>
               </div>
 
-              {/* Cost Summary Breakdown (Clean, Frameless) */}
-              <div className="p-4 rounded-2xl bg-[#F6F9F0] space-y-2 text-xs">
-                <div className="flex justify-between text-[#516744]">
-                  <span>
-                    {isSw ? "Ada ya mwezi:" : "Monthly rate:"} ({selectedPlan})
-                  </span>
-                  <span className="font-bold text-[#1A2E0A]">TZS {monthlyRate.toLocaleString()}</span>
-                </div>
-                {billingCycle > 1 && (
-                  <div className="flex justify-between text-[#516744]">
-                    <span>
-                      {isSw ? "Jumla ya miezi:" : "Period subtotal:"} ({billingCycle}{" "}
-                      {isSw ? "miezi" : "mo"})
-                    </span>
-                    <span className="font-bold text-[#1A2E0A]">TZS {subtotalBeforeDiscount.toLocaleString()}</span>
-                  </div>
-                )}
-                {discountAmount > 0 && (
-                  <div className="flex justify-between text-emerald-800 font-semibold">
-                    <span>
-                      {isSw ? "Punguzo la muda mrefu" : "Long-term savings"} ({discountPercent}%):
-                    </span>
-                    <span>-TZS {discountAmount.toLocaleString()}</span>
-                  </div>
-                )}
-                {oneTimeTrainingFee > 0 && (
-                  <div className="flex justify-between text-[#516744]">
-                    <span>{isSw ? "Ada ya mafunzo dukani:" : "On-site staff setup & training:"}</span>
-                    <span className="font-bold text-[#1A2E0A]">TZS {oneTimeTrainingFee.toLocaleString()}</span>
-                  </div>
-                )}
-                <div className="pt-2 border-t border-[#E3EDD9] flex justify-between items-center text-sm font-black text-[#152709]">
-                  <span>{isSw ? "Jumla Kuu ya Kulipa (VAT Inclusive):" : "Total Payable (VAT Inclusive):"}</span>
-                  <span className="text-lg text-[#1F3908]">TZS {finalTotal.toLocaleString()}</span>
-                </div>
-              </div>
-
-              {/* Payment Processing Flow */}
+              {/* SUBMIT BUTTON (EXACT MATCH TO IMAGE 2) */}
               {pesapalSimulationStep === "idle" ? (
-                <div className="space-y-2.5">
+                <div>
                   <button
                     type="button"
                     onClick={handleInitiatePesapalPayment}
                     disabled={isProcessing}
-                    className="w-full py-3.5 rounded-2xl neu-btn text-xs font-black shadow-xs flex items-center justify-center gap-2 transition"
+                    className="w-full py-4 rounded-2xl bg-[#0284C7] hover:bg-[#0369A1] text-white text-xs font-black tracking-wider uppercase shadow-md transition flex items-center justify-center gap-2"
                   >
                     {isProcessing ? (
                       <RefreshCw className="w-4 h-4 animate-spin" />
@@ -1071,50 +915,36 @@ export const SubscriptionBillingModule: React.FC = () => {
                           ? "Inaunganisha na Pesapal..."
                           : "Connecting to Pesapal Gateway..."
                         : isSw
-                        ? `Lipa TZS ${finalTotal.toLocaleString()} (${
-                            selectedCarrier === "mpesa"
-                              ? "Vodacom M-Pesa"
-                              : selectedCarrier === "tigopesa"
-                              ? "Tigo Pesa"
-                              : selectedCarrier === "airtel"
-                              ? "Airtel Money"
-                              : "HaloPesa"
-                          })`
-                        : `Pay TZS ${finalTotal.toLocaleString()} (${
-                            selectedCarrier === "mpesa"
-                              ? "Vodacom M-Pesa"
-                              : selectedCarrier === "tigopesa"
-                              ? "Tigo Pesa"
-                              : selectedCarrier === "airtel"
-                              ? "Airtel Money"
-                              : "HaloPesa"
-                          })`}
+                        ? "LIPA SASA KWA SIMU (TUMA MAOMBI YA PIN)"
+                        : "PAY NOW VIA MOBILE (SEND PIN REQUEST)"}
                     </span>
                   </button>
 
-                  <div className="flex items-center justify-between text-[11px] text-[#556D48] pt-1">
+                  {/* Secondary Till toggle */}
+                  <div className="mt-3 text-center">
                     <button
                       type="button"
-                      onClick={() => setPaymentTab(paymentTab === "lipa_namba" ? "pesapal" : "lipa_namba")}
-                      className="hover:underline font-bold text-[#233C0D]"
+                      onClick={() =>
+                        setPaymentMethodMode(paymentMethodMode === "lipa_namba" ? "mobile" : "lipa_namba")
+                      }
+                      className="text-[11px] font-bold text-slate-500 hover:text-[#0284C7] transition"
                     >
-                      {paymentTab === "lipa_namba"
+                      {paymentMethodMode === "lipa_namba"
                         ? isSw
-                          ? "Tumia Malipo ya Simu (Pesapal Push)"
-                          : "Use Mobile Push (Pesapal)"
+                          ? "Rudi kwenye Malipo ya Simu (STK Push)"
+                          : "Back to Mobile Push"
                         : isSw
-                        ? "Lipa kwa Namba ya Till (5542109)"
-                        : "Pay via Till Number (5542109)"}
+                        ? "Au Lipa kwa Namba ya Till (5542109)"
+                        : "Or Pay via Till Number (5542109)"}
                     </button>
-                    <span>Lango Rasmi la Pesapal</span>
                   </div>
 
-                  {paymentTab === "lipa_namba" && (
-                    <div className="p-4 rounded-2xl bg-[#F6F9F0] space-y-3 mt-2">
-                      <div className="text-xs text-[#3E5533]">
+                  {paymentMethodMode === "lipa_namba" && (
+                    <div className="p-4 rounded-2xl bg-white space-y-3 mt-2 border border-slate-200">
+                      <div className="text-xs text-slate-600">
                         {isSw
-                          ? "Tuma TZS " + finalTotal.toLocaleString() + " kwenda Till 5542109 (TradePOS Technologies), kisha weka nambari ya SMS ya muamala hapa chini:"
-                          : "Send TZS " + finalTotal.toLocaleString() + " to Till 5542109 (TradePOS Technologies), then enter the SMS transaction code below:"}
+                          ? `Tuma TZS ${finalTotal.toLocaleString()} kwenda Till 5542109 (TradePOS Technologies), kisha weka SMS code ya muamala hapa:`
+                          : `Send TZS ${finalTotal.toLocaleString()} to Till 5542109 (TradePOS Technologies), then enter your SMS reference code:`}
                       </div>
                       <div className="flex gap-2">
                         <input
@@ -1122,13 +952,13 @@ export const SubscriptionBillingModule: React.FC = () => {
                           value={lipaReferenceCode}
                           onChange={(e) => setLipaReferenceCode(e.target.value)}
                           placeholder="Mfano: 9KT564819P"
-                          className="flex-1 bg-white rounded-xl px-3 py-2 text-xs font-mono font-bold text-[#142807] uppercase border-0 focus:ring-2 focus:ring-[#77B822]"
+                          className="flex-1 bg-slate-50 rounded-xl px-3 py-2 text-xs font-mono font-bold text-slate-900 uppercase border border-slate-200 focus:ring-2 focus:ring-[#0284C7]"
                         />
                         <button
                           type="button"
                           onClick={handleVerifyLipaCode}
                           disabled={isProcessing}
-                          className="px-4 py-2 rounded-xl bg-[#233C0D] text-white text-xs font-black hover:bg-[#182C08] transition"
+                          className="px-4 py-2 rounded-xl bg-[#0284C7] text-white text-xs font-black hover:bg-[#0369A1] transition"
                         >
                           {isSw ? "Thibitisha" : "Verify"}
                         </button>
@@ -1137,24 +967,16 @@ export const SubscriptionBillingModule: React.FC = () => {
                   )}
                 </div>
               ) : (
-                <div className="p-5 rounded-2xl bg-[#F6FBF1] text-center space-y-3">
-                  <div className="inline-flex p-3 rounded-full bg-[#E1FFAC] text-[#1E370A]">
+                <div className="p-5 rounded-2xl bg-white text-center space-y-3 shadow-xs">
+                  <div className="inline-flex p-3 rounded-full bg-blue-50 text-[#0284C7]">
                     <Smartphone className="w-6 h-6 animate-pulse" />
                   </div>
-                  <h4 className="text-xs font-black text-[#152709]">
+                  <h4 className="text-xs font-black text-slate-900">
                     {isSw ? "Ombi la Malipo Limetumwa Kwenye Simu Yako!" : "Push Notification Sent to Phone!"}
                   </h4>
-                  <p className="text-[11px] text-[#4F6742]">
+                  <p className="text-[11px] text-slate-500">
                     {isSw
-                      ? `Ombi la malipo la TZS ${finalTotal.toLocaleString()} limetumwa kwenda ${payerPhone} (${
-                          selectedCarrier === "mpesa"
-                            ? "M-Pesa"
-                            : selectedCarrier === "tigopesa"
-                            ? "Tigo Pesa"
-                            : selectedCarrier === "airtel"
-                            ? "Airtel Money"
-                            : "HaloPesa"
-                        }). Weka PIN yako kukamilisha.`
+                      ? `Ombi la malipo la TZS ${finalTotal.toLocaleString()} limetumwa kwenda ${payerPhone} (${selectedCarrier.toUpperCase()}). Weka PIN yako kukamilisha.`
                       : `STK push request for TZS ${finalTotal.toLocaleString()} was dispatched to ${payerPhone}. Enter PIN on your phone.`}
                   </p>
                   <div className="pt-2 flex flex-col sm:flex-row gap-2 justify-center">
@@ -1167,7 +989,7 @@ export const SubscriptionBillingModule: React.FC = () => {
                         )
                       }
                       disabled={isProcessing}
-                      className="px-5 py-2.5 rounded-xl bg-[#233C0D] text-white text-xs font-black hover:bg-[#182C08] transition flex items-center justify-center gap-2"
+                      className="px-5 py-2.5 rounded-xl bg-[#0284C7] text-white text-xs font-black hover:bg-[#0369A1] transition flex items-center justify-center gap-2"
                     >
                       <Check className="w-4 h-4" />
                       <span>{isSw ? "Thibitisha Malipo Yamekamilika" : "Confirm Payment Received"}</span>
@@ -1175,6 +997,11 @@ export const SubscriptionBillingModule: React.FC = () => {
                   </div>
                 </div>
               )}
+
+              {/* FOOTER NOTE (EXACT MATCH TO IMAGE 2) */}
+              <div className="text-[11px] text-slate-400 text-center pt-1 font-medium">
+                256-Bit SSL Encrypted  •  TradePOS Direct Checkout
+              </div>
             </div>
           </div>
         </div>
@@ -1183,12 +1010,12 @@ export const SubscriptionBillingModule: React.FC = () => {
       {/* OFFICIAL PRINTABLE TAX INVOICE & RECEIPT MODAL */}
       {activeReceipt && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 lg:p-6 overflow-y-auto print:p-0 print:bg-white">
-          <div className="bg-white rounded-3xl max-w-xl w-full border border-[#C5D8B2] shadow-2xl overflow-hidden flex flex-col my-auto print:border-none print:shadow-none">
+          <div className="bg-white rounded-3xl max-w-xl w-full border border-slate-200 shadow-2xl overflow-hidden flex flex-col my-auto print:border-none print:shadow-none">
             {/* Header / Actions */}
-            <div className="p-4 border-b border-[#E3EDD9] flex items-center justify-between bg-[#F8FAF4] print:hidden">
+            <div className="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50 print:hidden">
               <div className="flex items-center gap-2">
-                <Receipt className="w-4 h-4 text-[#2E4E10]" />
-                <span className="text-xs font-black text-[#152709]">
+                <Receipt className="w-4 h-4 text-slate-700" />
+                <span className="text-xs font-black text-slate-900">
                   {isSw ? "Risiti Rasmi ya Kodi (TradePOS EFD)" : "Official Tax Invoice & Receipt"}
                 </span>
               </div>
@@ -1196,7 +1023,7 @@ export const SubscriptionBillingModule: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => window.print()}
-                  className="px-3 py-1.5 rounded-xl bg-[#233C0D] text-white text-xs font-bold hover:bg-[#182C08] transition flex items-center gap-1.5"
+                  className="px-3 py-1.5 rounded-xl bg-slate-900 text-white text-xs font-bold hover:bg-slate-800 transition flex items-center gap-1.5"
                 >
                   <Printer className="w-3.5 h-3.5" />
                   <span>{isSw ? "Chapisha (Print)" : "Print"}</span>
@@ -1204,7 +1031,7 @@ export const SubscriptionBillingModule: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setActiveReceipt(null)}
-                  className="p-1.5 rounded-full hover:bg-[#E5EFE0] text-[#4A613E] transition"
+                  className="p-1.5 rounded-full hover:bg-slate-200 text-slate-500 transition"
                 >
                   <X className="w-5 h-5" />
                 </button>
@@ -1212,53 +1039,53 @@ export const SubscriptionBillingModule: React.FC = () => {
             </div>
 
             {/* Receipt Printable Sheet */}
-            <div className="p-6 lg:p-8 space-y-6 text-[#1A2E0A] bg-white" id="tradepos-receipt-print">
-              <div className="text-center space-y-1 border-b border-dashed border-[#C5D8B2] pb-5">
-                <div className="text-xs font-black tracking-widest text-[#2D4C10] uppercase">
+            <div className="p-6 lg:p-8 space-y-6 text-slate-900 bg-white" id="tradepos-receipt-print">
+              <div className="text-center space-y-1 border-b border-dashed border-slate-200 pb-5">
+                <div className="text-xs font-black tracking-widest text-[#0284C7] uppercase">
                   TradePOS Technologies Tanzania
                 </div>
-                <h3 className="text-lg font-black tracking-tight text-[#142608]">
+                <h3 className="text-lg font-black tracking-tight text-slate-900">
                   {isSw ? "RISITI YA MALIPO YA LESENI" : "OFFICIAL SUBSCRIPTION INVOICE"}
                 </h3>
-                <p className="text-[11px] text-[#556D48]">
+                <p className="text-[11px] text-slate-500">
                   TIN: 142-990-821 | VRN: 40-029182-K | Dar es Salaam, Tanzania
                 </p>
-                <p className="text-[11px] text-[#556D48]">Support: +255 754 123 456 | billing@tradepos.co.tz</p>
+                <p className="text-[11px] text-slate-500">Support: +255 754 123 456 | billing@tradepos.co.tz</p>
               </div>
 
               {/* Invoice Meta */}
               <div className="grid grid-cols-2 gap-3 text-xs">
                 <div>
-                  <span className="text-[#647C59] block">{isSw ? "Mteja / Biashara:" : "Client Business:"}</span>
-                  <strong className="text-[#152709] font-bold text-sm">{business?.name || "TradePOS Tenant"}</strong>
-                  <div className="text-[11px] text-[#556D48]">
+                  <span className="text-slate-400 block">{isSw ? "Mteja / Biashara:" : "Client Business:"}</span>
+                  <strong className="text-slate-900 font-bold text-sm">{business?.name || "TradePOS Tenant"}</strong>
+                  <div className="text-[11px] text-slate-500">
                     {business?.location || "Tanzania"} • {activeReceipt.payerPhone || business?.phone}
                   </div>
                 </div>
                 <div className="text-right">
-                  <span className="text-[#647C59] block">{isSw ? "Nambari ya Risiti:" : "Receipt / Invoice #:"}</span>
-                  <strong className="text-[#152709] font-mono font-bold text-sm">{activeReceipt.invoice}</strong>
-                  <div className="text-[11px] text-[#556D48]">
+                  <span className="text-slate-400 block">{isSw ? "Nambari ya Risiti:" : "Receipt / Invoice #:"}</span>
+                  <strong className="text-slate-900 font-mono font-bold text-sm">{activeReceipt.invoice}</strong>
+                  <div className="text-[11px] text-slate-500">
                     {isSw ? "Tarehe:" : "Date:"} {activeReceipt.date}
                   </div>
                 </div>
               </div>
 
               {/* Line Items */}
-              <div className="border border-[#D8E6CC] rounded-2xl overflow-hidden">
+              <div className="border border-slate-200 rounded-2xl overflow-hidden">
                 <table className="w-full text-xs">
-                  <thead className="bg-[#F8FAF4] font-bold text-[#4D6340] border-b border-[#D8E6CC]">
+                  <thead className="bg-slate-50 font-bold text-slate-600 border-b border-slate-200">
                     <tr>
                       <th className="py-2.5 px-3 text-left">{isSw ? "Maelezo ya Kifurushi" : "Plan Description"}</th>
                       <th className="py-2.5 px-3 text-center">{isSw ? "Muda" : "Duration"}</th>
                       <th className="py-2.5 px-3 text-right">{isSw ? "Kiasi (TZS)" : "Amount (TZS)"}</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-[#F1F6EB]">
+                  <tbody className="divide-y divide-slate-100">
                     <tr>
                       <td className="py-3 px-3">
-                        <div className="font-bold text-[#142608]">TradePOS {activeReceipt.plan} License</div>
-                        <div className="text-[10px] text-[#5A734D]">
+                        <div className="font-bold text-slate-900">TradePOS {activeReceipt.plan} License</div>
+                        <div className="text-[10px] text-slate-500">
                           {isSw
                             ? "Mfumo kamili wa usimamizi wa biashara, mauzo, stoo na ripoti."
                             : "Full cloud POS, multi-branch inventory, analytics and reports."}
@@ -1277,44 +1104,44 @@ export const SubscriptionBillingModule: React.FC = () => {
 
               {/* Breakdown */}
               <div className="space-y-1.5 text-xs text-right">
-                <div className="flex justify-between text-[#556D48]">
+                <div className="flex justify-between text-slate-500">
                   <span>{isSw ? "Kiasi Halisi (Net Subtotal):" : "Net Subtotal:"}</span>
-                  <span className="font-bold text-[#152709]">
+                  <span className="font-bold text-slate-900">
                     TZS {(activeReceipt.amount - activeReceipt.taxVat).toLocaleString()}
                   </span>
                 </div>
-                <div className="flex justify-between text-[#556D48]">
+                <div className="flex justify-between text-slate-500">
                   <span>{isSw ? "Kodi ya Ongezeko la Thamani (VAT 18%):" : "Tax (VAT 18%):"}</span>
-                  <span className="font-bold text-[#152709]">TZS {activeReceipt.taxVat.toLocaleString()}</span>
+                  <span className="font-bold text-slate-900">TZS {activeReceipt.taxVat.toLocaleString()}</span>
                 </div>
-                <div className="flex justify-between text-base font-black text-[#152709] pt-2 border-t border-[#D8E6CC]">
+                <div className="flex justify-between text-base font-black text-slate-900 pt-2 border-t border-slate-200">
                   <span>{isSw ? "Jumla Yote Iliyolipwa:" : "Total Paid:"}</span>
-                  <span className="text-[#203A09]">TZS {activeReceipt.amount.toLocaleString()}</span>
+                  <span className="text-[#0284C7]">TZS {activeReceipt.amount.toLocaleString()}</span>
                 </div>
-                <div className="flex justify-between text-[11px] text-[#556D48] pt-1">
+                <div className="flex justify-between text-[11px] text-slate-500 pt-1">
                   <span>{isSw ? "Njia ya Malipo:" : "Payment Method:"}</span>
-                  <span className="font-semibold text-[#152709]">{activeReceipt.paymentMethod}</span>
+                  <span className="font-semibold text-slate-900">{activeReceipt.paymentMethod}</span>
                 </div>
               </div>
 
-              {/* Verification Stamp & QR Mock */}
-              <div className="p-4 rounded-2xl bg-[#F6FBF1] border border-[#C6E697] flex items-center justify-between">
+              {/* Verification Stamp */}
+              <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 flex items-center justify-between">
                 <div>
-                  <div className="text-[11px] font-black text-[#213B0B] uppercase">
+                  <div className="text-[11px] font-black text-emerald-900 uppercase">
                     {isSw ? "HALI YA MALIPO: YAMETHIBITISHWA" : "PAYMENT STATUS: CONFIRMED"}
                   </div>
-                  <div className="text-[10px] text-[#516C44] mt-0.5">
+                  <div className="text-[10px] text-emerald-700 mt-0.5">
                     {isSw
                       ? "Leseni imewashwa rasmi katika mfumo wa TradePOS."
                       : "License officially activated in TradePOS cloud cluster."}
                   </div>
                 </div>
-                <div className="px-3 py-1 rounded-lg bg-[#E1FFAC] text-[#192E08] font-black text-xs font-mono border border-[#9EDE31]">
+                <div className="px-3 py-1 rounded-lg bg-emerald-200 text-emerald-900 font-black text-xs font-mono">
                   PAID-TZ
                 </div>
               </div>
 
-              <div className="text-center text-[10px] text-[#6E8662] pt-2 border-t border-dashed border-[#C5D8B2]">
+              <div className="text-center text-[10px] text-slate-400 pt-2 border-t border-dashed border-slate-200">
                 {isSw
                   ? "Asante kwa kuchagua TradePOS kuwa mshirika wa biashara yako!"
                   : "Thank you for partnering with TradePOS for your retail operations!"}
