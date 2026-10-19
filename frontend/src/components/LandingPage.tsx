@@ -99,9 +99,9 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onLoginC
 
   const businessTypes = t.landing.businessTypes;
 
-  const pricingPlans = t.landing.pricingPlans.map((plan, idx) => ({
+  const pricingPlans = t.landing.pricingPlans.map((plan) => ({
     ...plan,
-    isPopular: idx === 0,
+    isPopular: plan.name.includes("PROFESSIONAL"),
   }));
 
   return (
@@ -312,11 +312,11 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onLoginC
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-7xl mx-auto items-stretch">
             {pricingPlans.map((plan, idx) => (
               <div
                 key={idx}
-                className={`p-7 rounded-3xl bg-white border flex flex-col justify-between transition-all duration-200 relative ${
+                className={`p-6 sm:p-7 rounded-3xl bg-white border flex flex-col justify-between transition-all duration-200 relative ${
                   plan.isPopular
                     ? "border-2 border-[#81cc1a] shadow-neu-raised bg-[#FDFFF9]"
                     : "border-[#d8e6cb] shadow-neu-card"

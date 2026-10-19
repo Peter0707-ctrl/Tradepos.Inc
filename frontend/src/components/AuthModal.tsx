@@ -30,7 +30,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ initialMode, onClose, onSu
   const [bizName, setBizName] = useState("");
   const [bizType, setBizType] = useState("Retail Shop");
   const [bizLocation, setBizLocation] = useState("");
-  const [selectedPlan, setSelectedPlan] = useState<"STARTER" | "PROFESSIONAL" | "BUSINESS">("PROFESSIONAL");
+  const [selectedPlan, setSelectedPlan] = useState<"STARTER" | "PROFESSIONAL" | "BUSINESS" | "ENTERPRISE">("PROFESSIONAL");
   const [paymentMethod, setPaymentMethod] = useState("MPESA");
   const [paymentPhone, setPaymentPhone] = useState("");
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
@@ -313,22 +313,34 @@ export const AuthModal: React.FC<AuthModalProps> = ({ initialMode, onClose, onSu
             </label>
             {[
               {
+                id: "STARTER",
+                name: "Starter POS",
+                price: "TZS 50,000 / mwezi",
+                desc: "Duka 1 la biashara, wauzaji 2, stoo & mauzo ya siku",
+              },
+              {
                 id: "PROFESSIONAL",
-                name: "Professional (Inayopendekezwa)",
+                name: "Professional Retail (Inayopendekezwa)",
                 price: "TZS 150,000 / mwezi",
-                desc: "Mfumo kamili wa mauzo, stoo ya bidhaa, madeni, na faida/hasara",
+                desc: "Matawi hadi 5, wafanyakazi bila kikomo, AI assistant & P&L",
               },
               {
                 id: "BUSINESS",
                 name: "Business Chain",
                 price: "TZS 300,000 / mwezi",
-                desc: "Matawi mengi, usimamizi wa stoo kubwa na wauzaji wa jumla",
+                desc: "Matawi mengi bila kikomo, WhatsApp alerts, bei za jumla & rejareja",
+              },
+              {
+                id: "ENTERPRISE",
+                name: "Custom Enterprise",
+                price: "TZS 500,000 / mwezi",
+                desc: "Matawi 10+, TRA EFD sync, seva binafsi na SLA 99.9%",
               },
             ].map((p) => (
               <div
                 key={p.id}
                 onClick={() => setSelectedPlan(p.id as any)}
-                className={`p-4 rounded-2xl cursor-pointer transition flex items-center justify-between ${
+                className={`p-3.5 rounded-2xl cursor-pointer transition flex items-center justify-between ${
                   selectedPlan === p.id
                     ? "auth-neu-option-active"
                     : "auth-neu-option"
@@ -338,7 +350,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ initialMode, onClose, onSu
                   <h4 className="font-extrabold text-xs text-[#1c2e0e]">{p.name}</h4>
                   <p className="text-[11px] text-[#4f6445]">{p.desc}</p>
                 </div>
-                <span className="text-xs font-black text-[#152708]">{p.price}</span>
+                <span className="text-xs font-black text-[#152708] shrink-0 ml-2">{p.price}</span>
               </div>
             ))}
 
@@ -371,8 +383,12 @@ export const AuthModal: React.FC<AuthModalProps> = ({ initialMode, onClose, onSu
               <div className="flex justify-between font-extrabold text-[#1f330d] text-sm pt-1.5 border-t border-[#d3e2cb]">
                 <span>Kiasi cha Kulipa:</span>
                 <span>
-                  {selectedPlan === "BUSINESS"
+                  {selectedPlan === "ENTERPRISE"
+                    ? "TZS 500,000"
+                    : selectedPlan === "BUSINESS"
                     ? "TZS 300,000"
+                    : selectedPlan === "STARTER"
+                    ? "TZS 50,000"
                     : "TZS 150,000"}
                 </span>
               </div>
