@@ -143,19 +143,6 @@ function MainApp() {
     }
   }, [isHydrated, isOwner, activeModule, setActiveModule]);
 
-  // Prevent blank screen while localStorage state hydrates
-  if (!isHydrated) {
-    return (
-      <div className="min-h-screen bg-[#F4F7EE] flex items-center justify-center p-6 select-none">
-        <div className="flex flex-col items-center gap-3">
-          <div className="w-12 h-12 rounded-2xl bg-[#E1FFAC] border border-[#BCE86C] flex items-center justify-center shadow-xs">
-            <ShoppingBag className="w-6 h-6 text-[#1A2E09] animate-pulse" />
-          </div>
-          <span className="text-xs font-black text-[#1A2E09] tracking-wider uppercase">TradePOS</span>
-        </div>
-      </div>
-    );
-  }
 
   // Human readable title lookup
   const getModuleTitle = (mod: string) => {
