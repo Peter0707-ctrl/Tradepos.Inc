@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { useApp } from "@/context/AppContext";
 import {
   Building2,
@@ -36,6 +36,7 @@ export const AdminDashboardModule: React.FC<AdminDashboardModuleProps> = ({ onNa
     auditLogs,
     adminExtendSubscription,
     adminImpersonateStore,
+    language,
   } = useApp();
 
   const allBusinesses = availableBusinesses.length > 0
@@ -108,8 +109,36 @@ export const AdminDashboardModule: React.FC<AdminDashboardModuleProps> = ({ onNa
   const openTickets = (supportTickets || []).filter((t) => t.status === "OPEN" || t.status === "IN_PROGRESS");
   const resolvedTickets = (supportTickets || []).filter((t) => t.status === "RESOLVED");
 
-  // Format today's date in Swahili
-  const currentDateFormatted = new Date().toLocaleDateString("sw-TZ", {
+  // Dynamic typing salutation based on time of day (Good morning / Good afternoon / Good evening)
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) {
+      return language === "sw" ? "Habari za Asubuhi, Admin" : "Good morning, Admin";
+    } else if (hour < 17) {
+      return language === "sw" ? "Habari za Mchana, Admin" : "Good afternoon, Admin";
+    } else {
+      return language === "sw" ? "Habari za Jioni, Admin" : "Good evening, Admin";
+    }
+  };
+
+  const fullGreeting = getGreeting();
+  const [typedText, setTypedText] = useState("");
+
+  useEffect(() => {
+    let index = 0;
+    setTypedText("");
+    const interval = setInterval(() => {
+      index++;
+      setTypedText(fullGreeting.slice(0, index));
+      if (index >= fullGreeting.length) {
+        clearInterval(interval);
+      }
+    }, 45);
+    return () => clearInterval(interval);
+  }, [fullGreeting]);
+
+  // Format today's date in selected language
+  const currentDateFormatted = new Date().toLocaleDateString(language === "sw" ? "sw-TZ" : "en-US", {
     weekday: "long",
     year: "numeric",
     month: "long",
@@ -118,54 +147,16 @@ export const AdminDashboardModule: React.FC<AdminDashboardModuleProps> = ({ onNa
 
   return (
     <div className="flex flex-col h-full bg-[#F4F7EE] p-3 sm:p-5 overflow-y-auto">
-      {/* Top Banner Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-5 shrink-0 bg-white p-4 rounded-2xl border border-[#d8e6cc] shadow-neu-card">
+      {/* Dynamic Typing Salutation Header */}
+      <div className="flex items-center justify-between mb-4 pb-2 border-b border-[#D8E6CC] shrink-0">
         <div>
-          <div className="flex items-center gap-2 mb-1">
-            <span className="px-2.5 py-0.5 rounded-full bg-[#1b2f09] text-[#E1FFAC] text-[10px] font-black uppercase tracking-wider">
-              ADMIN CONSOLE
-            </span>
-            <div className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 text-[11px] font-bold">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-              <span>Mfumo Uko Online (100% Uptime)</span>
-            </div>
-          </div>
-          <h1 className="text-xl sm:text-2xl font-black text-[#152508] tracking-tight">
-            Dashibodi Kuu ya Mfumo
+          <h1 className="text-xl sm:text-2xl font-black text-[#152508] tracking-tight flex items-center gap-1.5">
+            <span>{typedText}</span>
+            <span className="w-0.5 h-6 bg-[#27460d] inline-block animate-pulse"></span>
           </h1>
           <p className="text-xs text-[#52654c] mt-0.5">
-            Muhtasari wa maduka, watumiaji, mapato ya kila mwezi (MRR), na desk ya msaada • {currentDateFormatted}
+            {currentDateFormatted}
           </p>
-        </div>
-
-        {/* Action Shortcuts */}
-        <div className="flex items-center gap-2 flex-wrap">
-          <button
-            onClick={() => onNavigate("admin-tenants")}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white text-[#233519] border border-[#d8e6cc] hover:bg-[#f0f6e9] text-xs font-bold transition cursor-pointer shadow-xs"
-          >
-            <Building2 className="w-3.5 h-3.5 text-[#55694f]" />
-            <span>Maduka ({tenantsData.length})</span>
-          </button>
-          <button
-            onClick={() => onNavigate("admin-users")}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white text-[#233519] border border-[#d8e6cc] hover:bg-[#f0f6e9] text-xs font-bold transition cursor-pointer shadow-xs"
-          >
-            <Users className="w-3.5 h-3.5 text-[#55694f]" />
-            <span>Watumiaji ({employees.length})</span>
-          </button>
-          <button
-            onClick={() => onNavigate("admin-support")}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#1b2f09] hover:bg-[#253e0d] text-[#E1FFAC] border border-[#8ece28] text-xs font-black transition cursor-pointer shadow-xs"
-          >
-            <LifeBuoy className="w-3.5 h-3.5" />
-            <span>Desk ya Msaada</span>
-            {openTickets.length > 0 && (
-              <span className="px-1.5 py-0.2 rounded-full bg-rose-500 text-white text-[10px] font-black">
-                {openTickets.length}
-              </span>
-            )}
-          </button>
         </div>
       </div>
 
