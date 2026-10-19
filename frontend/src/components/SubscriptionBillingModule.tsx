@@ -325,7 +325,7 @@ export const SubscriptionBillingModule: React.FC = () => {
                 onClick={() => setBillingCycle(item.cycle)}
                 className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 ${
                   isSelected
-                    ? "bg-[#0284C7] text-white shadow-xs"
+                    ? "bg-[#233C0D] text-white shadow-xs"
                     : "text-slate-600 hover:text-slate-900 hover:bg-slate-50"
                 }`}
               >
@@ -345,7 +345,7 @@ export const SubscriptionBillingModule: React.FC = () => {
         </div>
       </div>
 
-      {/* Plan Cards Grid (Exactly like AjiraMarket Image 3 Reference) */}
+      {/* Plan Cards Grid (TradePOS Brand Palette) */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 items-stretch pt-2">
         {/* CARD 1: STARTER */}
         <div className="bg-white rounded-3xl p-6 border-2 border-slate-200 shadow-xs flex flex-col justify-between transition hover:shadow-md">
@@ -359,7 +359,7 @@ export const SubscriptionBillingModule: React.FC = () => {
               </span>
             </div>
 
-            <h3 className="text-xl font-black text-slate-900">
+            <h3 className="text-xl font-black text-[#152709]">
               {isSw ? "Starter POS" : "Starter POS"}
             </h3>
             <p className="text-xs text-slate-500 mt-1 mb-5">
@@ -367,7 +367,7 @@ export const SubscriptionBillingModule: React.FC = () => {
             </p>
 
             <div className="mb-6">
-              <span className="text-3xl font-black text-slate-900">
+              <span className="text-3xl font-black text-[#152709]">
                 TZS {calculateTotal("STARTER", billingCycle).toLocaleString()}
               </span>
               <span className="text-xs text-slate-500 font-medium">
@@ -378,19 +378,19 @@ export const SubscriptionBillingModule: React.FC = () => {
 
             <ul className="space-y-3 text-xs text-slate-600">
               <li className="flex items-start gap-2.5">
-                <CheckCircle2 className="w-4 h-4 text-[#0284C7] shrink-0 mt-0.5" />
+                <CheckCircle2 className="w-4 h-4 text-[#3E6517] shrink-0 mt-0.5" />
                 <span>{isSw ? "Tawi 1 la Biashara (Single Branch)" : "1 Business Branch"}</span>
               </li>
               <li className="flex items-start gap-2.5">
-                <CheckCircle2 className="w-4 h-4 text-[#0284C7] shrink-0 mt-0.5" />
+                <CheckCircle2 className="w-4 h-4 text-[#3E6517] shrink-0 mt-0.5" />
                 <span>{isSw ? "Wafanyakazi hadi 2 (Wauzaji)" : "Up to 2 Staff Accounts"}</span>
               </li>
               <li className="flex items-start gap-2.5">
-                <CheckCircle2 className="w-4 h-4 text-[#0284C7] shrink-0 mt-0.5" />
+                <CheckCircle2 className="w-4 h-4 text-[#3E6517] shrink-0 mt-0.5" />
                 <span>{isSw ? "Stoo, Bidhaa & Mauzo ya Kila Siku" : "Basic Inventory & Daily Sales"}</span>
               </li>
               <li className="flex items-start gap-2.5">
-                <CheckCircle2 className="w-4 h-4 text-[#0284C7] shrink-0 mt-0.5" />
+                <CheckCircle2 className="w-4 h-4 text-[#3E6517] shrink-0 mt-0.5" />
                 <span>{isSw ? "Ripoti za Z-Report ya Kufunga Siku" : "Daily Z-Report & Receipt Print"}</span>
               </li>
             </ul>
@@ -398,7 +398,7 @@ export const SubscriptionBillingModule: React.FC = () => {
 
           <button
             onClick={() => handleOpenCheckout("STARTER")}
-            className="mt-8 w-full py-3.5 rounded-2xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-black tracking-wider uppercase transition shadow-xs"
+            className="mt-8 w-full py-3.5 rounded-2xl bg-[#233C0D] hover:bg-[#182C08] text-white text-xs font-black tracking-wider uppercase transition shadow-xs"
           >
             {currentPlan === "STARTER"
               ? isSw
@@ -410,15 +410,15 @@ export const SubscriptionBillingModule: React.FC = () => {
           </button>
         </div>
 
-        {/* CARD 2: PROFESSIONAL (RECOMMENDED BADGE LIKE AJIRAMARKET IMAGE 3) */}
-        <div className="bg-white rounded-3xl p-6 border-2 border-[#0284C7] shadow-lg flex flex-col justify-between relative transition hover:shadow-xl">
-          <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 bg-[#0284C7] text-white text-[11px] font-black px-4 py-0.5 rounded-full uppercase tracking-wider shadow-xs">
+        {/* CARD 2: PROFESSIONAL (TRADE POS RECOMMENDED) */}
+        <div className="bg-white rounded-3xl p-6 border-2 border-[#8ECE28] shadow-lg flex flex-col justify-between relative transition hover:shadow-xl">
+          <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 bg-[#233C0D] text-white text-[11px] font-black px-4 py-0.5 rounded-full uppercase tracking-wider shadow-xs">
             {isSw ? "INAYOPENDEKEZWA" : "RECOMMENDED"}
           </div>
 
           <div>
             <div className="flex items-center justify-between gap-2 mb-3 pt-1">
-              <span className="px-3 py-1 rounded-full bg-blue-50 text-[#0284C7] text-[10px] font-black uppercase tracking-wider">
+              <span className="px-3 py-1 rounded-full bg-[#E1FFAC] text-[#192E08] text-[10px] font-black uppercase tracking-wider">
                 {isSw ? "MPANGO WA KAWAIDA" : "STANDARD PLAN"}
               </span>
               <span className="text-[10px] text-slate-500 font-bold">
@@ -426,7 +426,7 @@ export const SubscriptionBillingModule: React.FC = () => {
               </span>
             </div>
 
-            <h3 className="text-xl font-black text-slate-900">
+            <h3 className="text-xl font-black text-[#152709]">
               {isSw ? "Professional Retail" : "Professional Retail"}
             </h3>
             <p className="text-xs text-slate-500 mt-1 mb-5">
@@ -434,7 +434,7 @@ export const SubscriptionBillingModule: React.FC = () => {
             </p>
 
             <div className="mb-6">
-              <span className="text-3xl font-black text-[#0284C7]">
+              <span className="text-3xl font-black text-[#152709]">
                 TZS {calculateTotal("PROFESSIONAL", billingCycle).toLocaleString()}
               </span>
               <span className="text-xs text-slate-500 font-medium">
@@ -445,23 +445,23 @@ export const SubscriptionBillingModule: React.FC = () => {
 
             <ul className="space-y-3 text-xs text-slate-600">
               <li className="flex items-start gap-2.5">
-                <CheckCircle2 className="w-4 h-4 text-[#0284C7] shrink-0 mt-0.5" />
+                <CheckCircle2 className="w-4 h-4 text-[#3E6517] shrink-0 mt-0.5" />
                 <span>{isSw ? "Matawi hadi 5 & Maghala ya Bidhaa" : "Up to 5 Branches & Warehouses"}</span>
               </li>
               <li className="flex items-start gap-2.5">
-                <CheckCircle2 className="w-4 h-4 text-[#0284C7] shrink-0 mt-0.5" />
+                <CheckCircle2 className="w-4 h-4 text-[#3E6517] shrink-0 mt-0.5" />
                 <span>{isSw ? "Wafanyakazi Bila Kikomo" : "Unlimited Staff Accounts & Roles"}</span>
               </li>
               <li className="flex items-start gap-2.5">
-                <CheckCircle2 className="w-4 h-4 text-[#0284C7] shrink-0 mt-0.5" />
+                <CheckCircle2 className="w-4 h-4 text-[#3E6517] shrink-0 mt-0.5" />
                 <span>{isSw ? "Msaidizi wa AI (Copetra AI Coach)" : "AI Business Assistant (Copetra)"}</span>
               </li>
               <li className="flex items-start gap-2.5">
-                <CheckCircle2 className="w-4 h-4 text-[#0284C7] shrink-0 mt-0.5" />
+                <CheckCircle2 className="w-4 h-4 text-[#3E6517] shrink-0 mt-0.5" />
                 <span>{isSw ? "Duka la Mtandaoni & Utoaji Oda" : "Online Store & Dispatch Tracker"}</span>
               </li>
               <li className="flex items-start gap-2.5">
-                <CheckCircle2 className="w-4 h-4 text-[#0284C7] shrink-0 mt-0.5" />
+                <CheckCircle2 className="w-4 h-4 text-[#3E6517] shrink-0 mt-0.5" />
                 <span>{isSw ? "Uhasibu wa Faida & Hasara (P&L)" : "Full P&L Accounting & Audit"}</span>
               </li>
             </ul>
@@ -469,7 +469,7 @@ export const SubscriptionBillingModule: React.FC = () => {
 
           <button
             onClick={() => handleOpenCheckout("PROFESSIONAL")}
-            className="mt-8 w-full py-3.5 rounded-2xl bg-[#0284C7] hover:bg-[#0369A1] text-white text-xs font-black tracking-wider uppercase transition shadow-md"
+            className="mt-8 w-full py-3.5 rounded-2xl bg-[#233C0D] hover:bg-[#182C08] text-white text-xs font-black tracking-wider uppercase transition shadow-md"
           >
             {currentPlan === "PROFESSIONAL"
               ? isSw
@@ -516,23 +516,23 @@ export const SubscriptionBillingModule: React.FC = () => {
 
             <ul className="space-y-3 text-xs text-slate-600">
               <li className="flex items-start gap-2.5">
-                <CheckCircle2 className="w-4 h-4 text-slate-900 shrink-0 mt-0.5" />
+                <CheckCircle2 className="w-4 h-4 text-[#3E6517] shrink-0 mt-0.5" />
                 <span>{isSw ? "Matawi & Maghala Bila Kikomo" : "Unlimited Branches & Warehouses"}</span>
               </li>
               <li className="flex items-start gap-2.5">
-                <CheckCircle2 className="w-4 h-4 text-slate-900 shrink-0 mt-0.5" />
+                <CheckCircle2 className="w-4 h-4 text-[#3E6517] shrink-0 mt-0.5" />
                 <span>{isSw ? "Uhamishaji wa Bidhaa Baina ya Matawi" : "Inter-Branch Stock Transfers"}</span>
               </li>
               <li className="flex items-start gap-2.5">
-                <CheckCircle2 className="w-4 h-4 text-slate-900 shrink-0 mt-0.5" />
+                <CheckCircle2 className="w-4 h-4 text-[#3E6517] shrink-0 mt-0.5" />
                 <span>{isSw ? "Bei za Jumla & Rejareja (Multi-Tier)" : "Multi-Tier Wholesale Pricing"}</span>
               </li>
               <li className="flex items-start gap-2.5">
-                <CheckCircle2 className="w-4 h-4 text-slate-900 shrink-0 mt-0.5" />
+                <CheckCircle2 className="w-4 h-4 text-[#3E6517] shrink-0 mt-0.5" />
                 <span>{isSw ? "Ripoti za WhatsApp kwa Bosi Kiotomatiki" : "Automated WhatsApp Boss Alerts"}</span>
               </li>
               <li className="flex items-start gap-2.5">
-                <CheckCircle2 className="w-4 h-4 text-slate-900 shrink-0 mt-0.5" />
+                <CheckCircle2 className="w-4 h-4 text-[#3E6517] shrink-0 mt-0.5" />
                 <span>{isSw ? "Usaidizi Maalum wa Kiufundi (24/7)" : "24/7 Priority Support Specialist"}</span>
               </li>
             </ul>
@@ -540,7 +540,7 @@ export const SubscriptionBillingModule: React.FC = () => {
 
           <button
             onClick={() => handleOpenCheckout("BUSINESS")}
-            className="mt-8 w-full py-3.5 rounded-2xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-black tracking-wider uppercase transition shadow-md"
+            className="mt-8 w-full py-3.5 rounded-2xl bg-[#233C0D] hover:bg-[#182C08] text-white text-xs font-black tracking-wider uppercase transition shadow-md"
           >
             {currentPlan === "BUSINESS"
               ? isSw
@@ -564,7 +564,7 @@ export const SubscriptionBillingModule: React.FC = () => {
               </span>
             </div>
 
-            <h3 className="text-xl font-black text-slate-900">
+            <h3 className="text-xl font-black text-[#152709]">
               {isSw ? "Custom Plan" : "Custom Plan"}
             </h3>
             <p className="text-xs text-slate-500 mt-1 mb-5">
@@ -572,7 +572,7 @@ export const SubscriptionBillingModule: React.FC = () => {
             </p>
 
             <div className="mb-4">
-              <span className="text-3xl font-black text-slate-900">
+              <span className="text-3xl font-black text-[#152709]">
                 TZS {calculateTotal("CUSTOM", billingCycle).toLocaleString()}
               </span>
               <span className="text-xs text-slate-500 font-medium">
@@ -585,7 +585,7 @@ export const SubscriptionBillingModule: React.FC = () => {
             <div className="mb-4 p-3 rounded-2xl bg-slate-50 text-xs space-y-2">
               <div className="flex justify-between font-bold text-slate-700">
                 <span>{isSw ? "Matawi ya Biashara:" : "Configured Branches:"}</span>
-                <span className="text-[#0284C7] font-black">{customConfig.branches}</span>
+                <span className="text-[#233C0D] font-black">{customConfig.branches}</span>
               </div>
               <input
                 type="range"
@@ -596,7 +596,7 @@ export const SubscriptionBillingModule: React.FC = () => {
                 onChange={(e) =>
                   setCustomConfig((prev) => ({ ...prev, branches: parseInt(e.target.value, 10) }))
                 }
-                className="w-full accent-[#0284C7] cursor-pointer"
+                className="w-full accent-[#48791B] cursor-pointer"
               />
               <div className="flex items-center justify-between pt-1">
                 <label className="flex items-center gap-1.5 cursor-pointer text-[11px] text-slate-600 font-bold">
@@ -606,7 +606,7 @@ export const SubscriptionBillingModule: React.FC = () => {
                     onChange={(e) =>
                       setCustomConfig((prev) => ({ ...prev, traFiscalSync: e.target.checked }))
                     }
-                    className="w-3.5 h-3.5 accent-[#0284C7] rounded"
+                    className="w-3.5 h-3.5 accent-[#48791B] rounded"
                   />
                   <span>TRA EFD/VFD</span>
                 </label>
@@ -617,7 +617,7 @@ export const SubscriptionBillingModule: React.FC = () => {
                     onChange={(e) =>
                       setCustomConfig((prev) => ({ ...prev, dedicatedDb: e.target.checked }))
                     }
-                    className="w-3.5 h-3.5 accent-[#0284C7] rounded"
+                    className="w-3.5 h-3.5 accent-[#48791B] rounded"
                   />
                   <span>Private DB</span>
                 </label>
@@ -626,19 +626,19 @@ export const SubscriptionBillingModule: React.FC = () => {
 
             <ul className="space-y-2 text-xs text-slate-600">
               <li className="flex items-start gap-2.5">
-                <CheckCircle2 className="w-4 h-4 text-[#0284C7] shrink-0 mt-0.5" />
+                <CheckCircle2 className="w-4 h-4 text-[#3E6517] shrink-0 mt-0.5" />
                 <span>{isSw ? "Matawi 5 hadi 50+ kulingana na mahitaji" : "Configurable 5 to 50+ Branches"}</span>
               </li>
               <li className="flex items-start gap-2.5">
-                <CheckCircle2 className="w-4 h-4 text-[#0284C7] shrink-0 mt-0.5" />
+                <CheckCircle2 className="w-4 h-4 text-[#3E6517] shrink-0 mt-0.5" />
                 <span>{isSw ? "Muunganisho Rasmi wa TRA EFD / VFD" : "TRA EFD / VFD Fiscal Integration"}</span>
               </li>
               <li className="flex items-start gap-2.5">
-                <CheckCircle2 className="w-4 h-4 text-[#0284C7] shrink-0 mt-0.5" />
+                <CheckCircle2 className="w-4 h-4 text-[#3E6517] shrink-0 mt-0.5" />
                 <span>{isSw ? "Seva Binafsi & Backup Maalum (99.99%)" : "Dedicated Database & Backup Partition"}</span>
               </li>
               <li className="flex items-start gap-2.5">
-                <CheckCircle2 className="w-4 h-4 text-[#0284C7] shrink-0 mt-0.5" />
+                <CheckCircle2 className="w-4 h-4 text-[#3E6517] shrink-0 mt-0.5" />
                 <span>{isSw ? "Mafunzo ya Wafanyakazi Dukani" : "On-Site Staff Setup & Training"}</span>
               </li>
             </ul>
@@ -646,7 +646,7 @@ export const SubscriptionBillingModule: React.FC = () => {
 
           <button
             onClick={() => handleOpenCheckout("CUSTOM")}
-            className="mt-8 w-full py-3.5 rounded-2xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-black tracking-wider uppercase transition shadow-xs"
+            className="mt-8 w-full py-3.5 rounded-2xl bg-[#233C0D] hover:bg-[#182C08] text-white text-xs font-black tracking-wider uppercase transition shadow-xs"
           >
             {isSw ? "Lipa Custom Plan" : "Checkout Custom Plan"}
           </button>
@@ -657,7 +657,7 @@ export const SubscriptionBillingModule: React.FC = () => {
       <div className="bg-white rounded-3xl p-5 lg:p-6 border border-slate-200 shadow-xs">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
           <div>
-            <h4 className="font-extrabold text-sm text-slate-900">
+            <h4 className="font-extrabold text-sm text-[#152709]">
               {isSw ? "Kumbukumbu za Malipo & Risiti za Leseni" : "Billing & Payment Transaction Records"}
             </h4>
             <p className="text-xs text-slate-500">
@@ -704,7 +704,7 @@ export const SubscriptionBillingModule: React.FC = () => {
                     <td className="py-3 px-3.5 text-right">
                       <button
                         onClick={() => setActiveReceipt(p)}
-                        className="px-2.5 py-1 text-[11px] font-bold text-[#0284C7] hover:bg-blue-50 rounded-lg transition inline-flex items-center gap-1"
+                        className="px-2.5 py-1 text-[11px] font-bold text-[#233C0D] hover:bg-[#EAF3DE] rounded-lg transition inline-flex items-center gap-1"
                       >
                         <Receipt className="w-3.5 h-3.5" />
                         <span>{isSw ? "Tazama Risiti" : "View Receipt"}</span>
@@ -718,22 +718,22 @@ export const SubscriptionBillingModule: React.FC = () => {
         </div>
       </div>
 
-      {/* CHECKOUT MODAL (EXACT MATCH TO AJIRAMARKET IMAGE 2 REFERENCE) */}
+      {/* CHECKOUT MODAL (TRADEPOS BRAND BACKGROUND & FRAMELESS INPUT) */}
       {isCheckoutOpen && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 lg:p-6 overflow-y-auto">
-          {/* Modal Container with soft ice-cyan gradient like AjiraMarket Image 2 */}
-          <div className="bg-[#EBF6FE] rounded-3xl max-w-lg w-full shadow-2xl overflow-hidden flex flex-col my-auto border border-sky-100">
+          {/* Modal Container with TradePOS background color (NOT light blue) */}
+          <div className="bg-[#F4FAF0] rounded-3xl max-w-lg w-full shadow-2xl overflow-hidden flex flex-col my-auto border border-[#D5E7C2]">
             {/* Modal Header Bar */}
             <div className="p-6 pb-3 flex items-start justify-between">
               <div>
-                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/80 text-[#0284C7] text-[10px] font-black uppercase tracking-wider mb-2 shadow-xs">
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#0284C7] animate-pulse" />
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#E1FFAC] text-[#192E08] text-[10px] font-black uppercase tracking-wider mb-2 shadow-xs">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#233C0D] animate-pulse" />
                   <span>TRADEPOS DIRECT CHECKOUT</span>
                 </div>
-                <h3 className="text-xl font-black text-slate-900 tracking-tight">
+                <h3 className="text-xl font-black text-[#152709] tracking-tight">
                   TradePOS {selectedPlan} License
                 </h3>
-                <p className="text-xs text-slate-500 mt-0.5">
+                <p className="text-xs text-[#526848] mt-0.5">
                   {formatCycleText(billingCycle)}
                 </p>
               </div>
@@ -743,7 +743,7 @@ export const SubscriptionBillingModule: React.FC = () => {
                   setIsCheckoutOpen(false);
                   setPesapalSimulationStep("idle");
                 }}
-                className="p-2 rounded-full bg-white/80 hover:bg-white text-slate-500 hover:text-slate-900 transition shadow-xs"
+                className="p-2 rounded-full bg-white/80 hover:bg-white text-[#4A643B] hover:text-[#182C08] transition shadow-xs"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -757,43 +757,43 @@ export const SubscriptionBillingModule: React.FC = () => {
                 </div>
               )}
 
-              {/* PAYMENT AMOUNT BOX (EXACT MATCH TO IMAGE 2) */}
-              <div className="bg-white rounded-2xl p-5 shadow-xs flex flex-col justify-between">
+              {/* PAYMENT AMOUNT BOX */}
+              <div className="bg-white rounded-2xl p-5 shadow-xs flex flex-col justify-between border-0">
                 <div className="flex items-center justify-between">
                   <div>
-                    <span className="text-[11px] font-black text-slate-400 uppercase tracking-wider block">
+                    <span className="text-[11px] font-black text-[#5B754E] uppercase tracking-wider block">
                       {isSw ? "KIASI CHA MALIPO" : "PAYMENT AMOUNT"}
                     </span>
-                    <span className="text-3xl font-black text-slate-900 tracking-tight mt-1 block">
+                    <span className="text-3xl font-black text-[#152709] tracking-tight mt-1 block">
                       TZS {finalTotal.toLocaleString()}
                     </span>
                   </div>
                   <div className="text-right">
-                    <span className="text-[11px] font-bold text-slate-400 block">
+                    <span className="text-[11px] font-bold text-[#5B754E] block">
                       {isSw ? "Kifurushi:" : "Selected:"}
                     </span>
-                    <span className="text-xs font-black text-slate-800">
+                    <span className="text-xs font-black text-[#152709]">
                       {selectedPlan}
                     </span>
                   </div>
                 </div>
 
-                <div className="pt-4 mt-3 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400 font-semibold">
+                <div className="pt-4 mt-3 border-t border-[#F0F5EB] flex items-center justify-between text-[11px] text-[#556D48] font-semibold">
                   <span>{isSw ? "Uthibitisho Papo Hapo" : "Instant Confirmation"}</span>
-                  <span className="flex items-center gap-1 text-[#0284C7] font-bold">
+                  <span className="flex items-center gap-1 text-[#3E6517] font-bold">
                     <Lock className="w-3 h-3" />
                     <span>256-Bit SSL Encrypted</span>
                   </span>
                 </div>
               </div>
 
-              {/* SELECT NETWORK BOXES (EXACT MATCH TO IMAGE 2 WITH REALISTIC BRAND LOGOS) */}
+              {/* SELECT NETWORK BOXES (FRAMELESS WITH REALISTIC LOGOS) */}
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs font-bold text-slate-700">
+                  <span className="text-xs font-bold text-[#1F3609]">
                     {isSw ? "Chagua Mtandao:" : "Select Network:"}
                   </span>
-                  <span className="text-[11px] text-[#0284C7] font-semibold">
+                  <span className="text-[11px] text-[#3E6517] font-semibold">
                     {isSw ? "Chagua au Weka Namba" : "Select or Enter Number"}
                   </span>
                 </div>
@@ -803,10 +803,10 @@ export const SubscriptionBillingModule: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => setSelectedCarrier("mpesa")}
-                    className={`p-3 rounded-2xl bg-white text-center transition ${
+                    className={`p-3 rounded-2xl bg-white text-center transition border-0 ${
                       selectedCarrier === "mpesa"
-                        ? "border-2 border-[#0284C7] ring-2 ring-[#0284C7]/20 shadow-xs"
-                        : "border border-slate-200/80 hover:border-slate-300"
+                        ? "ring-2 ring-[#70B419] bg-[#F7FCF0] shadow-xs"
+                        : "hover:bg-[#F3F7ED]"
                     }`}
                   >
                     <div className="text-sm font-black tracking-tight leading-none mb-1">
@@ -820,10 +820,10 @@ export const SubscriptionBillingModule: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => setSelectedCarrier("tigopesa")}
-                    className={`p-3 rounded-2xl bg-white text-center transition ${
+                    className={`p-3 rounded-2xl bg-white text-center transition border-0 ${
                       selectedCarrier === "tigopesa"
-                        ? "border-2 border-[#0284C7] ring-2 ring-[#0284C7]/20 shadow-xs"
-                        : "border border-slate-200/80 hover:border-slate-300"
+                        ? "ring-2 ring-[#70B419] bg-[#F7FCF0] shadow-xs"
+                        : "hover:bg-[#F3F7ED]"
                     }`}
                   >
                     <div className="text-sm font-black text-[#00377B] tracking-tight leading-none mb-1">
@@ -836,10 +836,10 @@ export const SubscriptionBillingModule: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => setSelectedCarrier("airtel")}
-                    className={`p-3 rounded-2xl bg-white text-center transition ${
+                    className={`p-3 rounded-2xl bg-white text-center transition border-0 ${
                       selectedCarrier === "airtel"
-                        ? "border-2 border-[#0284C7] ring-2 ring-[#0284C7]/20 shadow-xs"
-                        : "border border-slate-200/80 hover:border-slate-300"
+                        ? "ring-2 ring-[#70B419] bg-[#F7FCF0] shadow-xs"
+                        : "hover:bg-[#F3F7ED]"
                     }`}
                   >
                     <div className="text-sm font-black text-[#E60000] tracking-tight leading-none mb-1">
@@ -852,10 +852,10 @@ export const SubscriptionBillingModule: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => setSelectedCarrier("halopesa")}
-                    className={`p-3 rounded-2xl bg-white text-center transition ${
+                    className={`p-3 rounded-2xl bg-white text-center transition border-0 ${
                       selectedCarrier === "halopesa"
-                        ? "border-2 border-[#0284C7] ring-2 ring-[#0284C7]/20 shadow-xs"
-                        : "border border-slate-200/80 hover:border-slate-300"
+                        ? "ring-2 ring-[#70B419] bg-[#F7FCF0] shadow-xs"
+                        : "hover:bg-[#F3F7ED]"
                     }`}
                   >
                     <div className="text-sm font-black text-[#FF6600] tracking-tight leading-none mb-1">
@@ -866,9 +866,9 @@ export const SubscriptionBillingModule: React.FC = () => {
                 </div>
               </div>
 
-              {/* PAYMENT PHONE NUMBER INPUT (EXACT MATCH TO IMAGE 2) */}
+              {/* PAYMENT PHONE NUMBER INPUT (COMPLETELY FRAME LESS) */}
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                <label className="block text-xs font-semibold text-[#1F3609] mb-1.5">
                   {isSw
                     ? "Namba ya Simu ya Malipo (M-Pesa, Tigo Pesa, Airtel, HaloPesa)"
                     : "Payment Phone Number (M-Pesa, Tigo Pesa, Airtel, HaloPesa)"}
@@ -879,30 +879,30 @@ export const SubscriptionBillingModule: React.FC = () => {
                     value={payerPhone}
                     onChange={(e) => handlePhoneChange(e.target.value)}
                     placeholder="0754123456 / 0654123456"
-                    className="w-full bg-white rounded-2xl px-4 py-3.5 text-sm font-bold text-slate-900 placeholder:text-slate-400 border border-slate-200 focus:outline-hidden focus:ring-2 focus:ring-[#0284C7] shadow-xs"
+                    className="w-full bg-white rounded-2xl px-4 py-3.5 text-sm font-bold text-[#152709] placeholder:text-[#889E7E] border-0 focus:outline-hidden shadow-xs"
                   />
-                  <div className="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs font-black text-[#0284C7]">
+                  <div className="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs font-black text-[#233C0D]">
                     {selectedCarrier === "mpesa" && "Vodacom"}
                     {selectedCarrier === "tigopesa" && "Tigo"}
                     {selectedCarrier === "airtel" && "Airtel"}
                     {selectedCarrier === "halopesa" && "Halotel"}
                   </div>
                 </div>
-                <p className="text-[11px] text-slate-500 mt-1.5">
+                <p className="text-[11px] text-[#556D48] mt-1.5">
                   {isSw
                     ? "Simu yako itapokea ujumbe wa kuweka namba yako ya siri (PIN) kukamilisha malipo."
                     : "Your phone will receive a prompt to enter your PIN to complete payment."}
                 </p>
               </div>
 
-              {/* SUBMIT BUTTON (EXACT MATCH TO IMAGE 2) */}
+              {/* SUBMIT BUTTON */}
               {pesapalSimulationStep === "idle" ? (
                 <div>
                   <button
                     type="button"
                     onClick={handleInitiatePesapalPayment}
                     disabled={isProcessing}
-                    className="w-full py-4 rounded-2xl bg-[#0284C7] hover:bg-[#0369A1] text-white text-xs font-black tracking-wider uppercase shadow-md transition flex items-center justify-center gap-2"
+                    className="w-full py-4 rounded-2xl bg-[#233C0D] hover:bg-[#182C08] text-white text-xs font-black tracking-wider uppercase shadow-md transition flex items-center justify-center gap-2"
                   >
                     {isProcessing ? (
                       <RefreshCw className="w-4 h-4 animate-spin" />
@@ -927,7 +927,7 @@ export const SubscriptionBillingModule: React.FC = () => {
                       onClick={() =>
                         setPaymentMethodMode(paymentMethodMode === "lipa_namba" ? "mobile" : "lipa_namba")
                       }
-                      className="text-[11px] font-bold text-slate-500 hover:text-[#0284C7] transition"
+                      className="text-[11px] font-bold text-[#556D48] hover:text-[#233C0D] transition"
                     >
                       {paymentMethodMode === "lipa_namba"
                         ? isSw
@@ -940,8 +940,8 @@ export const SubscriptionBillingModule: React.FC = () => {
                   </div>
 
                   {paymentMethodMode === "lipa_namba" && (
-                    <div className="p-4 rounded-2xl bg-white space-y-3 mt-2 border border-slate-200">
-                      <div className="text-xs text-slate-600">
+                    <div className="p-4 rounded-2xl bg-white space-y-3 mt-2 border-0 shadow-xs">
+                      <div className="text-xs text-[#4F6742]">
                         {isSw
                           ? `Tuma TZS ${finalTotal.toLocaleString()} kwenda Till 5542109 (TradePOS Technologies), kisha weka SMS code ya muamala hapa:`
                           : `Send TZS ${finalTotal.toLocaleString()} to Till 5542109 (TradePOS Technologies), then enter your SMS reference code:`}
@@ -952,13 +952,13 @@ export const SubscriptionBillingModule: React.FC = () => {
                           value={lipaReferenceCode}
                           onChange={(e) => setLipaReferenceCode(e.target.value)}
                           placeholder="Mfano: 9KT564819P"
-                          className="flex-1 bg-slate-50 rounded-xl px-3 py-2 text-xs font-mono font-bold text-slate-900 uppercase border border-slate-200 focus:ring-2 focus:ring-[#0284C7]"
+                          className="flex-1 bg-[#F4FAF0] rounded-xl px-3 py-2 text-xs font-mono font-bold text-[#152709] uppercase border-0 focus:outline-hidden"
                         />
                         <button
                           type="button"
                           onClick={handleVerifyLipaCode}
                           disabled={isProcessing}
-                          className="px-4 py-2 rounded-xl bg-[#0284C7] text-white text-xs font-black hover:bg-[#0369A1] transition"
+                          className="px-4 py-2 rounded-xl bg-[#233C0D] text-white text-xs font-black hover:bg-[#182C08] transition"
                         >
                           {isSw ? "Thibitisha" : "Verify"}
                         </button>
@@ -967,14 +967,14 @@ export const SubscriptionBillingModule: React.FC = () => {
                   )}
                 </div>
               ) : (
-                <div className="p-5 rounded-2xl bg-white text-center space-y-3 shadow-xs">
-                  <div className="inline-flex p-3 rounded-full bg-blue-50 text-[#0284C7]">
+                <div className="p-5 rounded-2xl bg-white text-center space-y-3 shadow-xs border-0">
+                  <div className="inline-flex p-3 rounded-full bg-[#E1FFAC] text-[#1E370A]">
                     <Smartphone className="w-6 h-6 animate-pulse" />
                   </div>
-                  <h4 className="text-xs font-black text-slate-900">
+                  <h4 className="text-xs font-black text-[#152709]">
                     {isSw ? "Ombi la Malipo Limetumwa Kwenye Simu Yako!" : "Push Notification Sent to Phone!"}
                   </h4>
-                  <p className="text-[11px] text-slate-500">
+                  <p className="text-[11px] text-[#4F6742]">
                     {isSw
                       ? `Ombi la malipo la TZS ${finalTotal.toLocaleString()} limetumwa kwenda ${payerPhone} (${selectedCarrier.toUpperCase()}). Weka PIN yako kukamilisha.`
                       : `STK push request for TZS ${finalTotal.toLocaleString()} was dispatched to ${payerPhone}. Enter PIN on your phone.`}
@@ -989,7 +989,7 @@ export const SubscriptionBillingModule: React.FC = () => {
                         )
                       }
                       disabled={isProcessing}
-                      className="px-5 py-2.5 rounded-xl bg-[#0284C7] text-white text-xs font-black hover:bg-[#0369A1] transition flex items-center justify-center gap-2"
+                      className="px-5 py-2.5 rounded-xl bg-[#233C0D] text-white text-xs font-black hover:bg-[#182C08] transition flex items-center justify-center gap-2"
                     >
                       <Check className="w-4 h-4" />
                       <span>{isSw ? "Thibitisha Malipo Yamekamilika" : "Confirm Payment Received"}</span>
@@ -998,8 +998,8 @@ export const SubscriptionBillingModule: React.FC = () => {
                 </div>
               )}
 
-              {/* FOOTER NOTE (EXACT MATCH TO IMAGE 2) */}
-              <div className="text-[11px] text-slate-400 text-center pt-1 font-medium">
+              {/* FOOTER NOTE */}
+              <div className="text-[11px] text-[#69825C] text-center pt-1 font-medium">
                 256-Bit SSL Encrypted  •  TradePOS Direct Checkout
               </div>
             </div>
