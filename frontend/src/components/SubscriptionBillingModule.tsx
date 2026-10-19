@@ -839,7 +839,7 @@ export const SubscriptionBillingModule: React.FC = () => {
                   </span>
                   <span className="flex items-center justify-end gap-1 text-[11px] text-[#3E6517] font-bold mt-0.5">
                     <Lock className="w-3 h-3" />
-                    <span>256-Bit SSL Encrypted</span>
+                    <span>{isSw ? "Muamala Salama" : "Secure Payment"}</span>
                   </span>
                 </div>
               </div>
@@ -1082,7 +1082,7 @@ export const SubscriptionBillingModule: React.FC = () => {
 
               {/* FOOTER NOTE */}
               <div className="text-[11px] text-[#69825C] text-center pt-1 font-medium">
-                256-Bit SSL Encrypted  •  TradePOS Direct Checkout
+                {isSw ? "Malipo Salama ya Moja kwa Moja ya TradePOS" : "TradePOS Direct Secure Checkout"}
               </div>
             </div>
           </div>
