@@ -5,11 +5,13 @@ export const dynamic = "force-dynamic";
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
-    const orderTrackingId = searchParams.get("orderTrackingId");
+    const rawTrackingId = searchParams.get("orderTrackingId");
 
-    if (!orderTrackingId) {
-      return NextResponse.json({ error: "Missing orderTrackingId" }, { status: 400 });
+    if (!rawTrackingId || typeof rawTrackingId !== "string" || rawTrackingId.length > 100 || !/^[a-zA-Z0-9_-]+$/.test(rawTrackingId)) {
+      return NextResponse.json({ error: "Muundo wa orderTrackingId si sahihi (Invalid orderTrackingId format)." }, { status: 400 });
     }
+
+    const orderTrackingId = rawTrackingId;
 
     const consumerKey = process.env.PESAPAL_CONSUMER_KEY;
     const consumerSecret = process.env.PESAPAL_CONSUMER_SECRET;

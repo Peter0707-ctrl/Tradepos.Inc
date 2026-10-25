@@ -4,9 +4,9 @@ export const dynamic = "force-dynamic";
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
-  const orderTrackingId = searchParams.get("OrderTrackingId");
-  const orderMerchantReference = searchParams.get("OrderMerchantReference");
-  const orderNotificationType = searchParams.get("OrderNotificationType");
+  const orderTrackingId = String(searchParams.get("OrderTrackingId") || "").slice(0, 100);
+  const orderMerchantReference = String(searchParams.get("OrderMerchantReference") || "").slice(0, 100);
+  const orderNotificationType = String(searchParams.get("OrderNotificationType") || "").slice(0, 50);
 
   // Pesapal IPN expects a 200 response with confirmation JSON
   return NextResponse.json({

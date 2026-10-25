@@ -54,9 +54,16 @@ export async function POST(req: NextRequest) {
     const body = await req.json().catch(() => ({}));
     const { identifier, password } = body;
 
-    if (!identifier || typeof identifier !== "string") {
+    if (!identifier || typeof identifier !== "string" || identifier.length > 255) {
       return NextResponse.json(
-        { success: false, error: "Tafadhali ingiza barua pepe au namba ya simu." },
+        { success: false, error: "Tafadhali ingiza barua pepe au namba ya simu sahihi." },
+        { status: 400 }
+      );
+    }
+
+    if (password && (typeof password !== "string" || password.length > 255)) {
+      return NextResponse.json(
+        { success: false, error: "Muundo wa nenosiri si sahihi." },
         { status: 400 }
       );
     }

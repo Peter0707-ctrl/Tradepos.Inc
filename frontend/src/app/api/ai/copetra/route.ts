@@ -1,12 +1,21 @@
 import { NextRequest, NextResponse } from "next/server";
 
+export const dynamic = "force-dynamic";
+
 export async function POST(req: NextRequest) {
   try {
-    const body = await req.json();
+    const body = await req.json().catch(() => ({}));
     const { query, context } = body;
 
-    if (!query) {
+    if (!query || typeof query !== "string" || query.trim().length === 0) {
       return NextResponse.json({ error: "Query is required" }, { status: 400 });
+    }
+
+    if (query.length > 2000) {
+      return NextResponse.json(
+        { error: "Swali lako ni refu mno. Tafadhali fupisha swali lako liwe chini ya herufi 2000." },
+        { status: 400 }
+      );
     }
 
     const businessName = context?.businessName || "Biashara Yangu";

@@ -1,8 +1,10 @@
 import { NextResponse } from "next/server";
 
+export const dynamic = "force-dynamic";
+
 export async function POST(request: Request) {
   try {
-    const body = await request.json();
+    const body = await request.json().catch(() => ({}));
     const {
       plan = "PROFESSIONAL",
       durationMonths = 1,
@@ -13,6 +15,26 @@ export async function POST(request: Request) {
       customerEmail = "billing@tradepos.co.tz",
       customDetails,
     } = body;
+
+    const amountNum = Number(amount);
+    if (isNaN(amountNum) || amountNum <= 0 || amountNum > 100_000_000) {
+      return NextResponse.json(
+        { error: "Kiasi cha malipo si sahihi (Invalid payment amount)." },
+        { status: 400 }
+      );
+    }
+
+    const durationNum = parseInt(String(durationMonths), 10);
+    if (isNaN(durationNum) || durationNum < 1 || durationNum > 36) {
+      return NextResponse.json(
+        { error: "Muda wa leseni si sahihi (Invalid duration)." },
+        { status: 400 }
+      );
+    }
+
+    const cleanEmail = String(customerEmail).trim().slice(0, 150);
+    const cleanPhone = String(customerPhone).replace(/[^\d+]/g, "").slice(0, 30);
+    const cleanName = String(customerName).trim().slice(0, 100) || "TradePOS Merchant";
 
     const consumerKey = process.env.PESAPAL_CONSUMER_KEY;
     const consumerSecret = process.env.PESAPAL_CONSUMER_SECRET;
@@ -54,21 +76,21 @@ export async function POST(request: Request) {
       const token = authData.token;
 
       // 2. Submit order request to Pesapal
-      const description = `TradePOS ${plan} Plan - ${durationMonths} Month(s) License`;
-      const nameParts = customerName.trim().split(" ");
+      const description = `TradePOS ${plan} Plan - ${durationNum} Month(s) License`;
+      const nameParts = cleanName.split(" ");
       const firstName = nameParts[0] || "Valued";
       const lastName = nameParts.slice(1).join(" ") || "Client";
 
       const orderPayload: any = {
         id: invoiceNumber,
         currency,
-        amount: Number(amount),
+        amount: amountNum,
         description,
         callback_url: `${appUrl}/api/pesapal/callback`,
         notification_id: process.env.PESAPAL_IPN_ID || "869cdf16-9dfd-4425-bd93-da0fab88203d",
         billing_address: {
-          email_address: customerEmail,
-          phone_number: customerPhone,
+          email_address: cleanEmail,
+          phone_number: cleanPhone,
           country_code: "TZ",
           first_name: firstName,
           last_name: lastName,

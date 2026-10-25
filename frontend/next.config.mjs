@@ -1,4 +1,19 @@
 /** @type {import('next').NextConfig} */
+
+const cspHeader = `
+  default-src 'self';
+  script-src 'self' 'unsafe-inline' 'unsafe-eval';
+  style-src 'self' 'unsafe-inline';
+  img-src 'self' blob: data: https://images.unsplash.com https://*.unsplash.com;
+  font-src 'self' data:;
+  object-src 'none';
+  base-uri 'self';
+  form-action 'self' https://pay.pesapal.com https://cybqa.pesapal.com https://wa.me;
+  frame-ancestors 'self';
+  connect-src 'self' https://pay.pesapal.com https://cybqa.pesapal.com https://miraculous-forgiveness-production-10d4.up.railway.app https://images.unsplash.com;
+  upgrade-insecure-requests;
+`.replace(/\s{2,}/g, ' ').trim();
+
 const nextConfig = {
   // Disable X-Powered-By header to prevent server fingerprinting
   poweredByHeader: false,
@@ -20,6 +35,10 @@ const nextConfig = {
       {
         source: "/(.*)",
         headers: [
+          {
+            key: "Content-Security-Policy",
+            value: cspHeader,
+          },
           {
             key: "X-DNS-Prefetch-Control",
             value: "on",
@@ -47,6 +66,10 @@ const nextConfig = {
           {
             key: "X-XSS-Protection",
             value: "1; mode=block",
+          },
+          {
+            key: "Cross-Origin-Opener-Policy",
+            value: "same-origin",
           },
         ],
       },
