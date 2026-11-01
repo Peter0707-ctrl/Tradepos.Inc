@@ -1,4 +1,6 @@
 import { NextResponse } from "next/server";
+import { randomInt } from "crypto";
+import { resolveSecret } from "@/lib/secretVault";
 
 export const dynamic = "force-dynamic";
 
@@ -13,7 +15,6 @@ export async function POST(request: Request) {
       customerName = "TradePOS Merchant",
       customerPhone = "255700000000",
       customerEmail = "billing@tradepos.co.tz",
-      customDetails,
     } = body;
 
     const amountNum = Number(amount);
@@ -36,21 +37,19 @@ export async function POST(request: Request) {
     const cleanPhone = String(customerPhone).replace(/[^\d+]/g, "").slice(0, 30);
     const cleanName = String(customerName).trim().slice(0, 100) || "TradePOS Merchant";
 
-    const consumerKey = process.env.PESAPAL_CONSUMER_KEY;
-    const consumerSecret = process.env.PESAPAL_CONSUMER_SECRET;
-    const pesapalEnv = process.env.PESAPAL_ENV || "sandbox";
+    const consumerKey = resolveSecret("PESAPAL_CONSUMER_KEY");
+    const consumerSecret = resolveSecret("PESAPAL_CONSUMER_SECRET");
+    const pesapalEnv = resolveSecret("PESAPAL_ENV") || "sandbox";
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
 
-    const invoiceNumber = `INV-${new Date().getFullYear()}-${Math.floor(100000 + Math.random() * 900000)}`;
+    const invoiceNumber = `INV-${new Date().getFullYear()}-${randomInt(100000, 1000000)}`;
 
-    // If Pesapal credentials are fully configured in environment, call the real Pesapal v3 API
-    if (consumerKey && consumerSecret && !consumerKey.includes("your_pesapal")) {
+    if (consumerKey && consumerSecret) {
       const baseUrl =
         pesapalEnv === "production"
           ? "https://pay.pesapal.com/v3/api"
           : "https://cybqa.pesapal.com/pesapalv3/api";
 
-      // 1. Authenticate with Pesapal to get access token
       const authRes = await fetch(`${baseUrl}/Auth/RequestToken`, {
         method: "POST",
         headers: {
@@ -64,10 +63,9 @@ export async function POST(request: Request) {
       });
 
       if (!authRes.ok) {
-        const authErr = await authRes.text();
-        console.error("Pesapal Auth Error:", authErr);
+        console.error("[Pesapal] Gateway authentication failed");
         return NextResponse.json(
-          { error: "Failed to authenticate with Pesapal gateway", details: authErr },
+          { error: "Failed to authenticate with payment gateway" },
           { status: 502 }
         );
       }
@@ -75,19 +73,19 @@ export async function POST(request: Request) {
       const authData = await authRes.json();
       const token = authData.token;
 
-      // 2. Submit order request to Pesapal
       const description = `TradePOS ${plan} Plan - ${durationNum} Month(s) License`;
       const nameParts = cleanName.split(" ");
       const firstName = nameParts[0] || "Valued";
       const lastName = nameParts.slice(1).join(" ") || "Client";
 
-      const orderPayload: any = {
+      const orderPayload = {
         id: invoiceNumber,
         currency,
         amount: amountNum,
         description,
         callback_url: `${appUrl}/api/pesapal/callback`,
-        notification_id: process.env.PESAPAL_IPN_ID || "869cdf16-9dfd-4425-bd93-da0fab88203d",
+        notification_id:
+          resolveSecret("PESAPAL_IPN_ID") || "869cdf16-9dfd-4425-bd93-da0fab88203d",
         billing_address: {
           email_address: cleanEmail,
           phone_number: cleanPhone,
@@ -110,29 +108,26 @@ export async function POST(request: Request) {
 
       const orderData = await orderRes.json().catch(() => ({}));
 
-      // If Pesapal merchant account has limit / contractual verification pending or declined
       if (orderData.error) {
-        console.error("Pesapal Order Submission Error:", orderData.error);
-        let userMessage = orderData.error.message || "Pesapal order request was declined.";
+        let userMessage = "Muamala wa Pesapal umekataliwa. Tafadhali jaribu tena au tumia Lipa Namba.";
         if (
           orderData.error.code === "amount_exceeds_default_limit" ||
           orderData.error.error_type === "contractual_error"
         ) {
           userMessage =
-            "Lango la Pesapal limekataa muamala: Kiasi kinazidi kikomo cha akaunti yako ya Pesapal (amount exceeds limit). Wasiliana na support@pesapal.com ili wakuongezee kikomo cha biashara, au tumia Lipa Namba hapa chini.";
+            "Lango la Pesapal limekataa muamala: Kiasi kinazidi kikomo cha akaunti ya Pesapal. Wasiliana na support@pesapal.com au tumia Lipa Namba hapa chini.";
         } else if (
           orderData.error.code === "maximum_amount_limit_exceeded" ||
           orderData.error.error_type === "test_transactions_exceeded"
         ) {
           userMessage =
-            "Lango la Pesapal limekataa muamala: Kikomo cha miamala ya majaribio (test limit) kimefikiwa kwenye akaunti hii. Wasiliana na support@pesapal.com, au tumia Lipa Namba.";
+            "Lango la Pesapal limekataa muamala: Kikomo cha miamala ya majaribio kimefikiwa. Wasiliana na support@pesapal.com au tumia Lipa Namba.";
         }
 
         return NextResponse.json(
           {
             error: userMessage,
-            code: orderData.error.code,
-            details: orderData.error,
+            code: orderData.error.code || "GATEWAY_DECLINED",
           },
           { status: 400 }
         );
@@ -167,8 +162,8 @@ export async function POST(request: Request) {
       },
       { status: 400 }
     );
-  } catch (error: any) {
-    console.error("Checkout API handler error:", error?.message || error);
+  } catch {
+    console.error("[Pesapal] Checkout API handler error");
     return NextResponse.json(
       { error: "Hitilafu ya seva wakati wa kuanzisha malipo. Tafadhali jaribu tena." },
       { status: 500 }

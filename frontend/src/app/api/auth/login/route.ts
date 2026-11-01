@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
+import { resolveSecret } from "@/lib/secretVault";
 
 export const dynamic = "force-dynamic";
 
@@ -23,15 +24,19 @@ function isRateLimited(ip: string): boolean {
   return false;
 }
 
-// Constant-time string comparison to prevent timing attacks
-function safeCompare(a: string, b: string): boolean {
-  const bufA = Buffer.from(a);
-  const bufB = Buffer.from(b);
+// Constant-time string comparison to prevent timing side-channel attacks
+function safeCompareHex(a: string, b: string): boolean {
+  const bufA = Buffer.from(a.trim().toLowerCase(), "utf-8");
+  const bufB = Buffer.from(b.trim().toLowerCase(), "utf-8");
   if (bufA.length !== bufB.length) {
     return false;
   }
   return crypto.timingSafeEqual(bufA, bufB);
 }
+
+// SHA-256 hash of platform Super Admin credential (zero plaintext password in source code)
+const DEFAULT_SUPER_ADMIN_SHA256 =
+  "1ac4b6d753daefd075a051d4e487171cffeeaa6054e60ed0c5125f6c4625991b";
 
 export async function POST(req: NextRequest) {
   try {
@@ -71,16 +76,40 @@ export async function POST(req: NextRequest) {
     const cleanInput = identifier.trim().toLowerCase();
     const cleanPassword = typeof password === "string" ? password.trim() : "";
 
-    // Platform Super Admin Credentials (Configurable via Environment Variables)
-    const expectedAdminEmail = (process.env.ADMIN_EMAIL || "crestgroup@gmail.com").trim().toLowerCase();
-    const expectedAdminPassword = process.env.ADMIN_PASSWORD || "CREST@132026";
+    const expectedAdminEmail = (
+      resolveSecret("ADMIN_EMAIL") || "crestgroup@gmail.com"
+    )
+      .trim()
+      .toLowerCase();
     const legacyAdminEmail = "admin@tradepos.cloud";
+
+    const envAdminPassword = resolveSecret("ADMIN_PASSWORD");
+    const expectedAdminHash =
+      resolveSecret("ADMIN_PASSWORD_HASH") ||
+      (envAdminPassword
+        ? crypto.createHash("sha256").update(envAdminPassword).digest("hex")
+        : DEFAULT_SUPER_ADMIN_SHA256);
 
     const isSuperAdminCandidate =
       cleanInput === expectedAdminEmail || cleanInput === legacyAdminEmail;
 
     if (isSuperAdminCandidate) {
-      if (!cleanPassword || !safeCompare(cleanPassword, expectedAdminPassword)) {
+      if (!cleanPassword) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: "Nenosiri la Admin linahitajika.",
+          },
+          { status: 401 }
+        );
+      }
+
+      const providedHash = crypto
+        .createHash("sha256")
+        .update(cleanPassword)
+        .digest("hex");
+
+      if (!safeCompareHex(providedHash, expectedAdminHash)) {
         return NextResponse.json(
           {
             success: false,
@@ -90,7 +119,6 @@ export async function POST(req: NextRequest) {
         );
       }
 
-      // Return authenticated Super Admin profile (strictly omitting passwords or secrets)
       return NextResponse.json({
         success: true,
         user: {
@@ -105,14 +133,13 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // For non-admin accounts, confirm the request format is valid so client-side state validates against registered staff
     return NextResponse.json({
       success: true,
       isSuperAdmin: false,
       identifier: cleanInput,
     });
-  } catch (error: any) {
-    console.error("Auth login API error:", error);
+  } catch {
+    console.error("[TradePOS Auth] Authentication handler failed");
     return NextResponse.json(
       { success: false, error: "Hitilafu ya ndani ya seva ya uthibitishaji." },
       { status: 500 }

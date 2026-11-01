@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { resolveSecret } from "@/lib/secretVault";
 
 export const dynamic = "force-dynamic";
 
@@ -7,24 +8,29 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const rawTrackingId = searchParams.get("orderTrackingId");
 
-    if (!rawTrackingId || typeof rawTrackingId !== "string" || rawTrackingId.length > 100 || !/^[a-zA-Z0-9_-]+$/.test(rawTrackingId)) {
-      return NextResponse.json({ error: "Muundo wa orderTrackingId si sahihi (Invalid orderTrackingId format)." }, { status: 400 });
+    if (
+      !rawTrackingId ||
+      typeof rawTrackingId !== "string" ||
+      rawTrackingId.length > 100 ||
+      !/^[a-zA-Z0-9_-]+$/.test(rawTrackingId)
+    ) {
+      return NextResponse.json(
+        { error: "Muundo wa orderTrackingId si sahihi (Invalid orderTrackingId format)." },
+        { status: 400 }
+      );
     }
 
     const orderTrackingId = rawTrackingId;
+    const consumerKey = resolveSecret("PESAPAL_CONSUMER_KEY");
+    const consumerSecret = resolveSecret("PESAPAL_CONSUMER_SECRET");
+    const pesapalEnv = resolveSecret("PESAPAL_ENV") || "production";
 
-    const consumerKey = process.env.PESAPAL_CONSUMER_KEY;
-    const consumerSecret = process.env.PESAPAL_CONSUMER_SECRET;
-    const pesapalEnv = process.env.PESAPAL_ENV || "production";
-
-    // If credentials exist, query Pesapal
     if (consumerKey && consumerSecret) {
       const baseUrl =
         pesapalEnv === "production"
           ? "https://pay.pesapal.com/v3/api"
           : "https://cybqa.pesapal.com/pesapalv3/api";
 
-      // 1. Get Token
       const authRes = await fetch(`${baseUrl}/Auth/RequestToken`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Accept: "application/json" },
@@ -35,16 +41,15 @@ export async function GET(request: Request) {
         return NextResponse.json({
           completed: false,
           status: "AUTH_FAILED",
-          message: "Failed to authenticate with Pesapal",
+          message: "Failed to authenticate with payment gateway",
         });
       }
 
       const authData = await authRes.json();
       const token = authData.token;
 
-      // 2. Query status directly from Pesapal gateway
       const statusRes = await fetch(
-        `${baseUrl}/Transactions/GetTransactionStatus?orderTrackingId=${orderTrackingId}`,
+        `${baseUrl}/Transactions/GetTransactionStatus?orderTrackingId=${encodeURIComponent(orderTrackingId)}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -61,8 +66,6 @@ export async function GET(request: Request) {
       }
 
       const statusData = await statusRes.json();
-
-      // Only mark completed if Pesapal explicitly returns Completed or status_code === 1
       const isCompleted =
         statusData.payment_status_description === "Completed" || statusData.status_code === 1;
 
@@ -78,10 +81,13 @@ export async function GET(request: Request) {
     return NextResponse.json({
       completed: false,
       status: "CONFIG_ERROR",
-      message: "Pesapal credentials not configured",
+      message: "Payment gateway credentials not configured",
     });
-  } catch (error: any) {
-    console.error("Status API handler error:", error?.message || error);
-    return NextResponse.json({ completed: false, error: "Hitilafu ya kuangalia hali ya malipo." }, { status: 500 });
+  } catch {
+    console.error("[Pesapal] Status API handler error");
+    return NextResponse.json(
+      { completed: false, error: "Hitilafu ya kuangalia hali ya malipo." },
+      { status: 500 }
+    );
   }
 }
