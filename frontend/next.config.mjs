@@ -9,7 +9,7 @@ const cspHeader = `
   object-src 'none';
   base-uri 'self';
   form-action 'self' https://pay.pesapal.com https://cybqa.pesapal.com https://wa.me;
-  frame-ancestors 'self';
+  frame-ancestors 'none';
   connect-src 'self' https://pay.pesapal.com https://cybqa.pesapal.com https://miraculous-forgiveness-production-10d4.up.railway.app https://images.unsplash.com;
   upgrade-insecure-requests;
 `.replace(/\s{2,}/g, ' ').trim();
@@ -18,11 +18,18 @@ const nextConfig = {
   // Disable X-Powered-By header to prevent server fingerprinting
   poweredByHeader: false,
 
+  // Never emit browser source maps in production builds to protect intellectual property
+  productionBrowserSourceMaps: false,
+
+  compiler: {
+    removeConsole: process.env.NODE_ENV === 'production' ? { exclude: ['error'] } : false,
+  },
+
   // Disable server-side image optimizer to neutralize Next.js image DoS / SSRF vectors
   images: {
     unoptimized: true,
   },
-  
+
   eslint: {
     ignoreDuringBuilds: true,
   },
@@ -41,7 +48,7 @@ const nextConfig = {
           },
           {
             key: "X-DNS-Prefetch-Control",
-            value: "on",
+            value: "off",
           },
           {
             key: "Strict-Transport-Security",
@@ -49,7 +56,7 @@ const nextConfig = {
           },
           {
             key: "X-Frame-Options",
-            value: "SAMEORIGIN",
+            value: "DENY",
           },
           {
             key: "X-Content-Type-Options",
@@ -61,7 +68,7 @@ const nextConfig = {
           },
           {
             key: "Permissions-Policy",
-            value: "camera=(), microphone=(), geolocation=(), browsing-topics=()",
+            value: "camera=(), microphone=(), geolocation=(), payment=(), usb=(), browsing-topics=()",
           },
           {
             key: "X-XSS-Protection",
@@ -70,6 +77,10 @@ const nextConfig = {
           {
             key: "Cross-Origin-Opener-Policy",
             value: "same-origin",
+          },
+          {
+            key: "X-Permitted-Cross-Domain-Policies",
+            value: "none",
           },
         ],
       },

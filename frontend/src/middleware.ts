@@ -1,12 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 
-// Common exploit scanner paths (PHP scripts, WordPress, environment files, git dumps, etc.)
+// Common exploit scanner paths (PHP scripts, WordPress, environment files, git dumps, source maps, etc.)
 const BLOCKED_PATH_PATTERNS = [
   /\.env(\..+)?$/i,
   /\.git(\/.*)?$/i,
   /\.aws(\/.*)?$/i,
   /\.ssh(\/.*)?$/i,
   /\.php(\/.*)?$/i,
+  /\.js\.map$/i,
+  /\.css\.map$/i,
   /\/wp-admin/i,
   /\/wp-login/i,
   /\/wp-content/i,
@@ -35,11 +37,16 @@ export function middleware(request: NextRequest) {
 
   // 2. Reject malicious path traversal attacks (e.g. /../../etc/passwd, %2e%2e)
   const rawPath = request.url;
-  if (rawPath.includes("..") || rawPath.includes("%2e%2e") || rawPath.includes("%2E%2E")) {
+  if (
+    rawPath.includes("..") ||
+    rawPath.includes("%2e%2e") ||
+    rawPath.includes("%2E%2E") ||
+    rawPath.includes("%00")
+  ) {
     return new NextResponse("Forbidden: Invalid Path Traversal", { status: 403 });
   }
 
-  // 3. Block automated vulnerability scanners probing for PHP, WP, .env, .git
+  // 3. Block automated vulnerability scanners probing for PHP, WP, .env, .git, .map
   for (const pattern of BLOCKED_PATH_PATTERNS) {
     if (pattern.test(pathname)) {
       return new NextResponse("Forbidden: Access Denied", { status: 403 });
@@ -69,18 +76,16 @@ export function middleware(request: NextRequest) {
           originHost.endsWith("tradepos.cloud");
 
         if (!isLocalhost && !isTradePosDomain) {
-          // Reject untrusted cross-origin API requests
           return NextResponse.json(
             { error: "Forbidden: Untrusted Cross-Origin Request" },
             { status: 403 }
           );
         }
-      } catch (err) {
+      } catch {
         return new NextResponse("Bad Request: Malformed Origin Header", { status: 400 });
       }
     }
 
-    // Handle Preflight OPTIONS requests safely
     if (method === "OPTIONS") {
       const response = new NextResponse(null, { status: 204 });
       if (origin) {
@@ -96,24 +101,15 @@ export function middleware(request: NextRequest) {
   // 5. Proceed with request and inject hardened response headers
   const response = NextResponse.next();
 
-  // Anti-sniffing & framing defense
   response.headers.set("X-Content-Type-Options", "nosniff");
-  response.headers.set("X-Frame-Options", "SAMEORIGIN");
+  response.headers.set("X-Frame-Options", "DENY");
   response.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
   response.headers.set("Cross-Origin-Opener-Policy", "same-origin");
+  response.headers.set("X-Permitted-Cross-Domain-Policies", "none");
 
   return response;
 }
 
-// Apply middleware across all routes except static bundles and static image files
 export const config = {
-  matcher: [
-    /*
-     * Match all request paths except for:
-     * 1. /_next/static (static files)
-     * 2. /_next/image (image optimization files)
-     * 3. /favicon.ico, /icons/* (static icons)
-     */
-    "/((?!_next/static|_next/image|favicon.ico|icons/|sw.js).*)",
-  ],
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|icons/|sw.js).*)"],
 };
